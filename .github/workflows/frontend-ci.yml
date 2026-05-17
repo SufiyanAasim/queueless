@@ -27,13 +27,16 @@ on:
       - '.github/workflows/frontend-ci.yml'
   workflow_dispatch: {}
 
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
 jobs:
   build:
     name: Build (Node ${{ matrix.node }})
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        node: ['18', '20']
+        node: [20, 22]
     defaults:
       run:
         working-directory: frontend
@@ -45,7 +48,7 @@ jobs:
         with:
           node-version: ${{ matrix.node }}
           cache: 'npm'
-          cache-dependency-path: frontend/package-lock.json
+          cache-dependency-path: './frontend/package-lock.json'
 
       - name: Install dependencies
         run: npm ci
