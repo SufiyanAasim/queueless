@@ -1,0 +1,84 @@
+import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { apiTakeToken } from '../services/api.js';
+
+const SERVICES = [
+  { id: 'general',      title: 'General Inquiry',     desc: 'Reception, info, walk-in support' },
+  { id: 'consultation', title: 'Consultation',         desc: 'Doctor, advisor, or specialist visit' },
+  { id: 'transaction',  title: 'Transaction',          desc: 'Payment, deposit, account change' },
+];
+
+export default function TakeToken() {
+  const [service, setService] = useState('general');
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState(null);
+  const navigate = useNavigate();
+
+  const handleTake = async () => {
+    setSubmitting(true);
+    setError(null);
+    try {
+      const token = await apiTakeToken(service);
+      // Persist in localStorage so a refresh on the status page recovers the token.
+      localStorage.setItem('queueless.myToken', JSON.stringify(token));
+      navigate(`/token/${token.id}`);
+    } catch (e) {
+      const status = e.response?.status;
+      if (status === 423) setError('The queue is currently paused. Please try again in a few minutes.');
+      else if (status === 429) setError('Too many requests. Please slow down and try again.');
+      else setError(e.response?.data?.error || 'Could not issue a token. Please try again.');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  return (
+    <div className="max-w-3xl mx-auto px-6 py-16">
+      <div className="label mb-4">Step 1 of 2</div>
+      <h1 className="font-display text-5xl sm:text-6xl tracking-tightest leading-[0.95]">
+        What brings you in today?
+      </h1>
+      <p className="mt-4 text-graphite max-w-xl">
+        Pick a service so the staff can prepare. You'll get your token number on the next screen.
+      </p>
+
+      <div className="mt-10 grid sm:grid-cols-3 gap-4">
+        {SERVICES.map(s => (
+          <button
+            key={s.id}
+            onClick={() => setService(s.id)}
+            className={`text-left p-6 border transition-all ${
+              service === s.id
+                ? 'border-ink bg-ink text-paper'
+                : 'border-rule bg-cream hover:border-ink'
+            }`}
+          >
+            <div className="label" style={service === s.id ? { color: '#F7F3EC99' } : {}}>
+              {service === s.id ? 'Selected' : 'Service'}
+            </div>
+            <div className="mt-3 font-display text-2xl leading-tight">{s.title}</div>
+            <div className={`mt-2 text-xs ${service === s.id ? 'text-paper/70' : 'text-graphite'}`}>
+              {s.desc}
+            </div>
+          </button>
+        ))}
+      </div>
+
+      <div className="mt-10 pt-10 border-t border-rule flex flex-col sm:flex-row gap-4 sm:items-center sm:justify-between">
+        <p className="text-sm text-graphite max-w-md">
+          By taking a token, you agree to wait roughly in the order shown.
+          You can leave the page — your position is saved on this device.
+        </p>
+        <button onClick={handleTake} disabled={submitting} className="btn-primary">
+          {submitting ? 'Issuing token…' : 'Issue my token →'}
+        </button>
+      </div>
+
+      {error && (
+        <div className="mt-6 p-4 border border-accent bg-accent/5 text-accent-deep text-sm">
+          {error}
+        </div>
+      )}
+    </div>
+  );
+}

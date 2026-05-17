@@ -1,0 +1,26 @@
+# ============================================================================
+# QueueLess Analytics Pipeline - Python Dependencies
+# Course: CSL-460 Data Mining Lab
+# ----------------------------------------------------------------------------
+# Pinned major versions for reproducibility. To install:
+#   pip install -r requirements.txt
+# ============================================================================
+
+# Core data manipulation
+pandas>=2.2,<3.0
+numpy>=1.26,<2.2
+
+# Visualization
+matplotlib>=3.8,<4.0
+
+# Machine learning (optional linear regression predictor)
+scikit-learn>=1.4,<2.0
+joblib>=1.3,<2.0
+
+# Optional: MongoDB connectivity for cloud storage demo
+pymongo>=4.6,<5.0
+
+# Notebook environment
+jupyter>=1.0
+ipykernel>=6.29
+nbformat>=5.10

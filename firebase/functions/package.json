@@ -1,0 +1,11 @@
+{
+  "name": "queueless-functions",
+  "description": "QueueLess Firebase Cloud Functions - serverless token expiry. Owner: Hasaan.",
+  "engines": { "node": "20" },
+  "main": "index.js",
+  "private": true,
+  "dependencies": {
+    "firebase-admin": "^12.4.0",
+    "firebase-functions": "^5.0.1"
+  }
+}

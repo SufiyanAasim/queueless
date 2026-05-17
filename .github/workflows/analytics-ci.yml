@@ -1,0 +1,55 @@
+name: Analytics Pipeline CI
+
+# ----------------------------------------------------------------------------
+# Owner: Sufiyan (CI/CD & Testing module).
+#
+# The DM project is a separate course submission, but it shares this repo so
+# the bridge between CC and DM (the events CSV schema) doesn't drift silently.
+# This workflow runs the full simulator-to-charts pipeline with --skip-charts
+# (faster, no display server required) on every change to analytics/.
+# ----------------------------------------------------------------------------
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'analytics/**'
+      - '.github/workflows/analytics-ci.yml'
+  pull_request:
+    paths:
+      - 'analytics/**'
+      - '.github/workflows/analytics-ci.yml'
+  workflow_dispatch: {}
+
+jobs:
+  pipeline:
+    name: Run end-to-end pipeline
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: analytics
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+          cache-dependency-path: analytics/requirements.txt
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Run pipeline (small dataset, no charts)
+        run: python run_pipeline.py --days 7 --avg-per-day 80 --skip-charts
+
+      - name: Generate notebook artifact
+        run: python build_notebook.py
+
+      - name: Upload generated notebook
+        uses: actions/upload-artifact@v4
+        with:
+          name: queueless-analysis-notebook
+          path: analytics/notebooks/QueueLess_Analysis.ipynb
+          retention-days: 14

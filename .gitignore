@@ -1,0 +1,66 @@
+# --------------------------------------------------------------------------
+# QueueLess — top-level .gitignore
+# --------------------------------------------------------------------------
+
+# Environment files (NEVER commit real secrets)
+.env
+.env.local
+.env.*.local
+*.env
+!*.env.example
+
+# Node
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnp.*
+.yarn/cache
+.yarn/install-state.gz
+
+# Build outputs
+dist/
+build/
+.next/
+.vite/
+.turbo/
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+.venv/
+venv/
+env/
+ENV/
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Generated analytics outputs (regenerable from run_pipeline.py)
+analytics/data/queue_events.csv
+analytics/data/tokens_processed.csv
+analytics/data/charts/
+analytics/models/*.joblib
+
+# OS / Editor
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Logs
+logs/
+*.log
+
+# Firebase Admin SDK Secrets
+firebase-adminsdk*.json

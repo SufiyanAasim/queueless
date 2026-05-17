@@ -1,0 +1,43 @@
+{
+  "rules": {
+
+    "queue": {
+      "state": {
+        ".read": true,
+        ".write": false,
+        "status":              { ".validate": "newData.isString() && (newData.val() === 'running' || newData.val() === 'paused')" },
+        "currentTokenNumber":  { ".validate": "newData.isNumber() && newData.val() >= 0" },
+        "lastCalledAt":        { ".validate": "newData.isNumber() || newData.val() == null" },
+        "pausedAt":            { ".validate": "newData.isNumber() || newData.val() == null" }
+      },
+
+      "counter": {
+        ".read": false,
+        ".write": false,
+        "value": { ".validate": "newData.isNumber() && newData.val() >= 0" }
+      },
+
+      "tokens": {
+        ".read": true,
+        ".write": false,
+        "$tokenId": {
+          ".validate": "newData.hasChildren(['id', 'number', 'status', 'service', 'issuedAt'])",
+          "id":        { ".validate": "newData.isString() && newData.val() === $tokenId" },
+          "number":    { ".validate": "newData.isNumber() && newData.val() > 0" },
+          "status":    { ".validate": "newData.isString() && newData.val().matches(/^(waiting|called|served|expired)$/)" },
+          "service":   { ".validate": "newData.isString()" },
+          "issuedAt":  { ".validate": "newData.isNumber()" },
+          "calledAt":  { ".validate": "newData.isNumber() || newData.val() == null" },
+          "servedAt":  { ".validate": "newData.isNumber() || newData.val() == null" },
+          "expiresAt": { ".validate": "newData.isNumber()" },
+          "$other":    { ".validate": false }
+        }
+      }
+    },
+
+    "admins": {
+      ".read": false,
+      ".write": false
+    }
+  }
+}

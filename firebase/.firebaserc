@@ -1,0 +1,7 @@
+{
+  "projects": {
+    "firebase deploy --only database": "queueless-tqms"
+  },
+  "targets": {},
+  "etags": {}
+}

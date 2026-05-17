@@ -1,0 +1,85 @@
+name: Backend CI / Deploy
+
+# ----------------------------------------------------------------------------
+# Owner: Sufiyan (CI/CD & Testing module).
+#
+# Pipeline:
+#   1. On every push or PR -> install, lint (placeholder), run Jest suite.
+#   2. On merge to main only -> trigger the Render deploy hook so the
+#      production backend redeploys with the latest code.
+#
+# Render's auto-deploy can also be enabled in the Render dashboard with no
+# CI involvement at all - we use the deploy hook here so deploys ONLY happen
+# after CI is green, never on a broken main.
+# ----------------------------------------------------------------------------
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'backend/**'
+      - '.github/workflows/backend-ci.yml'
+  pull_request:
+    paths:
+      - 'backend/**'
+      - '.github/workflows/backend-ci.yml'
+  workflow_dispatch: {}
+
+jobs:
+  test:
+    name: Test (Node ${{ matrix.node }})
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node: ['18', '20']
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node ${{ matrix.node }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+          cache: 'npm'
+          cache-dependency-path: backend/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run unit + integration tests
+        run: npm test
+        env:
+          # Tests use a mocked Firebase (see tests/queue.test.js), but env
+          # vars must still validate as present. These are dummy values.
+          NODE_ENV: test
+          PORT: 0
+          CORS_ORIGIN: http://localhost
+          JWT_SECRET: ci-secret-ci-secret-ci-secret-ci-secret-ci-secret
+          ADMIN_USERNAME: admin
+          ADMIN_PASSWORD: testpassword123
+          FIREBASE_PROJECT_ID: ci-project
+          FIREBASE_CLIENT_EMAIL: ci@ci.iam.gserviceaccount.com
+          FIREBASE_PRIVATE_KEY: '-----BEGIN PRIVATE KEY-----\nfake\n-----END PRIVATE KEY-----\n'
+          FIREBASE_DATABASE_URL: https://ci.firebaseio.com
+          ANALYTICS_SINK: csv
+          ANALYTICS_CSV_PATH: /tmp/ci_events.csv
+
+  deploy:
+    name: Deploy to Render
+    needs: test
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger Render deploy hook
+        env:
+          RENDER_DEPLOY_HOOK: ${{ secrets.RENDER_DEPLOY_HOOK }}
+        run: |
+          if [ -z "$RENDER_DEPLOY_HOOK" ]; then
+            echo "RENDER_DEPLOY_HOOK secret not set - configure in repo settings."
+            echo "(Render dashboard > Service > Settings > Deploy Hook)"
+            exit 1
+          fi
+          curl -fsSL -X POST "$RENDER_DEPLOY_HOOK"
+          echo "Deploy triggered."

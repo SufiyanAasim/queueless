@@ -1,0 +1,48 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    font-feature-settings: 'cv11', 'ss01', 'tnum';
+    -webkit-font-smoothing: antialiased;
+  }
+  body {
+    /* Subtle paper grain - generated, no asset needed. */
+    background-image:
+      radial-gradient(circle at 15% 20%, rgba(0,0,0,0.015) 1px, transparent 1px),
+      radial-gradient(circle at 65% 70%, rgba(0,0,0,0.015) 1px, transparent 1px);
+    background-size: 28px 28px, 36px 36px;
+  }
+  /* Tabular numbers everywhere - critical for queue counters */
+  .num {
+    font-variant-numeric: tabular-nums;
+  }
+}
+
+@layer components {
+  .hairline {
+    @apply border border-rule;
+  }
+  .btn-primary {
+    @apply inline-flex items-center justify-center px-6 py-3 bg-ink text-paper
+           font-medium tracking-tight rounded-none transition-all
+           hover:bg-accent hover:translate-y-[-1px] active:translate-y-0
+           disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-ink disabled:hover:translate-y-0;
+  }
+  .btn-secondary {
+    @apply inline-flex items-center justify-center px-6 py-3 bg-transparent
+           text-ink font-medium tracking-tight border border-ink
+           transition-colors hover:bg-ink hover:text-paper;
+  }
+  .btn-danger {
+    @apply inline-flex items-center justify-center px-4 py-2 bg-accent text-paper
+           font-medium tracking-tight transition-colors hover:bg-accent-deep;
+  }
+  .card {
+    @apply bg-cream hairline p-6;
+  }
+  .label {
+    @apply text-xs font-medium tracking-[0.18em] uppercase text-graphite;
+  }
+}

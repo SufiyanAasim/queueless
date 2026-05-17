@@ -1,0 +1,14 @@
+{
+  "_comment": "QueueLess Firebase project configuration. Run `firebase deploy` from this directory to push rules + cloud functions.",
+  "database": {
+    "rules": "database.rules.json"
+  },
+  "functions": [
+    {
+      "source": "functions",
+      "codebase": "default",
+      "ignore": ["node_modules", ".git", "*.log"],
+      "runtime": "nodejs20"
+    }
+  ]
+}
