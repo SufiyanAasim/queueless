@@ -7,9 +7,7 @@
 
 ---
 
-## Why one repository for two courses?
-
-The two proposals describe different layers of the *same* system. The Cloud Computing project
+This project describes different layers of the *same* system. The Cloud Computing project
 issues digital tokens and tracks live queue state in Firebase; every queue event it handles is
 *dual-written* to a structured event log; the Data Mining project mines that log for waiting-time
 predictions, peak-hour patterns, and operational insights. Keeping the code in one place means
@@ -29,7 +27,7 @@ independently:
 
 ## Module ownership
 
-### Cloud Computing project (BSE 6 A/B/C)
+### Cloud Computing project (BSE 6 A/B)
 
 | Module | Owner | Subtree |
 |---|---|---|
@@ -38,7 +36,7 @@ independently:
 | Database Design & Cloud Configuration | **Hasaan** | `firebase/` |
 | Deployment, CI/CD & Testing | **Sufiyan** *(Team Lead)* | `.github/workflows/`, `backend/tests/`, deploy configs |
 
-### Data Mining project (BSE 6 A/C)
+### Data Mining project (BSE 6 A)
 
 | Module | Owner | Files |
 |---|---|---|
