@@ -101,8 +101,80 @@ async function logEvent(event) {
   return appendCsv(enriched);
 }
 
+const CSV_CACHE = {
+  data: null,
+  timestamp: 0,
+  TTL_MS: 5 * 60 * 1000 // 5 minutes
+};
+
+async function getTrafficStats() {
+  if (CSV_CACHE.data && Date.now() - CSV_CACHE.timestamp < CSV_CACHE.TTL_MS) {
+    return CSV_CACHE.data;
+  }
+
+  const filepath = path.resolve(__dirname, '..', '..', config.analytics.csvPath);
+  try {
+    const content = await fsp.readFile(filepath, 'utf8');
+    const lines = content.trim().split('\n').slice(1); // skip header
+    
+    const peakHours = {};
+    const peakHoursByService = { general: {}, consultation: {}, transaction: {} };
+    let totalIssued = 0;
+    let totalExpired = 0;
+    let sumWait = 0;
+    let waitCount = 0;
+
+    for (const line of lines) {
+      if (!line) continue;
+      const parts = line.split(',');
+      const eventType = parts[0];
+      const service = parts[3];
+      const timestamp = parseInt(parts[4]);
+
+      if (eventType === 'token_issued') {
+        totalIssued++;
+        const hour = new Date(timestamp).getHours();
+        peakHours[hour] = (peakHours[hour] || 0) + 1;
+        if (peakHoursByService[service]) {
+           peakHoursByService[service][hour] = (peakHoursByService[service][hour] || 0) + 1;
+        }
+      } else if (eventType === 'token_expired') {
+        totalExpired++;
+      } else if (eventType === 'token_called') {
+        const waitSecs = parseInt(parts[7]);
+        if (!isNaN(waitSecs)) {
+          sumWait += waitSecs;
+          waitCount++;
+        }
+      }
+    }
+
+    const dropOffRate = totalIssued > 0 ? (totalExpired / totalIssued) : 0;
+    const avgWaitSeconds = waitCount > 0 ? (sumWait / waitCount) : 0;
+    
+    const staffingRecommendation = [];
+    for (let h = 0; h < 24; h++) {
+       if ((peakHours[h] || 0) > 10) staffingRecommendation.push(h);
+    }
+
+    CSV_CACHE.data = {
+      peakHours,
+      peakHoursByService,
+      totalIssued,
+      totalExpired,
+      dropOffRate,
+      avgWaitSeconds,
+      staffingRecommendation
+    };
+    CSV_CACHE.timestamp = Date.now();
+    return CSV_CACHE.data;
+  } catch (err) {
+    return { peakHours: {}, peakHoursByService: {}, totalIssued: 0, totalExpired: 0, dropOffRate: 0, avgWaitSeconds: 0, staffingRecommendation: [] };
+  }
+}
+
 async function close() {
   if (mongoClient) await mongoClient.close();
 }
 
-module.exports = { logEvent, close, CSV_COLUMNS };
+module.exports = { logEvent, close, CSV_COLUMNS, getTrafficStats };

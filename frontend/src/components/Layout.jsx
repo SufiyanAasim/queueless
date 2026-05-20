@@ -10,9 +10,8 @@ export default function Layout({ children }) {
     <div className="min-h-screen flex flex-col">
       <header className="border-b border-rule">
         <div className="max-w-6xl mx-auto px-6 py-5 flex items-center justify-between">
-          <Link to="/" className="flex items-baseline gap-2">
-            <span className="font-display text-3xl tracking-tightest leading-none">QueueLess</span>
-            <span className="label hidden sm:inline">— Smart Queue Management</span>
+          <Link to="/" className="flex items-center gap-2">
+            <img src="/svg/queueless-wordmark-light.svg" alt="QueueLess" className="h-7" />
           </Link>
           <nav className="flex items-center gap-6 text-sm">
             {!onAdmin && !user && (
@@ -36,7 +35,7 @@ export default function Layout({ children }) {
 
       <footer className="border-t border-rule mt-12">
         <div className="max-w-6xl mx-auto px-6 py-6 flex flex-col sm:flex-row gap-2 sm:gap-6 items-start sm:items-center justify-between text-xs text-graphite">
-          <span>QueueLess · Bahria University Karachi · Spring 2026</span>
+          <img src="/svg/queueless-wordmark-dark.svg" alt="QueueLess" className="h-5 opacity-80" />
           <span className="font-mono">v1.0.0 · cloud-native queue management</span>
         </div>
       </footer>

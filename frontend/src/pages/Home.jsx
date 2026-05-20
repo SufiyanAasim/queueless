@@ -13,7 +13,7 @@ export default function Home() {
       {/* Hero */}
       <div className="grid lg:grid-cols-12 gap-10 items-end">
         <div className="lg:col-span-7">
-          <div className="label mb-6">Walk in only when it's your turn</div>
+          <img src="/svg/queueless-lockup.svg" alt="QueueLess - Smart Queue Management" className="h-10 mb-8" />
           <h1 className="font-display text-6xl sm:text-7xl lg:text-8xl tracking-tightest leading-[0.95]">
             Take a digital<br />
             <em className="text-accent">token.</em> Watch<br />

@@ -11,7 +11,7 @@
  *   waiting -> expired                (timeout)
  */
 const crypto = require('crypto');
-const { refs } = require('../config/firebase');
+const { refs, db } = require('../config/firebase');
 const config = require('../config/env');
 const analytics = require('./analytics.service');
 
@@ -119,18 +119,22 @@ async function getTokenStatus(tokenId) {
   // filter by two fields simultaneously without a composite index.
   const tokensSnap = await refs.tokens().once('value');
   const all = tokensSnap.val() || {};
+  // ahead relies on the specific service type so that separate queues don't affect each other.
   const ahead = Object.values(all).filter(
-    t => t.status === TOKEN_STATUS.WAITING && t.number < token.number
+    t => t.status === TOKEN_STATUS.WAITING && t.service === token.service && t.number < token.number
   ).length;
 
   const stateSnap = await refs.queueState().once('value');
   const state = stateSnap.val();
 
+  const analyticsData = await analytics.getTrafficStats();
+  const dynamicWaitSeconds = analyticsData.avgWaitSeconds || config.queue.avgServiceTimeSeconds;
+
   return {
     ...token,
     positionInQueue: token.status === TOKEN_STATUS.WAITING ? ahead + 1 : 0,
     peopleAhead: token.status === TOKEN_STATUS.WAITING ? ahead : 0,
-    estimatedWaitSeconds: ahead * config.queue.avgServiceTimeSeconds,
+    estimatedWaitSeconds: ahead * dynamicWaitSeconds,
     queueStatus: state.status,
   };
 }
@@ -139,7 +143,7 @@ async function getTokenStatus(tokenId) {
  * Admin: call the next waiting token. Marks the previously-called token (if
  * any) as served, then promotes the lowest-numbered WAITING token to CALLED.
  */
-async function callNextToken() {
+async function callNextToken(service = 'general') {
   const stateSnap = await refs.queueState().once('value');
   const state = stateSnap.val();
   if (state.status === QUEUE_STATUS.PAUSED) {
@@ -152,14 +156,47 @@ async function callNextToken() {
   const all = tokensSnap.val() || {};
   const tokenList = Object.values(all);
 
-  // Mark previously-called token as served.
-  const previouslyCalled = tokenList.find(t => t.status === TOKEN_STATUS.CALLED);
+  const previouslyCalled = tokenList.find(t => t.status === TOKEN_STATUS.CALLED && t.service === service);
+  const next = tokenList
+    .filter(t => t.status === TOKEN_STATUS.WAITING && t.service === service)
+    .sort((a, b) => a.number - b.number)[0];
+
+  const updates = {};
+  let servedAt = null;
+
   if (previouslyCalled) {
-    const servedAt = Date.now();
-    await refs.token(previouslyCalled.id).update({
-      status: TOKEN_STATUS.SERVED,
-      servedAt,
-    });
+    servedAt = Date.now();
+    updates[`tokens/${previouslyCalled.id}/status`] = TOKEN_STATUS.SERVED;
+    updates[`tokens/${previouslyCalled.id}/servedAt`] = servedAt;
+  }
+
+  if (!next) {
+    // If no next token, just update the previously called to served
+    if (Object.keys(updates).length > 0) {
+      await db.ref('queue').update(updates);
+      
+      analytics.logEvent({
+        event_type: 'token_served',
+        token_id: previouslyCalled.id,
+        token_number: previouslyCalled.number,
+        service: previouslyCalled.service,
+        timestamp: servedAt,
+        service_duration_seconds: Math.round((servedAt - previouslyCalled.calledAt) / 1000),
+      }).catch(err => console.error('[analytics]', err.message));
+    }
+    return { called: null, message: `No tokens waiting for ${service}.` };
+  }
+
+  const calledAt = Date.now();
+  updates[`tokens/${next.id}/status`] = TOKEN_STATUS.CALLED;
+  updates[`tokens/${next.id}/calledAt`] = calledAt;
+  updates[`state/currentTokenNumber`] = next.number;
+  updates[`state/lastCalledAt`] = calledAt;
+
+  // Use a multi-path atomic update to prevent race conditions
+  await db.ref('queue').update(updates);
+
+  if (previouslyCalled) {
     analytics.logEvent({
       event_type: 'token_served',
       token_id: previouslyCalled.id,
@@ -169,30 +206,6 @@ async function callNextToken() {
       service_duration_seconds: Math.round((servedAt - previouslyCalled.calledAt) / 1000),
     }).catch(err => console.error('[analytics]', err.message));
   }
-
-  // Promote the lowest-numbered waiting token.
-  const next = tokenList
-    .filter(t => t.status === TOKEN_STATUS.WAITING)
-    .sort((a, b) => a.number - b.number)[0];
-
-  if (!next) {
-    // No tokens waiting - just clear currentTokenNumber.
-    await refs.queueState().update({
-      currentTokenNumber: 0,
-      lastCalledAt: Date.now(),
-    });
-    return { called: null, message: 'No tokens waiting.' };
-  }
-
-  const calledAt = Date.now();
-  await refs.token(next.id).update({
-    status: TOKEN_STATUS.CALLED,
-    calledAt,
-  });
-  await refs.queueState().update({
-    currentTokenNumber: next.number,
-    lastCalledAt: calledAt,
-  });
 
   analytics.logEvent({
     event_type: 'token_called',
@@ -235,11 +248,16 @@ async function getActiveQueue() {
   const all = Object.values(tokensSnap.val() || {});
   const waiting = all.filter(t => t.status === TOKEN_STATUS.WAITING)
                      .sort((a, b) => a.number - b.number);
-  const called = all.find(t => t.status === TOKEN_STATUS.CALLED) || null;
+  const calledTokens = all.filter(t => t.status === TOKEN_STATUS.CALLED);
+  const nowServing = {
+    general: calledTokens.find(t => t.service === 'general') || null,
+    consultation: calledTokens.find(t => t.service === 'consultation') || null,
+    transaction: calledTokens.find(t => t.service === 'transaction') || null,
+  };
 
   return {
     state: stateSnap.val(),
-    nowServing: called,
+    nowServing,
     waiting,
     metrics: {
       totalIssued: all.length,

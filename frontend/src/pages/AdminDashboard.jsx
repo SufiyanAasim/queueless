@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Navigate } from 'react-router-dom';
+import { Navigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext.jsx';
 import { useQueueState } from '../hooks/useQueueState.js';
 import { apiCallNext, apiPause, apiResume, apiReset } from '../services/api.js';
@@ -72,6 +72,26 @@ function WaitingList({ tokens }) {
   );
 }
 
+function QueueColumn({ title, service, called, waiting, onCallNext, busy, isPaused }) {
+  return (
+    <div className="flex flex-col gap-4">
+      <div className="flex items-center justify-between border-b border-rule pb-2">
+        <h2 className="font-display text-2xl">{title}</h2>
+        <span className="text-xs text-graphite">{waiting.length} waiting</span>
+      </div>
+      <ServingNowCard token={called} />
+      <button
+        onClick={onCallNext}
+        disabled={busy || isPaused || waiting.length === 0}
+        className="btn-primary w-full"
+      >
+        {busy ? 'Working…' : `Call Next ${title}`}
+      </button>
+      <WaitingList tokens={waiting} />
+    </div>
+  );
+}
+
 export default function AdminDashboard() {
   const { user } = useAuth();
   const { state, tokens } = useQueueState();
@@ -81,8 +101,15 @@ export default function AdminDashboard() {
   if (!user) return <Navigate to="/admin/login" replace />;
 
   const tokenList = Object.values(tokens || {});
-  const waiting = tokenList.filter(t => t.status === 'waiting').sort((a, b) => a.number - b.number);
-  const called = tokenList.find(t => t.status === 'called') || null;
+  const waitingGeneral = tokenList.filter(t => t.status === 'waiting' && t.service === 'general').sort((a, b) => a.number - b.number);
+  const waitingConsultation = tokenList.filter(t => t.status === 'waiting' && t.service === 'consultation').sort((a, b) => a.number - b.number);
+  const waitingTransaction = tokenList.filter(t => t.status === 'waiting' && t.service === 'transaction').sort((a, b) => a.number - b.number);
+  const totalWaiting = waitingGeneral.length + waitingConsultation.length + waitingTransaction.length;
+
+  const calledGeneral = tokenList.find(t => t.status === 'called' && t.service === 'general') || null;
+  const calledConsultation = tokenList.find(t => t.status === 'called' && t.service === 'consultation') || null;
+  const calledTransaction = tokenList.find(t => t.status === 'called' && t.service === 'transaction') || null;
+
   const servedCount = tokenList.filter(t => t.status === 'served').length;
   const expiredCount = tokenList.filter(t => t.status === 'expired').length;
   const isPaused = state?.status === 'paused';
@@ -111,6 +138,7 @@ export default function AdminDashboard() {
           </h1>
         </div>
         <div className="flex items-center gap-4">
+          <Link to="/admin/analytics" className="btn-secondary text-sm">View Analytics</Link>
           <StatusBadge status={state?.status || 'running'} />
           <span className="label">Auto-updating live</span>
         </div>
@@ -118,7 +146,7 @@ export default function AdminDashboard() {
 
       {/* Metrics row */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-px bg-rule mb-10">
-        <div className="bg-paper p-5"><Stat label="Waiting" value={waiting.length} /></div>
+        <div className="bg-paper p-5"><Stat label="Waiting" value={totalWaiting} /></div>
         <div className="bg-paper p-5"><Stat label="Now serving" value={state?.currentTokenNumber || '—'} accent /></div>
         <div className="bg-paper p-5"><Stat label="Served today" value={servedCount} /></div>
         <div className="bg-paper p-5"><Stat label="Expired" value={expiredCount} /></div>
@@ -126,13 +154,6 @@ export default function AdminDashboard() {
 
       {/* Action bar */}
       <div className="mb-10 flex flex-wrap gap-3">
-        <button
-          onClick={() => run(apiCallNext)}
-          disabled={busy || isPaused || waiting.length === 0}
-          className="btn-primary"
-        >
-          {busy ? 'Working…' : 'Call next token →'}
-        </button>
         {!isPaused ? (
           <button onClick={() => run(apiPause)} disabled={busy} className="btn-secondary">
             Pause queue
@@ -163,18 +184,35 @@ export default function AdminDashboard() {
         </div>
       )}
 
-      {/* Two-column layout */}
-      <div className="grid lg:grid-cols-12 gap-8">
-        <div className="lg:col-span-5">
-          <ServingNowCard token={called} />
-        </div>
-        <div className="lg:col-span-7">
-          <div className="flex items-center justify-between mb-3">
-            <span className="label">Waiting in line</span>
-            <span className="text-xs text-graphite">{waiting.length} token{waiting.length === 1 ? '' : 's'}</span>
-          </div>
-          <WaitingList tokens={waiting} />
-        </div>
+      {/* Three-column layout for queues */}
+      <div className="grid lg:grid-cols-3 gap-8">
+        <QueueColumn 
+          title="General"
+          service="general"
+          called={calledGeneral}
+          waiting={waitingGeneral}
+          onCallNext={() => run(() => apiCallNext('general'))}
+          busy={busy}
+          isPaused={isPaused}
+        />
+        <QueueColumn 
+          title="Consultation"
+          service="consultation"
+          called={calledConsultation}
+          waiting={waitingConsultation}
+          onCallNext={() => run(() => apiCallNext('consultation'))}
+          busy={busy}
+          isPaused={isPaused}
+        />
+        <QueueColumn 
+          title="Transaction"
+          service="transaction"
+          called={calledTransaction}
+          waiting={waitingTransaction}
+          onCallNext={() => run(() => apiCallNext('transaction'))}
+          busy={busy}
+          isPaused={isPaused}
+        />
       </div>
     </div>
   );

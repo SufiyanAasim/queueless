@@ -42,7 +42,8 @@ export const apiLogin        = (u, p)      => api.post('/auth/login', { username
 
 // --- Admin (requires token in localStorage) ---
 export const apiActiveQueue  = ()          => api.get('/admin/queue').then(r => r.data);
-export const apiCallNext     = ()          => api.post('/admin/queue/call-next').then(r => r.data);
+export const apiAnalytics    = ()          => api.get('/admin/analytics').then(r => r.data);
+export const apiCallNext     = (service)   => api.post('/admin/queue/call-next', { service }).then(r => r.data);
 export const apiPause        = ()          => api.post('/admin/queue/pause').then(r => r.data);
 export const apiResume       = ()          => api.post('/admin/queue/resume').then(r => r.data);
 export const apiReset        = ()          => api.post('/admin/queue/reset').then(r => r.data);

@@ -1,0 +1,10 @@
+<svg width="96" height="96" viewBox="0 0 96 96" xmlns="http://www.w3.org/2000/svg" role="img">
+  <title>QueueLess favicon</title>
+  <rect width="96" height="96" rx="20" fill="#C0532A"/>
+  <text x="48" y="68"
+    font-family="Georgia, 'Times New Roman', serif"
+    font-size="58" font-weight="700" font-style="italic"
+    fill="#F5F0E8"
+    text-anchor="middle">Q</text>
+  <rect x="20" y="78" width="56" height="3" rx="1.5" fill="#F5F0E8" opacity="0.5"/>
+</svg>

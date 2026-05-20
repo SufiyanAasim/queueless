@@ -37,10 +37,10 @@ export default function MyToken() {
   const position = (() => {
     if (!token || token.status !== 'waiting') return 0;
     return Object.values(tokens || {})
-      .filter(t => t.status === 'waiting' && t.number < token.number).length + 1;
+      .filter(t => t.status === 'waiting' && t.service === token.service && t.number < token.number).length + 1;
   })();
   const peopleAhead = Math.max(0, position - 1);
-  const etaSeconds = peopleAhead * AVG_SECONDS_PER_TOKEN;
+  const etaSeconds = token?.estimatedWaitSeconds || 0;
 
   if (error) {
     return (

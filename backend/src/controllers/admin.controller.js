@@ -5,7 +5,7 @@
 const queueService = require('../services/queue.service');
 
 async function callNext(req, res) {
-  const result = await queueService.callNextToken();
+  const result = await queueService.callNextToken(req.body.service);
   res.json(result);
 }
 
@@ -29,4 +29,10 @@ async function reset(req, res) {
   res.json({ message: 'Queue reset.' });
 }
 
-module.exports = { callNext, pause, resume, activeQueue, reset };
+async function getAnalytics(req, res) {
+  const analyticsService = require('../services/analytics.service');
+  const data = await analyticsService.getTrafficStats();
+  res.json(data);
+}
+
+module.exports = { callNext, pause, resume, activeQueue, reset, getAnalytics };
