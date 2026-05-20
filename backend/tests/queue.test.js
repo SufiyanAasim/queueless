@@ -70,7 +70,7 @@ jest.mock('../src/config/firebase', () => {
   }
   return {
     admin: {},
-    db: {},
+    db: { ref: makeRef },
     refs: {
       queueState: () => makeRef('queue/state'),
       tokens: () => makeRef('queue/tokens'),
