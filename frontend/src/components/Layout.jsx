@@ -11,7 +11,7 @@ export default function Layout({ children }) {
       <header className="border-b border-rule">
         <div className="max-w-6xl mx-auto px-6 py-5 flex items-center justify-between">
           <Link to="/" className="flex items-center gap-2">
-            <img src="/svg/queueless-wordmark-light.svg" alt="QueueLess" className="h-7" />
+            <img src="/svg/queueless-wordmark-light.svg" alt="QueueLess" className="h-7 w-auto" />
           </Link>
           <nav className="flex items-center gap-6 text-sm">
             {!onAdmin && !user && (
@@ -35,7 +35,7 @@ export default function Layout({ children }) {
 
       <footer className="border-t border-rule mt-12">
         <div className="max-w-6xl mx-auto px-6 py-6 flex flex-col sm:flex-row gap-2 sm:gap-6 items-start sm:items-center justify-between text-xs text-graphite">
-          <img src="/svg/queueless-wordmark-dark.svg" alt="QueueLess" className="h-5 opacity-80" />
+          <img src="/svg/queueless-wordmark-light.svg" alt="QueueLess" className="h-6 w-auto opacity-70 grayscale" />
           <span className="font-mono">v1.0.0 · cloud-native queue management</span>
         </div>
       </footer>
