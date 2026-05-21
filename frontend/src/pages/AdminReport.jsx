@@ -42,13 +42,34 @@ export default function AdminReport() {
     );
   }
 
-  const { peakHours, peakHoursByService, totalIssued, totalExpired, dropOffRate, avgWaitSeconds, staffingRecommendation } = data;
+  const { peakHours = {}, peakHoursByService = {}, totalIssued = 0, totalExpired = 0, dropOffRate = 0, avgWaitSeconds = 0, staffingRecommendation = [] } = data || {};
   
-  // Format data for visualizations
   const services = ['general', 'consultation', 'transaction'];
-  const hours = Array.from({ length: 12 }, (_, i) => i + 8); // 8 AM to 7 PM
+  
+  // Dynamically build the hours range from actual data
+  const allHoursWithData = Object.keys(peakHours).map(Number).sort((a, b) => a - b);
+  // Show a range: from min active hour to max active hour (at least 3 hours wide)
+  const minHour = allHoursWithData.length > 0 ? Math.max(0, allHoursWithData[0] - 1) : 8;
+  const maxHour = allHoursWithData.length > 0 ? Math.min(23, allHoursWithData[allHoursWithData.length - 1] + 1) : 19;
+  const hours = Array.from({ length: maxHour - minHour + 1 }, (_, i) => i + minHour);
 
-  const maxTraffic = Math.max(...Object.values(peakHours || {}));
+  // Per-service max for better relative intensity
+  const maxPerService = {};
+  services.forEach(s => {
+    const vals = Object.values(peakHoursByService[s] || {});
+    maxPerService[s] = Math.max(...vals, 1);
+  });
+  const maxTraffic = Math.max(...Object.values(peakHours), 1);
+
+  const fmt12h = (h) => {
+    if (h === 0) return '12 AM';
+    if (h === 12) return '12 PM';
+    return h < 12 ? `${h} AM` : `${h - 12} PM`;
+  };
+
+  const waitDisplay = avgWaitSeconds < 60
+    ? `${Math.round(avgWaitSeconds)}s`
+    : `${Math.round(avgWaitSeconds / 60)} min`;
   
   // Suggestion Engine Logic
   let primarySuggestion = "Traffic patterns are currently stable. No queue interventions required.";
@@ -105,13 +126,16 @@ export default function AdminReport() {
       </div>
 
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-px bg-rule mb-12">
-        <div className="bg-paper p-5"><Stat label="Total Tokens" value={totalIssued || 0} /></div>
-        <div className="bg-paper p-5"><Stat label="Avg Wait (sec)" value={Math.round(avgWaitSeconds || 0)} accent /></div>
+        <div className="bg-paper p-5"><Stat label="Total Tokens" value={totalIssued} /></div>
+        <div className="bg-paper p-5"><Stat label="Avg Wait" value={waitDisplay} accent /></div>
         <div className="bg-paper p-5"><Stat label="Drop-off Rate" value={`${Math.round((dropOffRate || 0) * 100)}%`} /></div>
-        <div className="bg-paper p-5"><Stat label="Tokens Expired" value={totalExpired || 0} /></div>
+        <div className="bg-paper p-5"><Stat label="Tokens Expired" value={totalExpired} /></div>
       </div>
 
-      <h3 className="label mb-4">Traffic Heatmap by Service (8 AM - 7 PM)</h3>
+      <h3 className="label mb-4">
+        Traffic Heatmap by Service
+        {allHoursWithData.length > 0 ? ` · ${fmt12h(minHour)} – ${fmt12h(maxHour)}` : ''}
+      </h3>
       <div className="bg-paper border border-rule p-6 mb-12">
         <div className="overflow-x-auto">
           <table className="w-full text-left text-sm border-collapse">
@@ -131,18 +155,19 @@ export default function AdminReport() {
                   <td className="p-2 border-b border-rule border-dashed capitalize font-medium">{service}</td>
                   {hours.map(h => {
                     const count = (peakHoursByService[service] && peakHoursByService[service][h]) || 0;
-                    // Calculate intensity 0-4
-                    let intensityClass = "bg-paper";
-                    if (count > 0 && maxTraffic > 0) {
-                      const ratio = count / (maxTraffic * 0.5); // *0.5 because services are subsets
-                      if (ratio > 0.75) intensityClass = "bg-accent text-white";
-                      else if (ratio > 0.4) intensityClass = "bg-accent opacity-70 text-white";
-                      else if (ratio > 0.1) intensityClass = "bg-accent opacity-40 text-ink";
-                      else intensityClass = "bg-accent opacity-10 text-ink";
+                    const serviceMax = maxPerService[service] || 1;
+                    let intensityClass = 'bg-paper';
+                    let textClass = '';
+                    if (count > 0) {
+                      const ratio = count / serviceMax;
+                      if (ratio > 0.75) { intensityClass = 'bg-accent'; textClass = 'text-white'; }
+                      else if (ratio > 0.4) { intensityClass = 'bg-[#C0532A] opacity-70'; textClass = 'text-white'; }
+                      else if (ratio > 0.1) { intensityClass = 'bg-[#C0532A] opacity-40'; textClass = 'text-ink'; }
+                      else { intensityClass = 'bg-[#C0532A] opacity-15'; textClass = 'text-ink'; }
                     }
                     return (
                       <td key={h} className="p-1 border-b border-rule border-dashed">
-                        <div className={`h-8 w-full flex items-center justify-center rounded-sm ${intensityClass} text-xs transition-all`}>
+                        <div className={`h-8 w-full flex items-center justify-center rounded-sm text-xs transition-all font-medium ${intensityClass} ${textClass}`}>
                           {count > 0 ? count : ''}
                         </div>
                       </td>
