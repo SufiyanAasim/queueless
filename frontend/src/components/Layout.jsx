@@ -21,7 +21,9 @@ export default function Layout({ children }) {
             )}
             {user && (
               <>
-                <span className="label">{user.username}</span>
+                <Link to="/admin" className="text-graphite hover:text-ink transition-colors font-medium">Dashboard</Link>
+                <Link to="/admin/analytics" className="text-graphite hover:text-ink transition-colors font-medium">Analytics</Link>
+                <span className="label hidden sm:inline ml-4 border-l border-rule pl-4">{user.username}</span>
                 <button onClick={logout} className="text-graphite hover:text-accent transition-colors">
                   Sign out
                 </button>
