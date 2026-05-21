@@ -7,6 +7,7 @@ import Lookup from './pages/Lookup.jsx';
 import AdminLogin from './pages/AdminLogin.jsx';
 import AdminDashboard from './pages/AdminDashboard.jsx';
 import AdminAnalytics from './pages/AdminAnalytics.jsx';
+import AdminReport from './pages/AdminReport.jsx';
 
 export default function App() {
   return (
@@ -20,6 +21,7 @@ export default function App() {
           <Route path="login" element={<AdminLogin />} />
           <Route path="" element={<AdminDashboard />} />
           <Route path="analytics" element={<AdminAnalytics />} />
+          <Route path="report" element={<AdminReport />} />
         </Route>
         <Route path="*"               element={<Navigate to="/" replace />} />
       </Routes>
