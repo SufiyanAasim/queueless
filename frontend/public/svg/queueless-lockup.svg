@@ -1,20 +1,20 @@
-<svg width="300" height="54" viewBox="0 0 300 54" xmlns="http://www.w3.org/2000/svg" role="img">
+<svg width="460" height="52" viewBox="0 0 460 52" xmlns="http://www.w3.org/2000/svg" role="img">
   <title>QueueLess lockup with tagline</title>
-  <text x="0" y="33"
+  <text x="4" y="40"
     font-family="Georgia, 'Times New Roman', serif"
-    font-size="34" font-weight="700"
+    font-size="38" font-weight="700"
     fill="#1A1916" letter-spacing="-0.5">Queue</text>
-  <text x="117" y="33"
+  <text x="138" y="40"
     font-family="Georgia, 'Times New Roman', serif"
-    font-size="34" font-weight="700" font-style="italic"
+    font-size="38" font-weight="700" font-style="italic"
     fill="#C0532A" letter-spacing="-0.5">Less</text>
-  <line x1="210" y1="10" x2="210" y2="40" stroke="#C0532A" stroke-width="1" opacity="0.35"/>
-  <text x="220" y="20"
+  <line x1="250" y1="8" x2="250" y2="44" stroke="#C0532A" stroke-width="0.8" opacity="0.3"/>
+  <text x="264" y="24"
     font-family="Arial, Helvetica, sans-serif"
-    font-size="9" font-weight="400" letter-spacing="2.5"
+    font-size="9" font-weight="400" letter-spacing="2.2"
     fill="#888070">SMART QUEUE</text>
-  <text x="220" y="33"
+  <text x="264" y="38"
     font-family="Arial, Helvetica, sans-serif"
-    font-size="9" font-weight="400" letter-spacing="2.5"
+    font-size="9" font-weight="400" letter-spacing="2.2"
     fill="#888070">MANAGEMENT</text>
 </svg>

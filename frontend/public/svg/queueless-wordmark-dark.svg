@@ -1,11 +1,11 @@
-<svg width="260" height="44" viewBox="0 0 260 44" xmlns="http://www.w3.org/2000/svg" role="img">
+<svg width="280" height="52" viewBox="0 0 280 52" xmlns="http://www.w3.org/2000/svg" role="img">
   <title>QueueLess wordmark dark</title>
-  <text x="0" y="33"
+  <text x="4" y="40"
     font-family="Georgia, 'Times New Roman', serif"
-    font-size="34" font-weight="700"
+    font-size="38" font-weight="700"
     fill="#F5F0E8" letter-spacing="-0.5">Queue</text>
-  <text x="117" y="33"
+  <text x="138" y="40"
     font-family="Georgia, 'Times New Roman', serif"
-    font-size="34" font-weight="700" font-style="italic"
+    font-size="38" font-weight="700" font-style="italic"
     fill="#D4724A" letter-spacing="-0.5">Less</text>
 </svg>
