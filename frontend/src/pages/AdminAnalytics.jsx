@@ -53,7 +53,23 @@ export default function AdminAnalytics() {
 
   const maxPeak = Math.max(...Object.values(peakHours), 1);
   const hours = Array.from({ length: 24 }, (_, i) => i);
-  const { general, consultation, transaction } = peakHoursByService;
+  const { general = {}, consultation = {}, transaction = {} } = peakHoursByService || {};
+
+  // Dynamically find the first and last hours that have data for x-axis labels
+  const activeHours = hours.filter(h => (peakHours[h] || 0) > 0);
+  const firstActive = activeHours.length > 0 ? activeHours[0] : 0;
+  const midActive = activeHours.length > 0 ? activeHours[Math.floor(activeHours.length / 2)] : 12;
+  const lastActive = activeHours.length > 0 ? activeHours[activeHours.length - 1] : 23;
+
+  const fmt12h = (h) => {
+    if (h === 0) return '12 AM';
+    if (h === 12) return '12 PM';
+    return h < 12 ? `${h} AM` : `${h - 12} PM`;
+  };
+
+  const waitDisplay = avgWaitSeconds < 60
+    ? `${Math.round(avgWaitSeconds)}s`
+    : `${Math.round(avgWaitSeconds / 60)} min`;
 
   return (
     <div className="max-w-7xl mx-auto px-6 py-10">
@@ -79,7 +95,7 @@ export default function AdminAnalytics() {
           <Stat label="Avg. Drop-off Rate" value={`${(dropOffRate * 100).toFixed(1)}%`} accent />
         </div>
         <div className="bg-paper p-5">
-          <Stat label="Avg. Wait Time" value={`${Math.round(avgWaitSeconds / 60)} min`} />
+          <Stat label="Avg. Wait Time" value={waitDisplay} />
         </div>
       </div>
 
@@ -119,9 +135,9 @@ export default function AdminAnalytics() {
             })}
           </div>
           <div className="flex justify-between mt-4 text-xs text-graphite">
-            <span>12 AM</span>
-            <span>12 PM</span>
-            <span>11 PM</span>
+            <span>{fmt12h(firstActive)}</span>
+            <span>{fmt12h(midActive)}</span>
+            <span>{fmt12h(lastActive)}</span>
           </div>
         </div>
 

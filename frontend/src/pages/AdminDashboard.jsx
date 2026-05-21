@@ -138,7 +138,7 @@ export default function AdminDashboard() {
           </h1>
         </div>
         <div className="flex items-center gap-4">
-          <Link to="/admin/analytics" className="btn-secondary text-sm">View Analytics</Link>
+          <Link to="/admin/report" className="btn-secondary text-sm">Generate Report</Link>
           <StatusBadge status={state?.status || 'running'} />
           <span className="label">Auto-updating live</span>
         </div>

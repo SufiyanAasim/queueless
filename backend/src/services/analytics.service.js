@@ -81,6 +81,7 @@ async function appendMongo(event) {
 
 /**
  * Public API: log a single queue event to the configured sink.
+ * Always writes to MongoDB if configured. Falls back to CSV-only if no Mongo.
  */
 async function logEvent(event) {
   const enriched = {
@@ -95,10 +96,18 @@ async function logEvent(event) {
     service_duration_seconds: event.service_duration_seconds ?? null,
   };
 
-  if (config.analytics.sink === 'mongo') {
-    return appendMongo(enriched);
+  const writes = [];
+
+  // Always attempt MongoDB write if URI is configured
+  if (config.analytics.mongo.uri) {
+    writes.push(appendMongo(enriched));
   }
-  return appendCsv(enriched);
+
+  // Always write CSV as a backup/fallback
+  writes.push(appendCsv(enriched));
+
+  // Run both in parallel, surface any errors to caller
+  await Promise.allSettled(writes);
 }
 
 const CSV_CACHE = {
