@@ -9,18 +9,31 @@ export default function AdminAnalytics() {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [lastUpdated, setLastUpdated] = useState(null);
+  const [refreshing, setRefreshing] = useState(false);
 
-  useEffect(() => {
-    if (!user) return;
+  const fetchData = (isManual = false) => {
+    if (isManual) setRefreshing(true);
     apiAnalytics()
       .then(res => {
         setData(res);
         setLoading(false);
+        setLastUpdated(new Date());
+        setRefreshing(false);
       })
       .catch(err => {
         setError(err.response?.data?.error || 'Failed to load analytics.');
         setLoading(false);
+        setRefreshing(false);
       });
+  };
+
+  useEffect(() => {
+    if (!user) return;
+    fetchData();
+    // Auto-refresh every 30 seconds
+    const interval = setInterval(() => fetchData(), 30_000);
+    return () => clearInterval(interval);
   }, [user]);
 
   if (!user) return <Navigate to="/admin/login" replace />;
@@ -80,7 +93,21 @@ export default function AdminAnalytics() {
             Analytics
           </h1>
         </div>
-        <Link to="/admin" className="btn-secondary text-sm">← Back to Dashboard</Link>
+        <div className="flex items-center gap-3">
+          {lastUpdated && (
+            <span className="text-xs text-graphite">
+              Updated {lastUpdated.toLocaleTimeString()}
+            </span>
+          )}
+          <button
+            onClick={() => fetchData(true)}
+            disabled={refreshing}
+            className="btn-secondary text-sm"
+          >
+            {refreshing ? 'Refreshing…' : '↻ Refresh'}
+          </button>
+          <Link to="/admin" className="btn-secondary text-sm">← Back to Dashboard</Link>
+        </div>
       </div>
 
       {/* Metrics row */}

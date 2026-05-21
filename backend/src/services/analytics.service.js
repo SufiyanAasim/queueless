@@ -113,7 +113,7 @@ async function logEvent(event) {
 const CSV_CACHE = {
   data: null,
   timestamp: 0,
-  TTL_MS: 5 * 60 * 1000 // 5 minutes
+  TTL_MS: 30 * 1000 // 30 seconds - near real-time for live dashboard
 };
 
 async function getTrafficStats() {
