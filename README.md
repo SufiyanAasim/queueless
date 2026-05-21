@@ -7,43 +7,64 @@
 
 ---
 
-This project describes different layers of the *same* system. The Cloud Computing project
-issues digital tokens and tracks live queue state in Firebase; every queue event it handles is
-*dual-written* to a structured event log; the Data Mining project mines that log for waiting-time
-predictions, peak-hour patterns, and operational insights. Keeping the code in one place means
-the schema cannot drift — what the CC backend writes is exactly what the DM pipeline expects to
-read.
+This project spans two layers of the *same* system. The Cloud Computing project issues digital tokens and tracks live queue state in Firebase; every queue event is *dual-written* to both MongoDB Atlas and a CSV event log. The Data Mining project mines that log for waiting-time predictions, peak-hour patterns, and operational insights. Keeping the code in one repository means the schema cannot drift — what the backend writes is exactly what the pipeline expects to read.
 
-Each course submission is a **self-contained subtree** that can be demoed and graded
-independently:
-
-| Course | Subtree | Owners |
-|---|---|---|
-| Cloud Computing (CC) | `backend/`, `frontend/`, `firebase/` | Ifrahim · Taha · Hasaan · Sufiyan |
-| Data Mining (DM) | `analytics/` | Sufiyan · Taha |
-| Both | `.github/workflows/`, this README | Sufiyan |
+**Author:** Muhammad Sufiyan Aasim  
+**GitHub:** [msufiyanpk](https://github.com/msufiyanpk)  
+**Institution:** Bahria University Karachi · Department of Software Engineering
 
 ---
 
-## Module ownership
+## Tech Stack
 
-### Cloud Computing project (BSE 6 A/B)
+### Frontend
+| Technology | Purpose |
+|---|---|
+| **React 18** | UI component framework |
+| **Vite** | Build tool & dev server |
+| **React Router v6** | Client-side routing |
+| **Tailwind CSS** | Utility-first styling with custom design tokens |
+| **Firebase JS SDK** | Real-time WebSocket subscriptions for live queue state |
+| **Axios** | HTTP client with JWT interceptors |
+| **Vercel** | Hosting & CI/CD (auto-deploy on push to `main`) |
 
-| Module | Owner | Subtree |
-|---|---|---|
-| Frontend Development | **Ifrahim** | `frontend/` |
-| Backend API Development | **Taha** | `backend/` |
-| Database Design & Cloud Configuration | **Hasaan** | `firebase/` |
-| Deployment, CI/CD & Testing | **Sufiyan** *(Team Lead)* | `.github/workflows/`, `backend/tests/`, deploy configs |
+### Backend
+| Technology | Purpose |
+|---|---|
+| **Node.js 20** | JavaScript runtime |
+| **Express.js** | REST API framework |
+| **Firebase Admin SDK** | Realtime Database writes & atomic multi-path updates |
+| **MongoDB Atlas (via `mongodb` driver)** | Analytics event store (dual-written with CSV) |
+| **JSON Web Tokens (JWT)** | Admin authentication & route protection |
+| **bcryptjs** | Admin password hashing |
+| **Joi** | Environment variable validation at boot |
+| **Jest + Supertest** | Unit & integration tests (9 tests, all passing) |
+| **Render** | Cloud hosting with auto-deploy hooks |
 
-### Data Mining project (BSE 6 A)
+### Database & Cloud
+| Technology | Purpose |
+|---|---|
+| **Firebase Realtime Database** | Live queue state (`queue/state`, `queue/tokens`) |
+| **MongoDB Atlas** | Persistent analytics event log (`queue_events` collection) |
+| **Firebase Cloud Functions** | Scheduled token expiry (cron every 5 min) |
 
-| Module | Owner | Files |
-|---|---|---|
-| Data Collection & Storage | **Sufiyan** *(Team Lead)* | `analytics/data_collection/` |
-| Data Cleaning & Preprocessing | **Sufiyan** | `analytics/data_cleaning/` |
-| Analysis & Prediction | **Taha** | `analytics/analysis/` |
-| Visualization & Reporting | **Taha** | `analytics/visualization/`, `analytics/notebooks/` |
+### Data Mining / Analytics
+| Technology | Purpose |
+|---|---|
+| **Python 3.11** | Pipeline language |
+| **pandas** | Data cleaning, preprocessing, aggregation |
+| **scikit-learn** | Linear regression with cyclical hour encoding |
+| **matplotlib** | Chart generation (6 charts in QueueLess style) |
+| **Jupyter Notebook** | Academic report generation |
+| **joblib** | Model serialization |
+
+### DevOps & CI/CD
+| Technology | Purpose |
+|---|---|
+| **GitHub Actions** | 3 CI workflows (backend tests, frontend build, analytics smoke test) |
+| **Vercel** | Frontend auto-deploy on every push + preview URLs per PR |
+| **Render** | Backend auto-deploy via deploy hook triggered from CI |
+| **Dependabot** | Automated dependency security PRs |
 
 ---
 
@@ -66,52 +87,56 @@ queueless/
 │
 ├── frontend/                   # React + Vite + Tailwind (deployed to Vercel)
 │   ├── src/
-│   │   ├── pages/              # Home, TakeToken, MyToken, Lookup, AdminLogin, AdminDashboard
+│   │   ├── pages/              # Home, TakeToken, MyToken, Lookup, AdminLogin,
+│   │   │                       # AdminDashboard, AdminAnalytics, AdminReport
 │   │   ├── components/         # Layout, StatusBadge, Stat
 │   │   ├── hooks/              # useQueueState (Firebase live subscription)
-│   │   ├── services/           # axios API client with JWT injection
+│   │   ├── services/           # Axios API client with JWT injection
 │   │   ├── context/            # AuthContext
-│   │   └── firebase.js         # client SDK init
-│   ├── tailwind.config.js      # custom QueueLess design tokens
+│   │   └── firebase.js         # Client SDK init
+│   ├── public/
+│   │   ├── svg/                # QueueLess SVG brand assets (wordmark, favicon, lockup)
+│   │   └── png/                # PNG variants of brand assets
+│   ├── tailwind.config.js      # Custom QueueLess design tokens
 │   ├── vercel.json             # SPA rewrites + security headers
 │   ├── package.json
 │   └── .env.example
 │
 ├── firebase/                   # Cloud configuration
-│   ├── database.rules.json     # security rules (read-only for clients, server writes)
-│   ├── firebase.json           # project config
-│   └── functions/              # serverless Cloud Function for token expiry
-│       ├── index.js            # scheduled job, runs every 5 minutes
+│   ├── database.rules.json     # Security rules (read-only for clients, server writes)
+│   ├── firebase.json           # Project config
+│   └── functions/              # Serverless Cloud Function for token expiry
+│       ├── index.js            # Scheduled job, runs every 5 minutes
 │       └── package.json
 │
 ├── analytics/                  # Data Mining pipeline (Python)
 │   ├── data_collection/
-│   │   ├── data_simulator.py   # synthetic events generator (bimodal demand, lognormal service)
-│   │   ├── csv_writer.py       # ad-hoc CSV writer
-│   │   └── mongo_writer.py     # optional MongoDB Atlas connector
+│   │   ├── data_simulator.py   # Synthetic events generator (bimodal demand, lognormal service)
+│   │   ├── csv_writer.py       # Ad-hoc CSV writer
+│   │   └── mongo_writer.py     # MongoDB Atlas connector
 │   ├── data_cleaning/
-│   │   └── preprocess.py       # raw events -> tokens DataFrame with derived columns
+│   │   └── preprocess.py       # Raw events → tokens DataFrame with derived columns
 │   ├── analysis/
-│   │   ├── waiting_time.py     # descriptive statistics, grouped views
-│   │   ├── peak_hours.py       # frequency distribution, weekday × hour heatmap
-│   │   ├── moving_average.py   # rolling-average predictor with backtest
+│   │   ├── waiting_time.py     # Descriptive statistics, grouped views
+│   │   ├── peak_hours.py       # Frequency distribution, weekday × hour heatmap
+│   │   ├── moving_average.py   # Rolling-average predictor with backtest
 │   │   └── linear_regression.py # sklearn LinearRegression with cyclical hour encoding
 │   ├── visualization/
-│   │   └── charts.py           # six matplotlib charts in QueueLess editorial style
+│   │   └── charts.py           # Six matplotlib charts in QueueLess editorial style
 │   ├── notebooks/
-│   │   └── QueueLess_Analysis.ipynb   # academic submission (auto-generated, fully executed)
+│   │   └── QueueLess_Analysis.ipynb   # Academic submission (auto-generated, fully executed)
 │   ├── data/                   # CSV outputs + chart PNGs (regenerated by run_pipeline.py)
-│   ├── models/                 # serialized linear regression model
+│   ├── models/                 # Serialized linear regression model
 │   ├── requirements.txt
-│   ├── run_pipeline.py         # end-to-end orchestrator
-│   └── build_notebook.py       # regenerates the notebook from modules
+│   ├── run_pipeline.py         # End-to-end orchestrator
+│   └── build_notebook.py       # Regenerates the notebook from modules
 │
 ├── .github/workflows/
 │   ├── backend-ci.yml          # Jest tests + Render deploy hook
 │   ├── frontend-ci.yml         # Vite build verification (Vercel handles deploy)
 │   └── analytics-ci.yml        # Python pipeline smoke test
 │
-└── README.md                   # this file
+└── README.md                   # This file
 ```
 
 ---
@@ -149,7 +174,7 @@ The DM project is fully self-contained — it does not need the backend running:
 ```bash
 cd analytics
 pip install -r requirements.txt
-python run_pipeline.py            # simulator -> preprocess -> analytics -> charts
+python run_pipeline.py            # simulator → preprocess → analytics → charts
 jupyter notebook notebooks/QueueLess_Analysis.ipynb
 ```
 
@@ -160,7 +185,7 @@ Otherwise the simulator produces statistically realistic synthetic events.
 
 ## Cloud deployment
 
-### Firebase (Hasaan)
+### Firebase
 
 ```bash
 cd firebase
@@ -172,7 +197,7 @@ firebase deploy --only database,functions
 This pushes the security rules and the scheduled token-expiry Cloud Function. The function runs
 every 5 minutes (Asia/Karachi timezone) — see `firebase/functions/index.js`.
 
-### Render — Backend (Sufiyan)
+### Render — Backend
 
 1. Create a new Web Service on Render, connect the GitHub repo, set the root directory to `backend/`.
 2. Build command: `npm ci`. Start command: `npm start`.
@@ -183,7 +208,7 @@ every 5 minutes (Asia/Karachi timezone) — see `firebase/functions/index.js`.
 After this, every push to `main` triggers `.github/workflows/backend-ci.yml`, which runs the test
 suite and (on green) calls the deploy hook.
 
-### Vercel — Frontend (Sufiyan)
+### Vercel — Frontend
 
 1. Import the repo into Vercel, set the root directory to `frontend/`.
 2. Framework preset: Vite (auto-detected). Build command and output directory come from `vercel.json`.
@@ -199,6 +224,7 @@ suite and (on green) calls the deploy hook.
                     │   React frontend (Vercel) │
                     │   — public token UI       │
                     │   — admin dashboard       │
+                    │   — analytics & report    │
                     └──────────┬──────┬─────────┘
                                │      │
               REST (JWT)       │      │  WebSocket subscribe
@@ -209,15 +235,15 @@ suite and (on green) calls the deploy hook.
                     │  — token issuance         │
                     │  — queue control          │
                     │  — DUAL-WRITE: every      │
-                    │    event also goes to     │
-                    │    the analytics CSV      │
+                    │    event → MongoDB +      │
+                    │    CSV simultaneously     │
                     └──────────┬──────────┬─────┘
                                │          │
                                ▼          ▼
         ┌─────────────────────────┐   ┌─────────────────────────┐
-        │  Firebase Realtime DB   │   │  analytics/data/        │
-        │  — queue/state          │   │  queue_events.csv       │
-        │  — queue/tokens         │   │  (or MongoDB Atlas)     │
+        │  Firebase Realtime DB   │   │  MongoDB Atlas          │
+        │  — queue/state          │   │  — queue_events         │
+        │  — queue/tokens         │   │  (+ CSV fallback)       │
         │  — admins (private)     │   │                         │
         └─────────────────────────┘   └────────────┬────────────┘
                     ▲                              │
@@ -231,26 +257,26 @@ suite and (on green) calls the deploy hook.
 
 ---
 
-## Cloud computing concepts demonstrated (CC project)
+## Cloud computing concepts demonstrated
 
 | Concept | Where it lives |
 |---|---|
 | Cloud hosting | Vercel (frontend) + Render (backend) |
-| Cloud database | Firebase Realtime Database |
+| Cloud database | Firebase Realtime Database + MongoDB Atlas |
 | Real-time data sync | Firebase WebSocket listeners in `useQueueState` hook |
 | REST API design | `backend/src/routes/` — versioned at `/api/v1/`, role-segregated |
 | Authentication | JWT issued by `auth.service.js`, verified by `middleware/auth.js` |
 | Role-based access control | `requireAdmin` middleware on all `/admin/*` routes |
 | Serverless computing | `firebase/functions/index.js` — scheduled token expiry |
 | CI/CD pipelines | `.github/workflows/` — automated tests + auto-deploy |
-| Caching (in-memory) | Firebase Admin SDK's internal connection pool + service-level reuse |
 | Security rules | `firebase/database.rules.json` — clients read-only, server writes |
+| Analytics pipeline | Admin Analytics + Generate Report pages with live MongoDB reads |
 
-## Data mining concepts demonstrated (DM project)
+## Data mining concepts demonstrated
 
 | Concept | Where it lives |
 |---|---|
-| Structured data collection | Backend dual-write + `data_simulator.py` for development |
+| Structured data collection | Backend dual-write (MongoDB + CSV) + `data_simulator.py` |
 | Data cleaning & preprocessing | `data_cleaning/preprocess.py` — type coercion, outlier flagging, pivoting |
 | Aggregation / groupby | `analysis/waiting_time.py`, `analysis/peak_hours.py` |
 | Frequency distribution | Hourly volume bar chart, queue-length histogram |
@@ -259,6 +285,8 @@ suite and (on green) calls the deploy hook.
 | Moving-average predictor | `analysis/moving_average.py` — with proper backtest (no leakage) |
 | Model serialization | joblib in `analysis/linear_regression.py` |
 | Visualization | `visualization/charts.py` — six matplotlib charts |
+| Live in-browser analytics | `AdminAnalytics.jsx` — peak hours chart, drop-off rate, staffing recommendation |
+| Interactive report generation | `AdminReport.jsx` — dynamic heatmap + AI suggestions + print-to-PDF |
 | Reproducible report | `notebooks/QueueLess_Analysis.ipynb` — auto-generated by `build_notebook.py` |
 
 ---
@@ -266,9 +294,10 @@ suite and (on green) calls the deploy hook.
 ## Verified working
 
 - **Backend tests:** 9/9 Jest tests pass (`cd backend && npm test`)
-- **Frontend build:** `cd frontend && npm run build` produces a 124KB gzipped bundle
+- **Frontend build:** `cd frontend && npm run build` produces a clean production bundle
 - **Analytics pipeline:** `cd analytics && python run_pipeline.py` generates 6 charts and trains
   the linear regression model end-to-end. The notebook executes cleanly start to finish.
+- **Live deployments:** Frontend on [queueless-liart.vercel.app](https://queueless-liart.vercel.app) · Backend on Render
 
 ---
 
