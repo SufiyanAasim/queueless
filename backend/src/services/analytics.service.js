@@ -112,10 +112,27 @@ async function getTrafficStats() {
     return CSV_CACHE.data;
   }
 
-  const filepath = path.resolve(__dirname, '..', '..', config.analytics.csvPath);
   try {
-    const content = await fsp.readFile(filepath, 'utf8');
-    const lines = content.trim().split('\n').slice(1); // skip header
+    let events = [];
+    
+    if (config.analytics.sink === 'mongo') {
+      const col = await getMongoCollection();
+      events = await col.find({}).toArray();
+    } else {
+      const filepath = path.resolve(__dirname, '..', '..', config.analytics.csvPath);
+      const content = await fsp.readFile(filepath, 'utf8');
+      const lines = content.trim().split('\n').slice(1);
+      
+      events = lines.filter(line => line).map(line => {
+        const parts = line.split(',');
+        return {
+          event_type: parts[0],
+          service: parts[3],
+          timestamp: parseInt(parts[4]),
+          wait_duration_seconds: parseInt(parts[7])
+        };
+      });
+    }
     
     const peakHours = {};
     const peakHoursByService = { general: {}, consultation: {}, transaction: {} };
@@ -124,12 +141,10 @@ async function getTrafficStats() {
     let sumWait = 0;
     let waitCount = 0;
 
-    for (const line of lines) {
-      if (!line) continue;
-      const parts = line.split(',');
-      const eventType = parts[0];
-      const service = parts[3];
-      const timestamp = parseInt(parts[4]);
+    for (const ev of events) {
+      const eventType = ev.event_type;
+      const service = ev.service;
+      const timestamp = ev.timestamp;
 
       if (eventType === 'token_issued') {
         totalIssued++;
@@ -141,8 +156,8 @@ async function getTrafficStats() {
       } else if (eventType === 'token_expired') {
         totalExpired++;
       } else if (eventType === 'token_called') {
-        const waitSecs = parseInt(parts[7]);
-        if (!isNaN(waitSecs)) {
+        const waitSecs = ev.wait_duration_seconds;
+        if (waitSecs !== null && !isNaN(waitSecs)) {
           sumWait += waitSecs;
           waitCount++;
         }
