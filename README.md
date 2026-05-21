@@ -11,7 +11,7 @@ This project spans two layers of the *same* system. The Cloud Computing project 
 
 **Author:** Muhammad Sufiyan Aasim  
 **GitHub:** [msufiyanpk](https://github.com/msufiyanpk)  
-**Institution:** Bahria University Karachi · Department of Software Engineering
+**Institution:** Bahria University Karachi Campus · Department of Software Engineering
 
 ---
 
@@ -301,4 +301,4 @@ suite and (on green) calls the deploy hook.
 
 ---
 
-*QueueLess · Spring 2026 · Bahria University Karachi*
+*QueueLess · Spring 2026 · Bahria University Karachi Campus*
