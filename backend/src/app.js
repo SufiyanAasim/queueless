@@ -1,17 +1,3 @@
-/**
- * Express application factory.
- *
- * Separated from server.js so tests can import the app without binding a port.
- * Middleware order matters - read top to bottom:
- *   1. Trust proxy (we're behind Render's reverse proxy)
- *   2. Helmet (security headers)
- *   3. CORS (allow the Vercel frontend origin)
- *   4. Body parsing
- *   5. Logging
- *   6. Rate limiting (defends login brute-force)
- *   7. Routes
- *   8. 404 + error handlers (last resort)
- */
 const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
@@ -31,7 +17,7 @@ function buildApp() {
   app.use(helmet());
   app.use(cors({
     origin: config.corsOrigin.split(',').map(s => s.trim()),
-    credentials: false, // we use Bearer tokens, not cookies
+    credentials: false,
   }));
   app.use(express.json({ limit: '10kb' }));
   app.use(express.urlencoded({ extended: false, limit: '10kb' }));
@@ -39,7 +25,7 @@ function buildApp() {
   if (!config.isProduction) app.use(morgan('dev'));
   else app.use(morgan('combined'));
 
-  // Defend the login endpoint against credential-stuffing.
+  // Brute-force protection for the login endpoint.
   const loginLimiter = rateLimit({
     windowMs: 15 * 60 * 1000,
     max: 20,
@@ -49,7 +35,6 @@ function buildApp() {
   });
   app.use('/api/v1/auth/login', loginLimiter);
 
-  // Looser limit for public token issuance to discourage flood-take.
   const takeTokenLimiter = rateLimit({
     windowMs: 60 * 1000,
     max: 10,

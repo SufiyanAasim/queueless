@@ -21,15 +21,18 @@
         ".read": true,
         ".write": false,
         "$tokenId": {
-          ".validate": "newData.hasChildren(['id', 'number', 'status', 'service', 'issuedAt'])",
+          ".validate": "newData.hasChildren(['id', 'number', 'status', 'service', 'issuedAt', 'priority'])",
           "id":        { ".validate": "newData.isString() && newData.val() === $tokenId" },
           "number":    { ".validate": "newData.isNumber() && newData.val() > 0" },
           "status":    { ".validate": "newData.isString() && newData.val().matches(/^(waiting|called|served|expired)$/)" },
           "service":   { ".validate": "newData.isString()" },
+          "priority":  { ".validate": "newData.isString() && (newData.val() === 'normal' || newData.val() === 'priority')" },
           "issuedAt":  { ".validate": "newData.isNumber()" },
           "calledAt":  { ".validate": "newData.isNumber() || newData.val() == null" },
           "servedAt":  { ".validate": "newData.isNumber() || newData.val() == null" },
           "expiresAt": { ".validate": "newData.isNumber()" },
+          "expiredAt": { ".validate": "newData.isNumber() || newData.val() == null" },
+          "skippedAt": { ".validate": "newData.isNumber() || newData.val() == null" },
           "$other":    { ".validate": false }
         }
       }
@@ -38,6 +41,14 @@
     "admins": {
       ".read": false,
       ".write": false
+    },
+
+    "presence": {
+      ".read": true,
+      "$username": {
+        ".write": true,
+        ".validate": "newData.hasChildren(['online', 'lastSeen', 'service', 'username']) && newData.child('username').val() === $username"
+      }
     }
   }
 }

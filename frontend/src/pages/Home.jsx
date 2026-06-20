@@ -1,4 +1,6 @@
+import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
+import QRCode from 'qrcode';
 import { useQueueState } from '../hooks/useQueueState.js';
 import StatusBadge from '../components/StatusBadge.jsx';
 
@@ -7,6 +9,14 @@ export default function Home() {
   const tokenList = Object.values(tokens || {});
   const waiting = tokenList.filter(t => t.status === 'waiting').length;
   const nowServing = state?.currentTokenNumber || 0;
+  const [qrDataUrl, setQrDataUrl] = useState(null);
+
+  useEffect(() => {
+    const takeUrl = `${window.location.origin}/take`;
+    QRCode.toDataURL(takeUrl, { width: 160, margin: 1, color: { dark: '#171615', light: '#FBF7F0' } })
+      .then(setQrDataUrl)
+      .catch(() => {});
+  }, []);
 
   return (
     <div className="max-w-6xl mx-auto px-6 py-10 lg:py-16">
@@ -72,6 +82,17 @@ export default function Home() {
             <div className="border-r border-rule py-3">Free to use</div>
             <div className="py-3">No login</div>
           </div>
+
+          {/* Scan-to-join QR */}
+          {qrDataUrl && (
+            <div className="mt-6 w-full max-w-sm border border-rule bg-cream p-4 flex items-center gap-4">
+              <img src={qrDataUrl} alt="Scan to take a token" className="w-16 h-16 shrink-0" />
+              <div>
+                <div className="label">Scan to join queue</div>
+                <p className="text-xs text-graphite mt-1">Point your phone camera here — no app needed.</p>
+              </div>
+            </div>
+          )}
         </aside>
       </div>
     </div>

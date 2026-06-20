@@ -1,10 +1,3 @@
-/**
- * Axios client for the QueueLess REST API.
- *
- * The interceptor below injects the admin JWT (if present in localStorage)
- * onto every request, and a response interceptor centralizes 401 handling
- * by clearing the stored token so the AuthContext picks up the change.
- */
 import axios from 'axios';
 
 const baseURL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:4000/api/v1';
@@ -15,10 +8,19 @@ export const api = axios.create({
   headers: { 'Content-Type': 'application/json' },
 });
 
-const TOKEN_KEY = 'queueless.adminToken';
+export const ADMIN_TOKEN_KEY = 'queueless.adminToken';
+export const STAFF_TOKEN_KEY  = 'queueless.staffToken';
+// Legacy alias kept for AuthContext compatibility
+export const TOKEN_KEY = ADMIN_TOKEN_KEY;
 
 api.interceptors.request.use((config) => {
-  const token = localStorage.getItem(TOKEN_KEY);
+  const url = config.url || '';
+  // Staff routes must always use the staff JWT (it carries the service claim).
+  // All other routes use the admin token first, falling back to staff token.
+  const isStaffRoute = url.startsWith('/staff/');
+  const token = isStaffRoute
+    ? localStorage.getItem(STAFF_TOKEN_KEY)
+    : (localStorage.getItem(ADMIN_TOKEN_KEY) || localStorage.getItem(STAFF_TOKEN_KEY));
   if (token) config.headers.Authorization = `Bearer ${token}`;
   return config;
 });
@@ -27,25 +29,46 @@ api.interceptors.response.use(
   (res) => res,
   (err) => {
     if (err.response?.status === 401) {
-      localStorage.removeItem(TOKEN_KEY);
+      localStorage.removeItem(ADMIN_TOKEN_KEY);
+      localStorage.removeItem(STAFF_TOKEN_KEY);
     }
     return Promise.reject(err);
   }
 );
 
-// --- Public ---
-export const apiTakeToken    = (service)   => api.post('/tokens', { service }).then(r => r.data.token);
-export const apiTokenStatus  = (id)        => api.get(`/tokens/${id}`).then(r => r.data);
+// Public
+export const apiTakeToken    = (service, email, priority) =>
+  api.post('/tokens', { service, email: email || undefined, priority: priority || undefined }).then(r => r.data.token);
+export const apiTokenStatus  = (id) => api.get(`/tokens/${id}`).then(r => r.data);
+export const apiPublicConfig = () => api.get('/config').then(r => r.data);
+export const apiSubmitFeedback = (tokenId, rating, comment) =>
+  api.post('/feedback', { tokenId, rating, comment }).then(r => r.data);
 
-// --- Auth ---
-export const apiLogin        = (u, p)      => api.post('/auth/login', { username: u, password: p }).then(r => r.data);
+// Auth
+export const apiLogin = (u, p) => api.post('/auth/login', { username: u, password: p }).then(r => r.data);
 
-// --- Admin (requires token in localStorage) ---
-export const apiActiveQueue  = ()          => api.get('/admin/queue').then(r => r.data);
-export const apiAnalytics    = ()          => api.get('/admin/analytics').then(r => r.data);
-export const apiCallNext     = (service)   => api.post('/admin/queue/call-next', { service }).then(r => r.data);
-export const apiPause        = ()          => api.post('/admin/queue/pause').then(r => r.data);
-export const apiResume       = ()          => api.post('/admin/queue/resume').then(r => r.data);
-export const apiReset        = ()          => api.post('/admin/queue/reset').then(r => r.data);
+// Admin queue
+export const apiActiveQueue = () => api.get('/admin/queue').then(r => r.data);
+export const apiCallNext    = (service) => api.post('/admin/queue/call-next', { service }).then(r => r.data);
+export const apiSkipToken   = (tokenId) => api.post(`/admin/queue/skip/${tokenId}`).then(r => r.data);
+export const apiPause       = () => api.post('/admin/queue/pause').then(r => r.data);
+export const apiResume      = () => api.post('/admin/queue/resume').then(r => r.data);
+export const apiReset       = () => api.post('/admin/queue/reset').then(r => r.data);
 
-export { TOKEN_KEY };
+// Admin auto mode
+export const apiStartAutoMode = (services) => api.post('/admin/auto-mode/start', { services }).then(r => r.data);
+export const apiStopAutoMode  = () => api.post('/admin/auto-mode/stop').then(r => r.data);
+
+// Admin analytics + config + feedback + staff
+export const apiAnalytics    = () => api.get('/admin/analytics').then(r => r.data);
+export const apiAdminConfig  = () => api.get('/admin/config').then(r => r.data);
+export const apiUpdateConfig = (industry, orgName) => api.put('/admin/config', { industry, orgName }).then(r => r.data);
+export const apiFeedback     = () => api.get('/admin/feedback').then(r => r.data);
+export const apiListStaff    = () => api.get('/admin/staff').then(r => r.data);
+export const apiCreateStaff  = (data) => api.post('/admin/staff', data).then(r => r.data);
+export const apiDeleteStaff  = (username) => api.delete(`/admin/staff/${username}`).then(r => r.data);
+
+// Staff portal
+export const apiStaffQueue    = () => api.get('/staff/queue').then(r => r.data);
+export const apiStaffCallNext = () => api.post('/staff/queue/call-next', {}).then(r => r.data);
+export const apiStaffPinLogin = (pin) => api.post('/staff/login/pin', { pin }).then(r => r.data);

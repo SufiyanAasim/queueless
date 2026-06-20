@@ -1,25 +1,28 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { apiTakeToken } from '../services/api.js';
-
-const SERVICES = [
-  { id: 'general',      title: 'General Inquiry',     desc: 'Reception, info, walk-in support' },
-  { id: 'consultation', title: 'Consultation',         desc: 'Doctor, advisor, or specialist visit' },
-  { id: 'transaction',  title: 'Transaction',          desc: 'Payment, deposit, account change' },
-];
+import { useAppConfig } from '../hooks/useAppConfig.js';
+import { getServices } from '../utils/industry.js';
 
 export default function TakeToken() {
-  const [service, setService] = useState('general');
+  const cfg = useAppConfig();
+  const services = getServices(cfg.industry);
+
+  const [service, setService] = useState(services[0]?.id || 'general');
+  const [email, setEmail] = useState('');
+  const [priority, setPriority] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState(null);
   const navigate = useNavigate();
+
+  // If emergency service is selected, auto-flag as priority (medical profile)
+  const effectivePriority = priority || service === 'emergency' ? 'priority' : 'normal';
 
   const handleTake = async () => {
     setSubmitting(true);
     setError(null);
     try {
-      const token = await apiTakeToken(service);
-      // Persist in localStorage so a refresh on the status page recovers the token.
+      const token = await apiTakeToken(service, email.trim() || null, effectivePriority);
       localStorage.setItem('queueless.myToken', JSON.stringify(token));
       navigate(`/token/${token.id}`);
     } catch (e) {
@@ -42,8 +45,8 @@ export default function TakeToken() {
         Pick a service so the staff can prepare. You'll get your token number on the next screen.
       </p>
 
-      <div className="mt-10 grid sm:grid-cols-3 gap-4">
-        {SERVICES.map(s => (
+      <div className={`mt-10 grid gap-4 ${services.length <= 3 ? 'sm:grid-cols-3' : services.length === 4 ? 'sm:grid-cols-2 lg:grid-cols-4' : 'sm:grid-cols-2 lg:grid-cols-3'}`}>
+        {services.map(s => (
           <button
             key={s.id}
             onClick={() => setService(s.id)}
@@ -56,7 +59,7 @@ export default function TakeToken() {
             <div className="label" style={service === s.id ? { color: '#F7F3EC99' } : {}}>
               {service === s.id ? 'Selected' : 'Service'}
             </div>
-            <div className="mt-3 font-display text-2xl leading-tight">{s.title}</div>
+            <div className="mt-3 font-display text-xl leading-tight">{s.title}</div>
             <div className={`mt-2 text-xs ${service === s.id ? 'text-paper/70' : 'text-graphite'}`}>
               {s.desc}
             </div>
@@ -64,10 +67,49 @@ export default function TakeToken() {
         ))}
       </div>
 
-      <div className="mt-10 pt-10 border-t border-rule flex flex-col sm:flex-row gap-4 sm:items-center sm:justify-between">
+      <div className="mt-10 pt-10 border-t border-rule space-y-6">
+        {/* Priority toggle — not shown for emergency (auto-priority) */}
+        {service !== 'emergency' && (
+          <label className="flex items-start gap-3 cursor-pointer group">
+            <input
+              type="checkbox"
+              checked={priority}
+              onChange={e => setPriority(e.target.checked)}
+              className="mt-0.5 w-4 h-4 border-rule accent-ink cursor-pointer"
+            />
+            <div>
+              <span className="text-sm font-medium text-ink">Request priority service</span>
+              <p className="text-xs text-graphite mt-0.5">
+                For elderly, disabled, pregnant, or medical urgency. Priority tokens are called before regular ones.
+              </p>
+            </div>
+          </label>
+        )}
+        {service === 'emergency' && (
+          <div className="p-3 border border-accent bg-accent/5 text-accent-deep text-sm">
+            Emergency is automatically flagged as priority and will be called before other tokens.
+          </div>
+        )}
+
+        <label className="block">
+          <span className="label">Email (optional)</span>
+          <p className="mt-1 text-xs text-graphite mb-3">
+            Get your token number and tracking link sent to your inbox.
+          </p>
+          <input
+            type="email"
+            value={email}
+            onChange={e => setEmail(e.target.value)}
+            placeholder="you@example.com"
+            className="w-full sm:max-w-sm border border-rule bg-cream px-4 py-3 text-sm text-ink placeholder:text-graphite/60 focus:outline-none focus:border-ink"
+          />
+        </label>
+      </div>
+
+      <div className="mt-8 flex flex-col sm:flex-row gap-4 sm:items-center sm:justify-between">
         <p className="text-sm text-graphite max-w-md">
           By taking a token, you agree to wait roughly in the order shown.
-          You can leave the page — your position is saved on this device.
+          Your position is saved on this device.
         </p>
         <button onClick={handleTake} disabled={submitting} className="btn-primary">
           {submitting ? 'Issuing token…' : 'Issue my token →'}

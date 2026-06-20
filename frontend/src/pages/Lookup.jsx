@@ -1,7 +1,10 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useAppConfig } from '../hooks/useAppConfig.js';
+import { getServiceLabel } from '../utils/industry.js';
 
 export default function Lookup() {
+  const cfg = useAppConfig();
   const [tokenId, setTokenId] = useState('');
   const navigate = useNavigate();
 
@@ -37,7 +40,7 @@ export default function Lookup() {
             <div className="mt-1 font-display text-3xl">
               Token #{String(savedToken.number).padStart(2, '0')}
             </div>
-            <div className="mt-1 text-xs text-graphite">{savedToken.service}</div>
+            <div className="mt-1 text-xs text-graphite">{getServiceLabel(savedToken.service, cfg.industry)}</div>
           </div>
           <button
             onClick={() => navigate(`/token/${savedToken.id}`)}

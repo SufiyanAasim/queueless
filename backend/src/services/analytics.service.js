@@ -1,19 +1,3 @@
-/**
- * Analytics service - the bridge between the Cloud Computing project and
- * the Data Mining project.
- *
- * Every queue event the backend handles is appended here, so the DM pipeline
- * has a structured event log to mine. Two sinks are supported:
- *
- *   - "csv":   appends a row to a flat CSV file. Zero infra, fastest to set
- *              up, perfect for academic submission. The default.
- *   - "mongo": writes a document to MongoDB Atlas. Demonstrates a cloud NoSQL
- *              store and is the better choice if multiple backend instances
- *              run concurrently (CSV is a single-writer store).
- *
- * Failures here MUST NOT break user-facing requests. Callers should use
- * .catch() and log; the queue service does this.
- */
 const fs = require('fs');
 const fsp = require('fs/promises');
 const path = require('path');
@@ -22,23 +6,22 @@ const config = require('../config/env');
 let mongoClient = null;
 let mongoCollection = null;
 
-// CSV column order is the contract with the DM pipeline. Keep stable.
+// Column order is the contract with the DM pipeline — keep stable.
 const CSV_COLUMNS = [
-  'event_type',          // token_issued | token_called | token_served | token_expired | queue_paused | queue_resumed | queue_reset
+  'event_type',
   'token_id',
   'token_number',
   'service',
-  'timestamp',           // ms since epoch
-  'iso_timestamp',       // human-readable mirror, easier for pandas to parse
-  'queue_length',        // tokens waiting at moment of event (if known)
-  'wait_duration_seconds',     // for token_called events
-  'service_duration_seconds',  // for token_served events
+  'timestamp',
+  'iso_timestamp',
+  'queue_length',
+  'wait_duration_seconds',
+  'service_duration_seconds',
 ];
 
 function csvEscape(value) {
   if (value === null || value === undefined) return '';
   const str = String(value);
-  // Quote if contains comma, quote, or newline. Double internal quotes.
   if (/[",\n\r]/.test(str)) {
     return `"${str.replace(/"/g, '""')}"`;
   }
@@ -79,10 +62,6 @@ async function appendMongo(event) {
   await col.insertOne(event);
 }
 
-/**
- * Public API: log a single queue event to the configured sink.
- * Always writes to MongoDB if configured. Falls back to CSV-only if no Mongo.
- */
 async function logEvent(event) {
   const enriched = {
     event_type: event.event_type,
@@ -97,23 +76,18 @@ async function logEvent(event) {
   };
 
   const writes = [];
-
-  // Always attempt MongoDB write if URI is configured
   if (config.analytics.mongo.uri) {
     writes.push(appendMongo(enriched));
   }
-
-  // Always write CSV as a backup/fallback
   writes.push(appendCsv(enriched));
 
-  // Run both in parallel, surface any errors to caller
   await Promise.allSettled(writes);
 }
 
 const CSV_CACHE = {
   data: null,
   timestamp: 0,
-  TTL_MS: 30 * 1000 // 30 seconds - near real-time for live dashboard
+  TTL_MS: 30 * 1000,
 };
 
 async function getTrafficStats() {
@@ -123,7 +97,7 @@ async function getTrafficStats() {
 
   try {
     let events = [];
-    
+
     if (config.analytics.sink === 'mongo') {
       const col = await getMongoCollection();
       events = await col.find({}).toArray();
@@ -131,36 +105,35 @@ async function getTrafficStats() {
       const filepath = path.resolve(__dirname, '..', '..', config.analytics.csvPath);
       const content = await fsp.readFile(filepath, 'utf8');
       const lines = content.trim().split('\n').slice(1);
-      
+
       events = lines.filter(line => line).map(line => {
         const parts = line.split(',');
         return {
           event_type: parts[0],
           service: parts[3],
           timestamp: parseInt(parts[4]),
-          wait_duration_seconds: parseInt(parts[7])
+          wait_duration_seconds: parseInt(parts[7]),
         };
       });
     }
-    
+
     const peakHours = {};
-    const peakHoursByService = { general: {}, consultation: {}, transaction: {} };
+    const peakHoursByService = {};
     let totalIssued = 0;
     let totalExpired = 0;
     let sumWait = 0;
     let waitCount = 0;
 
     for (const ev of events) {
-      const eventType = ev.event_type;
-      const service = ev.service;
-      const timestamp = ev.timestamp;
+      const { event_type: eventType, service, timestamp } = ev;
 
       if (eventType === 'token_issued') {
         totalIssued++;
         const hour = new Date(timestamp).getHours();
         peakHours[hour] = (peakHours[hour] || 0) + 1;
-        if (peakHoursByService[service]) {
-           peakHoursByService[service][hour] = (peakHoursByService[service][hour] || 0) + 1;
+        if (service) {
+          if (!peakHoursByService[service]) peakHoursByService[service] = {};
+          peakHoursByService[service][hour] = (peakHoursByService[service][hour] || 0) + 1;
         }
       } else if (eventType === 'token_expired') {
         totalExpired++;
@@ -175,10 +148,32 @@ async function getTrafficStats() {
 
     const dropOffRate = totalIssued > 0 ? (totalExpired / totalIssued) : 0;
     const avgWaitSeconds = waitCount > 0 ? (sumWait / waitCount) : 0;
-    
+
     const staffingRecommendation = [];
     for (let h = 0; h < 24; h++) {
-       if ((peakHours[h] || 0) > 10) staffingRecommendation.push(h);
+      if ((peakHours[h] || 0) > 10) staffingRecommendation.push(h);
+    }
+
+    // Service distribution — % breakdown of tokens per service
+    const serviceDistribution = {};
+    for (const ev of events) {
+      if (ev.event_type === 'token_issued' && ev.service) {
+        serviceDistribution[ev.service] = (serviceDistribution[ev.service] || 0) + 1;
+      }
+    }
+
+    // Daily trend — last 7 days token counts
+    const now = Date.now();
+    const dailyTrend = {};
+    for (let i = 6; i >= 0; i--) {
+      const key = new Date(now - i * 86400000).toISOString().slice(0, 10);
+      dailyTrend[key] = 0;
+    }
+    for (const ev of events) {
+      if (ev.event_type === 'token_issued') {
+        const key = new Date(ev.timestamp).toISOString().slice(0, 10);
+        if (key in dailyTrend) dailyTrend[key]++;
+      }
     }
 
     CSV_CACHE.data = {
@@ -188,12 +183,25 @@ async function getTrafficStats() {
       totalExpired,
       dropOffRate,
       avgWaitSeconds,
-      staffingRecommendation
+      staffingRecommendation,
+      serviceDistribution,
+      dailyTrend,
     };
     CSV_CACHE.timestamp = Date.now();
     return CSV_CACHE.data;
   } catch (err) {
-    return { peakHours: {}, peakHoursByService: {}, totalIssued: 0, totalExpired: 0, dropOffRate: 0, avgWaitSeconds: 0, staffingRecommendation: [] };
+    console.error('[analytics] Failed to get traffic stats:', err.message);
+    return {
+      peakHours: {},
+      peakHoursByService: {},
+      totalIssued: 0,
+      totalExpired: 0,
+      dropOffRate: 0,
+      avgWaitSeconds: 0,
+      staffingRecommendation: [],
+      serviceDistribution: {},
+      dailyTrend: {}
+    };
   }
 }
 

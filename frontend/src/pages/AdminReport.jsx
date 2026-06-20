@@ -1,11 +1,14 @@
 import { useState, useEffect } from 'react';
 import { Navigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext.jsx';
+import { useAppConfig } from '../hooks/useAppConfig.js';
+import { getServices, getServiceLabel } from '../utils/industry.js';
 import { apiAnalytics } from '../services/api.js';
 import Stat from '../components/Stat.jsx';
 
 export default function AdminReport() {
   const { user } = useAuth();
+  const cfg = useAppConfig();
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -43,8 +46,9 @@ export default function AdminReport() {
   }
 
   const { peakHours = {}, peakHoursByService = {}, totalIssued = 0, totalExpired = 0, dropOffRate = 0, avgWaitSeconds = 0, staffingRecommendation = [] } = data || {};
-  
-  const services = ['general', 'consultation', 'transaction'];
+
+  // Use dynamic services from the configured industry profile
+  const services = getServices(cfg.industry).map(s => s.id);
   
   // Dynamically build the hours range from actual data
   const allHoursWithData = Object.keys(peakHours).map(Number).sort((a, b) => a - b);
@@ -94,7 +98,7 @@ export default function AdminReport() {
       <div className="hidden print:block mb-8 border-b border-rule pb-4">
         <h1 className="font-display text-4xl mb-2">QueueLess Analytics Report</h1>
         <div className="text-sm text-graphite">Generated on: {new Date().toLocaleDateString()} at {new Date().toLocaleTimeString()}</div>
-        <div className="text-sm text-graphite">Location: Karachi, Pakistan</div>
+        <div className="text-sm text-graphite">Organisation: {cfg.orgName}</div>
       </div>
 
       <div className="flex justify-between items-end mb-10 print:hidden">
@@ -152,7 +156,7 @@ export default function AdminReport() {
             <tbody>
               {services.map(service => (
                 <tr key={service}>
-                  <td className="p-2 border-b border-rule border-dashed capitalize font-medium">{service}</td>
+                  <td className="p-2 border-b border-rule border-dashed font-medium">{getServiceLabel(service, cfg.industry)}</td>
                   {hours.map(h => {
                     const count = (peakHoursByService[service] && peakHoursByService[service][h]) || 0;
                     const serviceMax = maxPerService[service] || 1;

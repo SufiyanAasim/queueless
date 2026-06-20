@@ -4,20 +4,21 @@ export default {
     './index.html',
     './src/**/*.{js,jsx,ts,tsx}',
   ],
+  darkMode: 'class',
   theme: {
     extend: {
       colors: {
-        // Editorial palette - warm paper + deep ink + single terracotta accent.
-        paper:    '#F7F3EC',  // warm off-white background, like ticket paper
-        cream:    '#FBF7F0',  // lighter elevation for cards
-        ink:      '#171615',  // primary text - just shy of pure black
-        graphite: '#5C5854',  // secondary text
-        ash:      '#A9A39B',  // muted / disabled
-        rule:     '#E5DFD3',  // hairline borders
-        accent:   '#C84B26',  // terracotta - the QueueLess "your turn" color
+        // Light (default)
+        paper:    '#F7F3EC',
+        cream:    '#FBF7F0',
+        ink:      '#171615',
+        graphite: '#5C5854',
+        ash:      '#A9A39B',
+        rule:     '#E5DFD3',
+        accent:   '#C84B26',
         'accent-deep': '#9F3A1B',
-        success:  '#3F6F4F',  // muted forest green for served tokens
-        warn:     '#B8881C',  // muted gold for paused
+        success:  '#3F6F4F',
+        warn:     '#B8881C',
       },
       fontFamily: {
         // Display serif for numbers - Instrument Serif is free via Google Fonts
@@ -38,11 +39,19 @@ export default {
       animation: {
         'pulse-slow': 'pulse 2.5s cubic-bezier(0.4, 0, 0.6, 1) infinite',
         'fade-up': 'fade-up 0.5s ease-out',
+        'shake': 'shake 0.5s ease-in-out',
       },
       keyframes: {
         'fade-up': {
           '0%': { opacity: 0, transform: 'translateY(8px)' },
           '100%': { opacity: 1, transform: 'translateY(0)' },
+        },
+        'shake': {
+          '0%, 100%': { transform: 'translateX(0)' },
+          '20%': { transform: 'translateX(-8px)' },
+          '40%': { transform: 'translateX(8px)' },
+          '60%': { transform: 'translateX(-5px)' },
+          '80%': { transform: 'translateX(5px)' },
         },
       },
     },

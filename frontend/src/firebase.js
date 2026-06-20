@@ -6,7 +6,7 @@
  * but not WRITE (writes go through our backend, which uses Admin SDK).
  */
 import { initializeApp } from 'firebase/app';
-import { getDatabase, ref, onValue, off } from 'firebase/database';
+import { getDatabase, ref, onValue, off, set, onDisconnect } from 'firebase/database';
 import { getAnalytics } from "firebase/analytics";
 
 const firebaseConfig = {
@@ -24,4 +24,4 @@ const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
 const analytics = getAnalytics(app);
 
-export { db, ref, onValue, off, app, analytics };
+export { db, ref, onValue, off, set, onDisconnect, app, analytics };

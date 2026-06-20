@@ -55,6 +55,7 @@ analytics/models/*.joblib
 Thumbs.db
 .idea/
 .vscode/
+.claude/
 *.swp
 *.swo
 

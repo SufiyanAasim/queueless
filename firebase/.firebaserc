@@ -1,6 +1,6 @@
 {
   "projects": {
-    "firebase deploy --only database": "queueless-tqms"
+    "default": "queueless-tqms-pk"
   },
   "targets": {},
   "etags": {}

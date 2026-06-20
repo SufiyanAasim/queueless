@@ -8,17 +8,42 @@
     -webkit-font-smoothing: antialiased;
   }
   body {
-    /* Subtle paper grain - generated, no asset needed. */
     background-image:
       radial-gradient(circle at 15% 20%, rgba(0,0,0,0.015) 1px, transparent 1px),
       radial-gradient(circle at 65% 70%, rgba(0,0,0,0.015) 1px, transparent 1px);
     background-size: 28px 28px, 36px 36px;
   }
+  .dark body {
+    background-image:
+      radial-gradient(circle at 15% 20%, rgba(255,255,255,0.015) 1px, transparent 1px),
+      radial-gradient(circle at 65% 70%, rgba(255,255,255,0.015) 1px, transparent 1px);
+  }
+
+  /* Dark mode semantic overrides — all warm greys shift to cool-dark */
+  .dark {
+    --tw-bg-opacity: 1;
+    color-scheme: dark;
+  }
+
   /* Tabular numbers everywhere - critical for queue counters */
   .num {
     font-variant-numeric: tabular-nums;
   }
 }
+
+/* ── dark mode semantic remappings ─────────────────────────────────────── */
+.dark .bg-paper   { background-color: #1C1A18 !important; }
+.dark .bg-cream   { background-color: #252220 !important; }
+.dark .bg-ink     { background-color: #F0EBE3 !important; }
+.dark .text-ink   { color: #F0EBE3 !important; }
+.dark .text-graphite { color: #A09890 !important; }
+.dark .text-ash   { color: #5C5854 !important; }
+.dark .border-rule { border-color: #353028 !important; }
+.dark .divide-rule > * + * { border-color: #353028 !important; }
+.dark .bg-rule    { background-color: #353028 !important; }
+
+/* dark body & html bg */
+.dark body, .dark html { background-color: #1C1A18; color: #F0EBE3; }
 
 @layer components {
   .hairline {

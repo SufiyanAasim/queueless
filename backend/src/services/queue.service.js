@@ -1,19 +1,8 @@
-/**
- * Queue service - single source of truth for all queue business logic.
- *
- * Firebase data model:
- *   queue/state    { status, currentTokenNumber, lastCalledAt, pausedAt }
- *   queue/counter  { value }                          // last issued number
- *   queue/tokens/{id} { number, status, service, ... }
- *
- * Token statuses:
- *   waiting -> called -> served       (happy path)
- *   waiting -> expired                (timeout)
- */
 const crypto = require('crypto');
 const { refs, db } = require('../config/firebase');
 const config = require('../config/env');
 const analytics = require('./analytics.service');
+const emailService = require('./email.service');
 
 const TOKEN_STATUS = Object.freeze({
   WAITING: 'waiting',
@@ -27,10 +16,11 @@ const QUEUE_STATUS = Object.freeze({
   PAUSED: 'paused',
 });
 
-/**
- * Initialize the queue state on first boot. Idempotent - safe to call on
- * every server start. Creates state/counter nodes only if missing.
- */
+const TOKEN_PRIORITY = Object.freeze({
+  NORMAL: 'normal',
+  PRIORITY: 'priority',
+});
+
 async function ensureInitialized() {
   const stateSnap = await refs.queueState().once('value');
   if (!stateSnap.exists()) {
@@ -39,47 +29,44 @@ async function ensureInitialized() {
       currentTokenNumber: 0,
       lastCalledAt: null,
       pausedAt: null,
+      autoMode: { enabled: false, intervalSeconds: 0 },
     });
   }
   const counterSnap = await refs.counter().once('value');
   if (!counterSnap.exists()) {
     await refs.counter().set({ value: 0 });
   }
+  // Ensure app config exists
+  const cfgSnap = await refs.appConfig().once('value');
+  if (!cfgSnap.exists()) {
+    await refs.appConfig().set({ industry: 'general', orgName: 'QueueLess' });
+  }
 }
 
-/**
- * Issue a new token. Uses a Firebase transaction on the counter node to
- * guarantee atomic increment - two concurrent requests will receive distinct
- * token numbers even under heavy load.
- */
-async function issueToken({ service = 'general' } = {}) {
-  // Step 1: refuse if queue is paused. Reading state first avoids burning a
-  // counter increment on a request that would fail anyway.
+async function issueToken({ service = 'general', email = null, priority = 'normal' } = {}) {
   const stateSnap = await refs.queueState().once('value');
   const state = stateSnap.val();
   if (state.status === QUEUE_STATUS.PAUSED) {
     const err = new Error('Queue is currently paused. Please try again later.');
-    err.statusCode = 423; // 423 Locked - semantically right for "temporarily unavailable"
+    err.statusCode = 423;
     throw err;
   }
 
-  // Step 2: atomic counter increment.
+  // Atomic counter increment — guarantees distinct token numbers under concurrent load.
   const txResult = await refs.counter().transaction((current) => {
     if (current === null) return { value: 1 };
     return { value: (current.value || 0) + 1 };
   });
-  if (!txResult.committed) {
-    throw new Error('Failed to allocate token number. Please retry.');
-  }
+  if (!txResult.committed) throw new Error('Failed to allocate token number. Please retry.');
   const number = txResult.snapshot.val().value;
 
-  // Step 3: write the token record.
   const id = crypto.randomUUID();
   const issuedAt = Date.now();
   const tokenRecord = {
     id,
     number,
     service,
+    priority: priority === 'priority' ? TOKEN_PRIORITY.PRIORITY : TOKEN_PRIORITY.NORMAL,
     status: TOKEN_STATUS.WAITING,
     issuedAt,
     calledAt: null,
@@ -88,8 +75,6 @@ async function issueToken({ service = 'general' } = {}) {
   };
   await refs.token(id).set(tokenRecord);
 
-  // Step 4: dual-write to analytics sink (Data Mining bridge).
-  // Fire-and-forget - analytics failures must not block user-facing token issuance.
   analytics.logEvent({
     event_type: 'token_issued',
     token_id: id,
@@ -99,12 +84,15 @@ async function issueToken({ service = 'general' } = {}) {
     queue_length: await getWaitingCount(),
   }).catch(err => console.error('[analytics] log failure (non-fatal):', err.message));
 
+  if (email) {
+    const trackingUrl = `${config.frontendUrl}/token/${id}`;
+    emailService.sendTokenEmail({ to: email, token: tokenRecord, trackingUrl })
+      .catch(err => console.error('[email] send failure (non-fatal):', err.message));
+  }
+
   return tokenRecord;
 }
 
-/**
- * Get the public-facing status of a single token: position in line and ETA.
- */
 async function getTokenStatus(tokenId) {
   const tokenSnap = await refs.token(tokenId).once('value');
   if (!tokenSnap.exists()) {
@@ -114,14 +102,12 @@ async function getTokenStatus(tokenId) {
   }
   const token = tokenSnap.val();
 
-  // Position is the count of WAITING tokens with a strictly smaller number.
-  // Done in JS rather than a Firebase query because Firebase RTDB cannot
-  // filter by two fields simultaneously without a composite index.
+  // Firebase RTDB cannot filter by two fields simultaneously, so we filter in JS.
   const tokensSnap = await refs.tokens().once('value');
   const all = tokensSnap.val() || {};
-  // ahead relies on the specific service type so that separate queues don't affect each other.
   const ahead = Object.values(all).filter(
-    t => t.status === TOKEN_STATUS.WAITING && t.service === token.service && t.number < token.number
+    t => t.status === TOKEN_STATUS.WAITING && t.service === token.service &&
+         (t.number < token.number || (t.priority === 'priority' && token.priority !== 'priority'))
   ).length;
 
   const stateSnap = await refs.queueState().once('value');
@@ -139,10 +125,13 @@ async function getTokenStatus(tokenId) {
   };
 }
 
-/**
- * Admin: call the next waiting token. Marks the previously-called token (if
- * any) as served, then promotes the lowest-numbered WAITING token to CALLED.
- */
+function sortByPriorityThenNumber(a, b) {
+  // Priority tokens go before normal; within same priority level, FIFO by number.
+  if (a.priority === 'priority' && b.priority !== 'priority') return -1;
+  if (a.priority !== 'priority' && b.priority === 'priority') return 1;
+  return a.number - b.number;
+}
+
 async function callNextToken(service = 'general') {
   const stateSnap = await refs.queueState().once('value');
   const state = stateSnap.val();
@@ -159,7 +148,7 @@ async function callNextToken(service = 'general') {
   const previouslyCalled = tokenList.find(t => t.status === TOKEN_STATUS.CALLED && t.service === service);
   const next = tokenList
     .filter(t => t.status === TOKEN_STATUS.WAITING && t.service === service)
-    .sort((a, b) => a.number - b.number)[0];
+    .sort(sortByPriorityThenNumber)[0];
 
   const updates = {};
   let servedAt = null;
@@ -171,10 +160,8 @@ async function callNextToken(service = 'general') {
   }
 
   if (!next) {
-    // If no next token, just update the previously called to served
     if (Object.keys(updates).length > 0) {
       await db.ref('queue').update(updates);
-      
       analytics.logEvent({
         event_type: 'token_served',
         token_id: previouslyCalled.id,
@@ -193,7 +180,6 @@ async function callNextToken(service = 'general') {
   updates[`state/currentTokenNumber`] = next.number;
   updates[`state/lastCalledAt`] = calledAt;
 
-  // Use a multi-path atomic update to prevent race conditions
   await db.ref('queue').update(updates);
 
   if (previouslyCalled) {
@@ -219,41 +205,51 @@ async function callNextToken(service = 'general') {
   return { called: { ...next, status: TOKEN_STATUS.CALLED, calledAt } };
 }
 
+async function skipToken(tokenId) {
+  const tokenSnap = await refs.token(tokenId).once('value');
+  if (!tokenSnap.exists()) {
+    throw Object.assign(new Error('Token not found.'), { statusCode: 404 });
+  }
+  const token = tokenSnap.val();
+  if (token.status !== 'called' && token.status !== 'waiting') {
+    throw Object.assign(new Error('Only waiting or called tokens can be skipped.'), { statusCode: 400 });
+  }
+  const now = Date.now();
+  await refs.token(tokenId).update({ status: TOKEN_STATUS.EXPIRED, expiredAt: now, skippedAt: now });
+  analytics.logEvent({
+    event_type: 'token_skipped',
+    token_id: tokenId,
+    token_number: token.number,
+    service: token.service,
+    timestamp: now,
+  }).catch(() => {});
+  return { skipped: token };
+}
+
 async function pauseQueue() {
-  await refs.queueState().update({
-    status: QUEUE_STATUS.PAUSED,
-    pausedAt: Date.now(),
-  });
+  await refs.queueState().update({ status: QUEUE_STATUS.PAUSED, pausedAt: Date.now() });
   analytics.logEvent({ event_type: 'queue_paused', timestamp: Date.now() })
     .catch(err => console.error('[analytics]', err.message));
 }
 
 async function resumeQueue() {
-  await refs.queueState().update({
-    status: QUEUE_STATUS.RUNNING,
-    pausedAt: null,
-  });
+  await refs.queueState().update({ status: QUEUE_STATUS.RUNNING, pausedAt: null });
   analytics.logEvent({ event_type: 'queue_resumed', timestamp: Date.now() })
     .catch(err => console.error('[analytics]', err.message));
 }
 
-/**
- * Admin: full active queue with health metrics. Used by the admin dashboard.
- */
 async function getActiveQueue() {
   const [tokensSnap, stateSnap] = await Promise.all([
     refs.tokens().once('value'),
     refs.queueState().once('value'),
   ]);
   const all = Object.values(tokensSnap.val() || {});
-  const waiting = all.filter(t => t.status === TOKEN_STATUS.WAITING)
-                     .sort((a, b) => a.number - b.number);
+  const waiting = all.filter(t => t.status === TOKEN_STATUS.WAITING).sort(sortByPriorityThenNumber);
   const calledTokens = all.filter(t => t.status === TOKEN_STATUS.CALLED);
-  const nowServing = {
-    general: calledTokens.find(t => t.service === 'general') || null,
-    consultation: calledTokens.find(t => t.service === 'consultation') || null,
-    transaction: calledTokens.find(t => t.service === 'transaction') || null,
-  };
+
+  // Build dynamic nowServing map keyed by service
+  const nowServing = {};
+  calledTokens.forEach(t => { nowServing[t.service] = t; });
 
   return {
     state: stateSnap.val(),
@@ -264,6 +260,7 @@ async function getActiveQueue() {
       waitingCount: waiting.length,
       servedCount: all.filter(t => t.status === TOKEN_STATUS.SERVED).length,
       expiredCount: all.filter(t => t.status === TOKEN_STATUS.EXPIRED).length,
+      priorityWaiting: waiting.filter(t => t.priority === 'priority').length,
       estimatedTotalWaitSeconds: waiting.length * config.queue.avgServiceTimeSeconds,
     },
   };
@@ -275,9 +272,6 @@ async function getWaitingCount() {
   return all.filter(t => t.status === TOKEN_STATUS.WAITING).length;
 }
 
-/**
- * Admin: full reset - useful for end-of-day cleanup or test environments.
- */
 async function resetQueue() {
   await Promise.all([
     refs.tokens().remove(),
@@ -287,6 +281,7 @@ async function resetQueue() {
       currentTokenNumber: 0,
       lastCalledAt: null,
       pausedAt: null,
+      autoMode: { enabled: false, intervalSeconds: 0 },
     }),
   ]);
   analytics.logEvent({ event_type: 'queue_reset', timestamp: Date.now() })
@@ -294,14 +289,10 @@ async function resetQueue() {
 }
 
 module.exports = {
-  TOKEN_STATUS,
-  QUEUE_STATUS,
+  TOKEN_STATUS, QUEUE_STATUS, TOKEN_PRIORITY,
   ensureInitialized,
-  issueToken,
-  getTokenStatus,
-  callNextToken,
-  pauseQueue,
-  resumeQueue,
-  getActiveQueue,
-  resetQueue,
+  issueToken, getTokenStatus,
+  callNextToken, skipToken,
+  pauseQueue, resumeQueue,
+  getActiveQueue, resetQueue,
 };

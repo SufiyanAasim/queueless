@@ -1,10 +1,3 @@
-/**
- * Environment configuration & validation.
- *
- * Loaded once at startup. If any required variable is missing or malformed,
- * the process exits immediately - it is far better to fail at boot than to
- * have the API silently misbehave in production.
- */
 require('dotenv').config();
 const Joi = require('joi');
 
@@ -13,8 +6,7 @@ const envSchema = Joi.object({
   NODE_ENV: Joi.string().valid('development', 'test', 'production').default('development'),
   CORS_ORIGIN: Joi.string().required(),
 
-  JWT_SECRET: Joi.string().min(32).required()
-    .description('JWT signing secret - minimum 32 chars'),
+  JWT_SECRET: Joi.string().min(32).required(),
   JWT_EXPIRES_IN: Joi.string().default('8h'),
 
   ADMIN_USERNAME: Joi.string().required(),
@@ -36,6 +28,16 @@ const envSchema = Joi.object({
   }),
   MONGO_DB: Joi.string().default('queueless'),
   MONGO_COLLECTION: Joi.string().default('queue_events'),
+
+  // Email (optional - if omitted, token emails are silently skipped)
+  SMTP_HOST: Joi.string().optional(),
+  SMTP_PORT: Joi.number().integer().default(587),
+  SMTP_USER: Joi.string().optional(),
+  SMTP_PASS: Joi.string().optional(),
+  SMTP_FROM: Joi.string().default('noreply@queueless.app'),
+
+  // Frontend URL used to generate token tracking links in emails
+  FRONTEND_URL: Joi.string().uri().default('http://localhost:5173'),
 }).unknown(true);
 
 const { value: env, error } = envSchema.validate(process.env, { abortEarly: false });
@@ -46,8 +48,7 @@ if (error) {
   process.exit(1);
 }
 
-// Firebase private keys come from .env with literal \n sequences. Unescape them
-// so the SDK can parse the PEM correctly.
+// Firebase private keys arrive from .env with literal \n sequences — unescape so the SDK reads the PEM.
 const firebasePrivateKey = env.FIREBASE_PRIVATE_KEY.replace(/\\n/g, '\n');
 
 module.exports = {
@@ -87,4 +88,14 @@ module.exports = {
       collection: env.MONGO_COLLECTION,
     },
   },
+
+  email: {
+    host: env.SMTP_HOST || null,
+    port: env.SMTP_PORT,
+    user: env.SMTP_USER || null,
+    pass: env.SMTP_PASS || null,
+    from: env.SMTP_FROM,
+  },
+
+  frontendUrl: env.FRONTEND_URL,
 };

@@ -1,0 +1,52 @@
+services:
+  - type: web
+    name: queueless-backend
+    runtime: node
+    rootDir: backend
+    buildCommand: npm install
+    startCommand: node src/server.js
+    plan: free
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 4000
+      - key: JWT_EXPIRES_IN
+        value: 8h
+      - key: AVG_SERVICE_TIME_SECONDS
+        value: 180
+      - key: TOKEN_EXPIRY_SECONDS
+        value: 3600
+      - key: ANALYTICS_SINK
+        value: mongo
+      - key: ANALYTICS_CSV_PATH
+        value: ../analytics/data/queue_events.csv
+      - key: MONGO_DB
+        value: queueless
+      - key: MONGO_COLLECTION
+        value: queue_events
+      - key: SMTP_PORT
+        value: 587
+      - key: SMTP_FROM
+        value: noreply@queueless.app
+      # --- secrets: set these manually in Render dashboard ---
+      - key: JWT_SECRET
+        sync: false
+      - key: ADMIN_USERNAME
+        sync: false
+      - key: ADMIN_PASSWORD
+        sync: false
+      - key: FIREBASE_PROJECT_ID
+        sync: false
+      - key: FIREBASE_CLIENT_EMAIL
+        sync: false
+      - key: FIREBASE_PRIVATE_KEY
+        sync: false
+      - key: FIREBASE_DATABASE_URL
+        sync: false
+      - key: MONGO_URI
+        sync: false
+      - key: CORS_ORIGIN
+        sync: false
+      - key: FRONTEND_URL
+        sync: false

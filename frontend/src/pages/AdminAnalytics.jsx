@@ -1,11 +1,35 @@
 import { useState, useEffect } from 'react';
 import { Navigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext.jsx';
+import { useAppConfig } from '../hooks/useAppConfig.js';
+import { getServiceLabel } from '../utils/industry.js';
 import { apiAnalytics } from '../services/api.js';
 import Stat from '../components/Stat.jsx';
 
+const COLORS = ['#4B6FBF', '#3F6F4F', '#8B5CF6', '#C84B26', '#B8881C', '#0891B2'];
+
+function BarChart({ data, maxVal, color = '#4B6FBF', labelKey, valueKey }) {
+  const max = maxVal || Math.max(...data.map(d => d[valueKey]), 1);
+  return (
+    <div className="flex items-end gap-1 h-36 border-b border-l border-rule pb-1 pl-1">
+      {data.map((d, i) => (
+        <div key={i} className="flex-1 flex flex-col justify-end group relative h-full">
+          <div
+            className="w-full transition-all"
+            style={{ height: `${(d[valueKey] / max) * 100}%`, background: color, opacity: 0.85 }}
+          />
+          <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 hidden group-hover:block text-xs bg-ink text-paper px-1.5 py-0.5 whitespace-nowrap z-10">
+            {d[labelKey]}: {d[valueKey]}
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 export default function AdminAnalytics() {
   const { user } = useAuth();
+  const cfg = useAppConfig();
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -15,182 +39,197 @@ export default function AdminAnalytics() {
   const fetchData = (isManual = false) => {
     if (isManual) setRefreshing(true);
     apiAnalytics()
-      .then(res => {
-        setData(res);
-        setLoading(false);
-        setLastUpdated(new Date());
-        setRefreshing(false);
-      })
-      .catch(err => {
-        setError(err.response?.data?.error || 'Failed to load analytics.');
-        setLoading(false);
-        setRefreshing(false);
-      });
+      .then(res => { setData(res); setLoading(false); setLastUpdated(new Date()); setRefreshing(false); })
+      .catch(err => { setError(err.response?.data?.error || 'Failed to load analytics.'); setLoading(false); setRefreshing(false); });
   };
 
   useEffect(() => {
     if (!user) return;
     fetchData();
-    // Auto-refresh every 30 seconds
     const interval = setInterval(() => fetchData(), 30_000);
     return () => clearInterval(interval);
   }, [user]);
 
   if (!user) return <Navigate to="/admin/login" replace />;
 
-  if (loading) {
-    return (
-      <div className="max-w-7xl mx-auto px-6 py-20 text-center text-graphite">
-        <div className="animate-pulse">Loading analytics...</div>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="max-w-7xl mx-auto px-6 py-20 text-center text-warn">
-        <div>{error}</div>
-      </div>
-    );
-  }
+  if (loading) return (
+    <div className="max-w-7xl mx-auto px-6 py-20 text-center text-graphite animate-pulse">Loading analytics…</div>
+  );
+  if (error) return (
+    <div className="max-w-7xl mx-auto px-6 py-20 text-center text-warn">{error}</div>
+  );
 
   const {
-    peakHours = {},
-    peakHoursByService = { general: {}, consultation: {}, transaction: {} },
-    totalIssued = 0,
-    totalExpired = 0,
-    dropOffRate = 0,
-    avgWaitSeconds = 0,
-    staffingRecommendation = []
+    peakHours = {}, peakHoursByService = {},
+    totalIssued = 0, totalExpired = 0,
+    dropOffRate = 0, avgWaitSeconds = 0,
+    staffingRecommendation = [],
+    serviceDistribution = {},
+    dailyTrend = {},
   } = data || {};
 
-  const maxPeak = Math.max(...Object.values(peakHours), 1);
+  const fmt12h = (h) => h === 0 ? '12a' : h === 12 ? '12p' : h < 12 ? `${h}a` : `${h - 12}p`;
+  const waitDisplay = avgWaitSeconds < 60 ? `${Math.round(avgWaitSeconds)}s` : `${Math.round(avgWaitSeconds / 60)} min`;
+
   const hours = Array.from({ length: 24 }, (_, i) => i);
-  const { general = {}, consultation = {}, transaction = {} } = peakHoursByService || {};
-
-  // Dynamically find the first and last hours that have data for x-axis labels
+  const maxPeak = Math.max(...Object.values(peakHours), 1);
   const activeHours = hours.filter(h => (peakHours[h] || 0) > 0);
-  const firstActive = activeHours.length > 0 ? activeHours[0] : 0;
-  const midActive = activeHours.length > 0 ? activeHours[Math.floor(activeHours.length / 2)] : 12;
-  const lastActive = activeHours.length > 0 ? activeHours[activeHours.length - 1] : 23;
+  const firstH = activeHours[0] ?? 0;
+  const midH = activeHours[Math.floor(activeHours.length / 2)] ?? 12;
+  const lastH = activeHours[activeHours.length - 1] ?? 23;
 
-  const fmt12h = (h) => {
-    if (h === 0) return '12 AM';
-    if (h === 12) return '12 PM';
-    return h < 12 ? `${h} AM` : `${h - 12} PM`;
-  };
+  const dailyEntries = Object.entries(dailyTrend).map(([date, count]) => ({
+    label: new Date(date).toLocaleDateString(undefined, { weekday: 'short' }),
+    count,
+    date,
+  }));
+  const maxDaily = Math.max(...dailyEntries.map(d => d.count), 1);
 
-  const waitDisplay = avgWaitSeconds < 60
-    ? `${Math.round(avgWaitSeconds)}s`
-    : `${Math.round(avgWaitSeconds / 60)} min`;
+  const distEntries = Object.entries(serviceDistribution).map(([svc, count]) => ({
+    service: svc,
+    label: getServiceLabel(svc, cfg.industry),
+    count,
+  })).sort((a, b) => b.count - a.count);
+  const maxDist = Math.max(...distEntries.map(d => d.count), 1);
+  const totalDist = distEntries.reduce((s, d) => s + d.count, 0) || 1;
+
+  // Peak hours bar chart data with stacked services
+  const serviceKeys = Object.keys(peakHoursByService);
 
   return (
     <div className="max-w-7xl mx-auto px-6 py-10">
-      <div className="mb-10 flex items-center justify-between">
+      {/* Header */}
+      <div className="mb-8 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <div className="label">Admin / Data Mining</div>
-          <h1 className="font-display text-5xl tracking-tightest leading-none mt-2">
-            Analytics
-          </h1>
+          <div className="label">Admin · Analytics</div>
+          <h1 className="font-display text-5xl tracking-tightest leading-none mt-2">Analytics</h1>
         </div>
-        <div className="flex items-center gap-3">
-          {lastUpdated && (
-            <span className="text-xs text-graphite">
-              Updated {lastUpdated.toLocaleTimeString()}
-            </span>
-          )}
-          <button
-            onClick={() => fetchData(true)}
-            disabled={refreshing}
-            className="btn-secondary text-sm"
-          >
+        <div className="flex items-center gap-3 flex-wrap">
+          {lastUpdated && <span className="text-xs text-graphite">Updated {lastUpdated.toLocaleTimeString()}</span>}
+          <button onClick={() => fetchData(true)} disabled={refreshing} className="btn-secondary text-sm">
             {refreshing ? 'Refreshing…' : '↻ Refresh'}
           </button>
-          <Link to="/admin" className="btn-secondary text-sm">← Back to Dashboard</Link>
+          <a
+            href={`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:4000/api/v1'}/admin/analytics/export`}
+            download="queue_events.csv"
+            className="btn-secondary text-sm"
+          >
+            Export CSV
+          </a>
+          <Link to="/admin" className="btn-secondary text-sm">← Dashboard</Link>
         </div>
       </div>
 
-      {/* Metrics row */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-px bg-rule mb-10">
-        <div className="bg-paper p-5">
-          <Stat label="Total Tokens Issued" value={totalIssued} />
-        </div>
-        <div className="bg-paper p-5">
-          <Stat label="Total Expired (Abandoned)" value={totalExpired} />
-        </div>
-        <div className="bg-paper p-5">
-          <Stat label="Avg. Drop-off Rate" value={`${(dropOffRate * 100).toFixed(1)}%`} accent />
-        </div>
-        <div className="bg-paper p-5">
-          <Stat label="Avg. Wait Time" value={waitDisplay} />
-        </div>
+      {/* KPI row */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-px bg-rule mb-8">
+        <div className="bg-paper p-5"><Stat label="Total Issued" value={totalIssued} /></div>
+        <div className="bg-paper p-5"><Stat label="Expired / Abandoned" value={totalExpired} /></div>
+        <div className="bg-paper p-5"><Stat label="Drop-off Rate" value={`${(dropOffRate * 100).toFixed(1)}%`} accent /></div>
+        <div className="bg-paper p-5"><Stat label="Avg Wait" value={waitDisplay} /></div>
       </div>
 
-      <div className="grid lg:grid-cols-2 gap-8">
-        {/* Peak Hours Chart */}
+      <div className="grid lg:grid-cols-2 gap-6 mb-6">
+        {/* Daily trend — last 7 days */}
         <div className="card">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-6">
-            <h2 className="font-display text-2xl">Traffic Peak Hours</h2>
-            <div className="flex gap-3 text-xs text-graphite mt-2 sm:mt-0">
-              <span className="flex items-center gap-1"><span className="w-2 h-2 bg-blue-500 rounded-full"></span> General</span>
-              <span className="flex items-center gap-1"><span className="w-2 h-2 bg-green-500 rounded-full"></span> Consult</span>
-              <span className="flex items-center gap-1"><span className="w-2 h-2 bg-purple-500 rounded-full"></span> Transact</span>
+          <h2 className="font-display text-2xl mb-5">7-Day Trend</h2>
+          <BarChart data={dailyEntries} maxVal={maxDaily} color="#4B6FBF" labelKey="label" valueKey="count" />
+          <div className="flex justify-between mt-3 text-xs text-graphite">
+            {dailyEntries.map(d => <span key={d.date}>{d.label}</span>)}
+          </div>
+        </div>
+
+        {/* Service distribution */}
+        <div className="card">
+          <h2 className="font-display text-2xl mb-5">Service Distribution</h2>
+          {distEntries.length === 0 ? (
+            <div className="text-center py-10 text-graphite">No data yet.</div>
+          ) : (
+            <div className="space-y-3">
+              {distEntries.map((d, i) => (
+                <div key={d.service}>
+                  <div className="flex justify-between text-xs mb-1">
+                    <span className="font-medium">{d.label}</span>
+                    <span className="text-graphite">{d.count} · {((d.count / totalDist) * 100).toFixed(0)}%</span>
+                  </div>
+                  <div className="h-2 bg-rule rounded-full overflow-hidden">
+                    <div
+                      className="h-full rounded-full transition-all"
+                      style={{ width: `${(d.count / maxDist) * 100}%`, background: COLORS[i % COLORS.length] }}
+                    />
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+
+      <div className="grid lg:grid-cols-2 gap-6">
+        {/* Peak hours stacked bar */}
+        <div className="card">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-5 gap-2">
+            <h2 className="font-display text-2xl">Peak Hours</h2>
+            <div className="flex flex-wrap gap-3 text-xs text-graphite">
+              {serviceKeys.map((k, i) => (
+                <span key={k} className="flex items-center gap-1">
+                  <span className="w-2 h-2 rounded-full" style={{ background: COLORS[i % COLORS.length] }} />
+                  {getServiceLabel(k, cfg.industry)}
+                </span>
+              ))}
             </div>
           </div>
-          <div className="flex items-end gap-1 h-48 border-b border-l border-rule pb-2 pl-2">
+          <div className="flex items-end gap-0.5 h-40 border-b border-l border-rule pb-1 pl-1">
             {hours.map(h => {
-              const countG = general[h] || 0;
-              const countC = consultation[h] || 0;
-              const countT = transaction[h] || 0;
-              
-              const heightPctG = (countG / maxPeak) * 100;
-              const heightPctC = (countC / maxPeak) * 100;
-              const heightPctT = (countT / maxPeak) * 100;
-
+              const total = peakHours[h] || 0;
+              const pct = (total / maxPeak) * 100;
               return (
                 <div key={h} className="flex-1 flex flex-col justify-end group relative h-full">
-                  <div className="flex flex-col justify-end w-full h-full">
-                    <div className="bg-purple-500 hover:opacity-80 transition-all w-full" style={{ height: `${heightPctT}%` }}></div>
-                    <div className="bg-green-500 hover:opacity-80 transition-all w-full" style={{ height: `${heightPctC}%` }}></div>
-                    <div className="bg-blue-500 hover:opacity-80 transition-all w-full" style={{ height: `${heightPctG}%` }}></div>
-                  </div>
-                  <span className="absolute -bottom-6 left-1/2 -translate-x-1/2 text-[10px] text-graphite opacity-0 group-hover:opacity-100 transition-opacity">
-                    {h}:00
-                  </span>
+                  <div className="w-full" style={{ height: `${pct}%`, background: COLORS[0], opacity: 0.8 }} />
+                  {total > 0 && (
+                    <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 hidden group-hover:block text-xs bg-ink text-paper px-1.5 py-0.5 whitespace-nowrap z-10">
+                      {fmt12h(h)}: {total}
+                    </div>
+                  )}
                 </div>
               );
             })}
           </div>
-          <div className="flex justify-between mt-4 text-xs text-graphite">
-            <span>{fmt12h(firstActive)}</span>
-            <span>{fmt12h(midActive)}</span>
-            <span>{fmt12h(lastActive)}</span>
+          <div className="flex justify-between mt-2 text-xs text-graphite">
+            <span>{fmt12h(firstH)}</span>
+            <span>{fmt12h(midH)}</span>
+            <span>{fmt12h(lastH)}</span>
           </div>
         </div>
 
-        {/* Dynamic Staffing Recommendation */}
-        <div className="card flex flex-col justify-center">
-          <h2 className="font-display text-2xl mb-4 text-accent">Smart Staffing Recommendation</h2>
-          <p className="text-sm text-graphite mb-6">
-            Based on historical data mining analysis, we recommend opening extra counters during high-traffic periods to minimize the {Math.round(avgWaitSeconds / 60)} min average wait time.
+        {/* Smart staffing recommendation */}
+        <div className="card flex flex-col">
+          <h2 className="font-display text-2xl mb-3 text-accent">Smart Staffing</h2>
+          <p className="text-sm text-graphite mb-5">
+            Based on {totalIssued} tokens and {waitDisplay} avg wait. Open additional counters during flagged hours.
           </p>
-          <div className="bg-ink text-paper p-6 text-sm">
+          <div className="bg-ink text-paper p-5 text-sm flex-1">
             {staffingRecommendation.length > 0 ? (
               <>
-                <div className="mb-2 uppercase tracking-widest text-xs opacity-70">Peak Load Detected</div>
-                <div>We recommend having at least <strong>3 active counters</strong> during the following hours:</div>
-                <div className="mt-4 flex flex-wrap gap-2">
+                <div className="text-xs uppercase tracking-widest text-paper/60 mb-3">Peak load detected</div>
+                <div className="mb-4">Recommend <strong>3+ active counters</strong> during:</div>
+                <div className="flex flex-wrap gap-2">
                   {staffingRecommendation.map(h => (
-                    <span key={h} className="bg-paper/20 px-2 py-1 rounded">
-                      {h}:00 - {h + 1}:00
-                    </span>
+                    <span key={h} className="bg-paper/15 px-2 py-1 text-xs">{h}:00–{h + 1}:00</span>
                   ))}
                 </div>
               </>
             ) : (
-              <div>Traffic is currently light across all hours. 1 active counter should be sufficient.</div>
+              <div className="text-paper/70">Traffic is light across all hours. 1 counter is sufficient.</div>
             )}
           </div>
+          {totalIssued > 0 && (
+            <div className="mt-4 pt-4 border-t border-rule">
+              <div className="text-xs text-graphite">
+                Completion rate: <strong>{((1 - dropOffRate) * 100).toFixed(0)}%</strong> of tokens served ·
+                {' '}{totalExpired} abandoned
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </div>

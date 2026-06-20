@@ -1,10 +1,3 @@
-/**
- * Firebase Admin SDK initialization.
- *
- * Initialized exactly once and reused across the application. The Admin SDK
- * uses a service account credential and bypasses the database security rules,
- * so we treat this client as the trusted server-side identity.
- */
 const admin = require('firebase-admin');
 const config = require('./env');
 
@@ -21,18 +14,20 @@ if (!admin.apps.length) {
 
 const db = admin.database();
 
-// Reference helpers - centralizing path strings here keeps the schema
-// documented in one place and avoids typos scattered across services.
 const refs = {
-  // Active queue state - the single source of truth the frontend listens to.
-  queueState: () => db.ref('queue/state'),       // { status: "running"|"paused", currentTokenNumber, lastCalledAt }
-  tokens: () => db.ref('queue/tokens'),          // { [tokenId]: { number, status, ... } }
+  queueState: () => db.ref('queue/state'),
+  tokens: () => db.ref('queue/tokens'),
   token: (id) => db.ref(`queue/tokens/${id}`),
-  counter: () => db.ref('queue/counter'),        // monotonically increasing token number
-
-  // Admin accounts - written via bootstrap, read on login.
+  counter: () => db.ref('queue/counter'),
   admins: () => db.ref('admins'),
   admin: (username) => db.ref(`admins/${username}`),
+  staff: () => db.ref('staff'),
+  staffMember: (username) => db.ref(`staff/${username}`),
+  presence: () => db.ref('presence'),
+  presenceMember: (username) => db.ref(`presence/${username}`),
+  appConfig: () => db.ref('config'),
+  feedback: () => db.ref('feedback'),
+  feedbackEntry: (tokenId) => db.ref(`feedback/${tokenId}`),
 };
 
 module.exports = { admin, db, refs };
