@@ -78,18 +78,13 @@ export default function Layout({ children }) {
     <div className="min-h-screen flex flex-col">
       <header className="border-b border-rule sticky top-0 z-40 bg-paper print:hidden">
         <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 xl:px-10 py-3 flex items-center justify-between gap-4">
-          {/* Logo + org identity */}
-          <Link to={logoTarget} className="flex items-start gap-2 shrink-0 group">
+          {/* Logo only — org identity lives in the footer status bar */}
+          <Link to={logoTarget} className="flex items-center shrink-0 group">
             <img
               src={logoSrc}
               alt="QueueLess"
-              className="h-6 sm:h-7 w-auto transition-opacity duration-200 mt-0.5"
+              className="h-6 sm:h-7 w-auto transition-opacity duration-200"
             />
-            {cfg?.orgName && cfg.orgName !== 'QueueLess' && (
-              <div className="hidden sm:flex flex-col justify-center leading-none">
-                <span className="text-xs font-medium text-ink">{cfg.orgName}</span>
-              </div>
-            )}
           </Link>
 
           {/* Desktop nav */}
@@ -383,14 +378,17 @@ export default function Layout({ children }) {
           <div className="flex items-center gap-2 min-w-0">
             {cfg?.orgName && cfg.orgName !== 'QueueLess' ? (
               <span
-                className="font-medium text-ink truncate"
+                className="flex items-center gap-1.5 min-w-0 truncate"
                 title={cfg.location ? `${cfg.orgName} · ${cfg.location}` : cfg.orgName}
               >
-                <span className="mr-1 opacity-60">📍</span>
-                <span>{cfg.orgName}</span>
+                {/* Location pin SVG — inherits currentColor for light/dark */}
+                <svg className="w-3 h-3 text-graphite shrink-0" viewBox="0 0 12 16" fill="currentColor" aria-hidden="true">
+                  <path d="M6 0C3.24 0 1 2.24 1 5c0 3.75 5 11 5 11s5-7.25 5-11c0-2.76-2.24-5-5-5zm0 6.75A1.75 1.75 0 1 1 6 3.25a1.75 1.75 0 0 1 0 3.5z"/>
+                </svg>
+                <span className="font-medium text-ink">{cfg.orgName}</span>
                 {cfg.location && (
                   <>
-                    <span className="mx-1.5 text-rule">·</span>
+                    <span className="text-rule">·</span>
                     <span className="text-graphite font-normal">{cfg.location}</span>
                   </>
                 )}
