@@ -1,304 +1,391 @@
-# QueueLess — Smart Queue Management & Analytics
+# QueueLess — Smart Queue Token Management System
 
 > **Bahria University Karachi · Department of Software Engineering · Spring 2026**
-> A unified project covering two parallel course submissions:
+> Submitted for two parallel course requirements:
 > - **SEL-401 Cloud Computing Lab** — *QueueLess: Smart Token & Queue Management System*
 > - **CSL-460 Data Mining Lab** — *QueueLess: Smart Queue Analytics & Prediction System*
 
+**Live:** [queueless-beta.vercel.app](https://queueless-beta.vercel.app)  
+**Author:** Muhammad Sufiyan Aasim · [@msufiyanpk](https://github.com/msufiyanpk)  
+**Institution:** Bahria University Karachi · Department of Software Engineering
+
 ---
 
-This project spans two layers of the *same* system. The Cloud Computing project issues digital tokens and tracks live queue state in Firebase; every queue event is *dual-written* to both MongoDB Atlas and a CSV event log. The Data Mining project mines that log for waiting-time predictions, peak-hour patterns, and operational insights. Keeping the code in one repository means the schema cannot drift — what the backend writes is exactly what the pipeline expects to read.
+## What is QueueLess?
 
-**Author:** Muhammad Sufiyan Aasim  
-**GitHub:** [msufiyanpk](https://github.com/msufiyanpk)  
-**Institution:** Bahria University Karachi Campus · Department of Software Engineering
+QueueLess is a full-stack digital queue management system that replaces paper tokens with a real-time, browser-based experience. Customers take tokens from their phone, track their live position in the queue, and get notified the moment their number is called — no app download required.
+
+Admins and staff manage the queue from a dedicated portal with a live dashboard, ML-assisted auto mode, analytics, and per-service staff portals. Every queue event is dual-written to both MongoDB Atlas and a CSV event log, feeding a Python data mining pipeline that performs waiting-time predictions, peak-hour heatmaps, and staffing recommendations.
+
+---
+
+## Features
+
+### Customer-facing
+- **Take a token** — pick a service, request priority if needed (elderly, medical, VIP), and get a token number instantly
+- **Live position tracking** — real-time queue position with estimated wait time, powered by Firebase WebSocket
+- **Confetti + sound alert** — browser celebration when your token is called
+- **Push notifications** — browser notification when your number is called, even in a background tab
+- **Token history** — see all tokens ever taken on this device
+- **QR code on home page** — scan to join the queue without typing a URL
+- **Email tracking link** — optional email with your token number and live-tracking link
+- **Feedback** — submit a star rating + comment after being served
+
+### Admin portal (`/admin`)
+- **Live dashboard** — real-time queue state per service, waiting list with priority badges, serving-now card
+- **Call next / skip / no-show** — advance the queue or mark a token expired
+- **Pause / resume / reset** — full queue control
+- **ML Auto Mode** — automatically calls next tokens on a dynamically calculated interval derived from historical wait times and time-of-day traffic patterns
+- **Priority token system** — priority tokens (VIP, emergency, elderly) are always served before normal tokens, FIFO within same level
+- **Analytics dashboard** — 7-day bar chart, service distribution, CSV export, auto-refreshes every 30 seconds
+- **Detailed report** — full traffic heatmap by service and hour, drop-off rate, staffing recommendations, print to PDF
+- **Staff management** — create/remove staff members, assign services, set optional PIN for kiosk login, see who is online/offline in real time
+- **Feedback viewer** — read all customer ratings and comments with average score
+- **Settings** — set organisation name, switch industry profile (General / Bank / Medical / Restaurant)
+- **Password change** — change admin password from within the portal
+
+### Staff portal (`/staff`)
+- **Separate login** — staff authenticate with username + password or PIN via kiosk mode
+- **Service-scoped dashboard** — staff can only call next for their assigned service
+- **Online/offline presence** — Firebase-powered live presence dots visible to admin
+- **Staff kiosk** (`/kiosk`) — fullscreen PIN numpad for shared terminals, shake animation on wrong PIN
+
+### Display board (`/display`)
+- Fullscreen TV-optimised view showing the currently called token per service, no login required
+
+### Industry profiles
+Four built-in profiles that configure the available services across the entire system:
+
+| Profile | Services |
+|---|---|
+| **General Office** | General Inquiry, Consultation, Transaction |
+| **Bank / Finance** | New Account, Loan Application, Foreign Exchange, Card Services, General Banking |
+| **Medical / Hospital** | OPD / Doctor, Lab Tests, Pharmacy, Radiology, Emergency (auto-priority) |
+| **Restaurant / Dining** | Table 1–2, Table 3–4, Table 5+, Takeaway |
 
 ---
 
 ## Tech Stack
 
 ### Frontend
-| Technology | Purpose |
-|---|---|
-| **React 18** | UI component framework |
-| **Vite** | Build tool & dev server |
-| **React Router v6** | Client-side routing |
-| **Tailwind CSS** | Utility-first styling with custom design tokens |
-| **Firebase JS SDK** | Real-time WebSocket subscriptions for live queue state |
-| **Axios** | HTTP client with JWT interceptors |
-| **Vercel** | Hosting & CI/CD (auto-deploy on push to `main`) |
+| Technology | Version | Purpose |
+|---|---|---|
+| React | 18 | UI component framework |
+| Vite | 5 | Build tool & dev server |
+| React Router | v6 | Client-side routing |
+| Tailwind CSS | 3 | Utility-first styling with custom design tokens |
+| Firebase JS SDK | 10 | Real-time WebSocket subscriptions for live queue state and staff presence |
+| Axios | 1.x | HTTP client with JWT interceptors |
+| canvas-confetti | — | Confetti animation on token called |
+| qrcode | — | QR code generation on home page |
 
 ### Backend
-| Technology | Purpose |
-|---|---|
-| **Node.js 20** | JavaScript runtime |
-| **Express.js** | REST API framework |
-| **Firebase Admin SDK** | Realtime Database writes & atomic multi-path updates |
-| **MongoDB Atlas (via `mongodb` driver)** | Analytics event store (dual-written with CSV) |
-| **JSON Web Tokens (JWT)** | Admin authentication & route protection |
-| **bcryptjs** | Admin password hashing |
-| **Joi** | Environment variable validation at boot |
-| **Jest + Supertest** | Unit & integration tests (9 tests, all passing) |
-| **Render** | Cloud hosting with auto-deploy hooks |
+| Technology | Version | Purpose |
+|---|---|---|
+| Node.js | 20 | JavaScript runtime |
+| Express.js | 4 | REST API framework |
+| Firebase Admin SDK | 12 | Realtime Database writes, atomic multi-path updates, presence management |
+| MongoDB Atlas | via `mongodb` driver | Analytics event store (dual-written with CSV) |
+| JSON Web Tokens | — | Admin and staff authentication, role + service claims |
+| bcryptjs | — | Password hashing for admin and staff PINs |
+| Joi | — | Environment variable validation at boot |
+| express-rate-limit | — | PIN login brute-force protection |
+| nodemailer | — | Optional token email with tracking link |
+| Jest + Supertest | — | Unit and integration tests |
 
 ### Database & Cloud
-| Technology | Purpose |
+| Service | Purpose |
 |---|---|
-| **Firebase Realtime Database** | Live queue state (`queue/state`, `queue/tokens`) |
-| **MongoDB Atlas** | Persistent analytics event log (`queue_events` collection) |
-| **Firebase Cloud Functions** | Scheduled token expiry (cron every 5 min) |
+| Firebase Realtime Database | Live queue state (`queue/state`, `queue/tokens`, `presence`) |
+| MongoDB Atlas | Persistent analytics event log (`queue_events` collection) |
 
-### Data Mining / Analytics
+### Analytics / Data Mining
 | Technology | Purpose |
 |---|---|
-| **Python 3.11** | Pipeline language |
-| **pandas** | Data cleaning, preprocessing, aggregation |
-| **scikit-learn** | Linear regression with cyclical hour encoding |
-| **matplotlib** | Chart generation (6 charts in QueueLess style) |
-| **Jupyter Notebook** | Academic report generation |
-| **joblib** | Model serialization |
+| Python 3.11 | Pipeline language |
+| pandas | Data cleaning, preprocessing, aggregation |
+| scikit-learn | Linear regression with cyclical hour encoding (R² = 0.893, MAE = 2.21 min) |
+| matplotlib | Chart generation (6 charts in QueueLess editorial style) |
+| Jupyter Notebook | Academic report (auto-generated, fully executed) |
+| joblib | Model serialisation |
 
-### DevOps & CI/CD
-| Technology | Purpose |
+### DevOps & Hosting
+| Service | Purpose |
 |---|---|
-| **GitHub Actions** | 3 CI workflows (backend tests, frontend build, analytics smoke test) |
-| **Vercel** | Frontend auto-deploy on every push + preview URLs per PR |
-| **Render** | Backend auto-deploy via deploy hook triggered from CI |
-| **Dependabot** | Automated dependency security PRs |
+| Vercel | Frontend hosting, auto-deploy on push to `main`, SPA rewrites |
+| Render | Backend hosting, auto-deploy via `render.yaml` |
+| Firebase | Realtime Database + Security Rules |
+| GitHub Actions | CI workflows — backend tests, frontend build verification, Firebase rules deploy |
 
 ---
 
-## What's inside
+## Project Structure
 
 ```
 queueless/
-├── backend/                    # Node.js + Express REST API (deployed to Render)
+├── backend/                        # Node.js + Express REST API → Render
 │   ├── src/
-│   │   ├── config/             # env validation, Firebase Admin init
-│   │   ├── services/           # queue logic, auth, analytics dual-write
-│   │   ├── controllers/        # thin HTTP handlers
-│   │   ├── routes/             # auth, tokens (public), admin (JWT-protected)
-│   │   ├── middleware/         # JWT auth, validation, error handling
-│   │   ├── app.js              # Express factory
-│   │   └── server.js           # entry point with graceful shutdown
-│   ├── tests/                  # Jest + Supertest smoke tests (9 tests, all passing)
-│   ├── package.json
-│   └── .env.example
+│   │   ├── config/
+│   │   │   ├── env.js              # Joi environment validation
+│   │   │   └── firebase.js         # Admin SDK init + database refs
+│   │   ├── services/
+│   │   │   ├── queue.service.js    # Token issuance, call next, skip, expiry
+│   │   │   ├── auth.service.js     # Admin login, password change
+│   │   │   ├── staff.service.js    # Staff CRUD, PIN login
+│   │   │   ├── analytics.service.js# Dual-write (MongoDB + CSV), traffic stats
+│   │   │   ├── autoMode.service.js # ML-assisted auto-call with dynamic interval
+│   │   │   ├── expiry.service.js   # Token expiry sweeper (every 5 min)
+│   │   │   └── email.service.js    # Nodemailer (optional)
+│   │   ├── controllers/
+│   │   │   ├── admin.controller.js
+│   │   │   ├── staff.controller.js
+│   │   │   ├── token.controller.js
+│   │   │   └── feedback.controller.js
+│   │   ├── routes/
+│   │   │   ├── admin.routes.js     # /admin/* — JWT protected, admin role only
+│   │   │   ├── staff.routes.js     # /staff/* — JWT protected, staff role
+│   │   │   └── token.routes.js     # /tokens/* — public
+│   │   ├── middleware/
+│   │   │   ├── auth.js             # JWT verification, role + service extraction
+│   │   │   ├── validate.js         # Joi request body validation
+│   │   │   └── errorHandler.js     # Centralised error responses
+│   │   ├── utils/
+│   │   │   └── asyncHandler.js
+│   │   ├── app.js                  # Express factory (CORS, rate-limit, routes)
+│   │   └── server.js               # Entry point, graceful shutdown, expiry sweep boot
+│   ├── tests/                      # Jest + Supertest
+│   ├── .env.example
+│   └── package.json
 │
-├── frontend/                   # React + Vite + Tailwind (deployed to Vercel)
+├── frontend/                       # React + Vite + Tailwind → Vercel
 │   ├── src/
-│   │   ├── pages/              # Home, TakeToken, MyToken, Lookup, AdminLogin,
-│   │   │                       # AdminDashboard, AdminAnalytics, AdminReport
-│   │   ├── components/         # Layout, StatusBadge, Stat
-│   │   ├── hooks/              # useQueueState (Firebase live subscription)
-│   │   ├── services/           # Axios API client with JWT injection
-│   │   ├── context/            # AuthContext
-│   │   └── firebase.js         # Client SDK init
+│   │   ├── pages/
+│   │   │   ├── Home.jsx            # Landing page + QR code to join queue
+│   │   │   ├── TakeToken.jsx       # Service selection, priority toggle, email
+│   │   │   ├── MyToken.jsx         # Live token tracking, confetti, push notification
+│   │   │   ├── Lookup.jsx          # Recover token by ID or from device storage
+│   │   │   ├── Feedback.jsx        # Star rating + comment after served
+│   │   │   ├── TokenHistory.jsx    # All tokens taken on this device
+│   │   │   ├── Display.jsx         # TV display board (/display)
+│   │   │   ├── AdminLogin.jsx
+│   │   │   ├── AdminDashboard.jsx  # Live queue, call next, skip, pause, auto mode
+│   │   │   ├── AdminAnalytics.jsx  # 7-day chart, service distribution, CSV export
+│   │   │   ├── AdminReport.jsx     # Heatmap, staffing AI suggestions, print to PDF
+│   │   │   ├── AdminStaff.jsx      # Create/remove staff, live presence, PIN field
+│   │   │   ├── AdminFeedback.jsx   # Customer ratings viewer
+│   │   │   ├── AdminSetup.jsx      # Org name, industry profile
+│   │   │   ├── AdminChangePassword.jsx
+│   │   │   ├── StaffLogin.jsx      # Staff username + password login
+│   │   │   ├── StaffDashboard.jsx  # Service-scoped queue view for staff
+│   │   │   └── StaffKiosk.jsx      # Fullscreen PIN numpad (/kiosk)
+│   │   ├── components/
+│   │   │   ├── Layout.jsx          # Nav (public / admin / staff), dark mode toggle, hamburger
+│   │   │   ├── StatusBadge.jsx
+│   │   │   └── Stat.jsx
+│   │   ├── context/
+│   │   │   ├── AuthContext.jsx     # Admin JWT state
+│   │   │   ├── StaffContext.jsx    # Staff JWT state + loginDirect for kiosk
+│   │   │   └── ThemeContext.jsx    # Dark mode toggle, persisted to localStorage
+│   │   ├── hooks/
+│   │   │   ├── useQueueState.js    # Firebase live subscription to queue/state + tokens
+│   │   │   ├── useTokenLive.js     # Live subscription to a single token
+│   │   │   ├── useAppConfig.js     # Fetches org config (industry, orgName)
+│   │   │   ├── usePresence.js      # Firebase onDisconnect presence for staff
+│   │   │   └── usePushNotification.js # Browser Notifications API wrapper
+│   │   ├── services/
+│   │   │   └── api.js              # Axios client, JWT interceptor (admin vs staff routing)
+│   │   ├── utils/
+│   │   │   └── industry.js         # 4 industry profiles, getServices(), getServiceLabel()
+│   │   └── firebase.js             # Firebase client SDK init
 │   ├── public/
-│   │   ├── svg/                # QueueLess SVG brand assets (wordmark, favicon, lockup)
-│   │   └── png/                # PNG variants of brand assets
-│   ├── tailwind.config.js      # Custom QueueLess design tokens
-│   ├── vercel.json             # SPA rewrites + security headers
-│   ├── package.json
-│   └── .env.example
+│   │   ├── svg/                    # QueueLess SVG brand assets
+│   │   └── png/                    # PNG brand assets
+│   ├── tailwind.config.js          # Custom design tokens + dark mode + animate-shake
+│   ├── vercel.json                 # SPA rewrites (/* → /index.html)
+│   └── package.json
 │
-├── firebase/                   # Cloud configuration
-│   ├── database.rules.json     # Security rules (read-only for clients, server writes)
-│   ├── firebase.json           # Project config
-│   └── functions/              # Serverless Cloud Function for token expiry
-│       ├── index.js            # Scheduled job, runs every 5 minutes
-│       └── package.json
+├── firebase/
+│   ├── database.rules.json         # Security rules — clients read-only, server writes,
+│   │                               # presence node client-writable, schema validation
+│   ├── firebase.json               # Firebase project config for CLI deploy
+│   └── .firebaserc                 # Project alias (queueless-tqms-pk)
 │
-├── analytics/                  # Data Mining pipeline (Python)
+├── analytics/                      # Python data mining pipeline
 │   ├── data_collection/
-│   │   ├── data_simulator.py   # Synthetic events generator (bimodal demand, lognormal service)
-│   │   ├── csv_writer.py       # Ad-hoc CSV writer
-│   │   └── mongo_writer.py     # MongoDB Atlas connector
+│   │   ├── data_simulator.py       # Synthetic events (bimodal demand, lognormal service)
+│   │   ├── csv_writer.py
+│   │   └── mongo_writer.py
 │   ├── data_cleaning/
-│   │   └── preprocess.py       # Raw events → tokens DataFrame with derived columns
+│   │   └── preprocess.py           # Raw events → tokens DataFrame, outlier flagging
 │   ├── analysis/
-│   │   ├── waiting_time.py     # Descriptive statistics, grouped views
-│   │   ├── peak_hours.py       # Frequency distribution, weekday × hour heatmap
-│   │   ├── moving_average.py   # Rolling-average predictor with backtest
-│   │   └── linear_regression.py # sklearn LinearRegression with cyclical hour encoding
+│   │   ├── waiting_time.py         # Descriptive stats, grouped views
+│   │   ├── peak_hours.py           # Frequency distribution, weekday × hour heatmap
+│   │   ├── moving_average.py       # Rolling-average predictor with backtest
+│   │   └── linear_regression.py    # sklearn LinearRegression, cyclical hour encoding
 │   ├── visualization/
-│   │   └── charts.py           # Six matplotlib charts in QueueLess editorial style
+│   │   └── charts.py               # 6 matplotlib charts in QueueLess editorial style
 │   ├── notebooks/
-│   │   └── QueueLess_Analysis.ipynb   # Academic submission (auto-generated, fully executed)
-│   ├── data/                   # CSV outputs + chart PNGs (regenerated by run_pipeline.py)
-│   ├── models/                 # Serialized linear regression model
+│   │   └── QueueLess_Analysis.ipynb
+│   ├── models/                     # Serialised regression model (.joblib)
+│   ├── data/                       # CSV outputs + chart PNGs (regenerated on each run)
 │   ├── requirements.txt
-│   ├── run_pipeline.py         # End-to-end orchestrator
-│   └── build_notebook.py       # Regenerates the notebook from modules
+│   ├── run_pipeline.py             # End-to-end orchestrator
+│   └── build_notebook.py           # Auto-generates the Jupyter notebook
 │
-├── .github/workflows/
-│   ├── backend-ci.yml          # Jest tests + Render deploy hook
-│   ├── frontend-ci.yml         # Vite build verification (Vercel handles deploy)
-│   └── analytics-ci.yml        # Python pipeline smoke test
+├── .github/
+│   └── workflows/
+│       ├── backend-ci.yml          # Jest tests on every push
+│       ├── frontend-ci.yml         # Vite build verification
+│       ├── analytics-ci.yml        # Python pipeline smoke test
+│       └── firebase-rules.yml      # Deploy RTDB rules when database.rules.json changes
 │
-└── README.md                   # This file
+├── render.yaml                     # Render blueprint (build + start + env var schema)
+├── LICENSE                         # MIT
+└── README.md
 ```
 
 ---
 
-## Quick start
+## Architecture
 
-### 1. Backend — local development
+```
+                    ┌──────────────────────────────────┐
+                    │     React (Vercel)               │
+                    │  /           → Home + QR code    │
+                    │  /take       → Issue token        │
+                    │  /token/:id  → Live tracking      │
+                    │  /display    → TV display board   │
+                    │  /staff      → Staff dashboard    │
+                    │  /kiosk      → PIN numpad         │
+                    │  /admin      → Admin portal       │
+                    └────────┬──────────────┬───────────┘
+                             │              │
+              REST /api/v1   │              │ Firebase WebSocket
+              (JWT auth)     │              │ (onValue — live state)
+                             ▼              ▼
+                    ┌──────────────────────────────────┐
+                    │   Node.js / Express (Render)     │
+                    │   — token issuance               │
+                    │   — queue control (call/skip)    │
+                    │   — ML auto mode                 │
+                    │   — staff + admin auth (JWT)     │
+                    │   — expiry sweeper (5 min cron)  │
+                    │   — DUAL-WRITE: MongoDB + CSV    │
+                    └────────┬──────────────┬───────────┘
+                             │              │
+                             ▼              ▼
+        ┌────────────────────────┐   ┌────────────────────────┐
+        │ Firebase Realtime DB  │   │  MongoDB Atlas          │
+        │ queue/state           │   │  queue_events           │
+        │ queue/tokens          │   │  (CSV fallback)         │
+        │ presence/{username}   │   │                         │
+        │ config/industry       │   └───────────┬────────────┘
+        │ admins (private)      │               │
+        └────────────────────────┘               ▼
+                                        ┌────────────────────────┐
+                                        │  Python DM pipeline    │
+                                        │  pandas + sklearn      │
+                                        │  R² 0.893 · MAE 2.21m  │
+                                        │  6 matplotlib charts   │
+                                        └────────────────────────┘
+```
+
+---
+
+## Quick Start (Local)
+
+### Backend
 
 ```bash
 cd backend
 cp .env.example .env
-# Fill in Firebase service-account credentials and a JWT_SECRET (64-byte hex).
-# Generate a secret with:
-#   node -e "console.log(require('crypto').randomBytes(64).toString('hex'))"
+# Fill in: FIREBASE_PROJECT_ID, FIREBASE_CLIENT_EMAIL, FIREBASE_PRIVATE_KEY,
+#          FIREBASE_DATABASE_URL, JWT_SECRET, ADMIN_USERNAME, ADMIN_PASSWORD
 npm install
-npm test            # runs the Jest suite (9 tests, all green) — no real Firebase needed
-npm run dev         # API live at http://localhost:4000
+npm test        # 9 tests, all green
+npm run dev     # http://localhost:4000
 ```
 
-### 2. Frontend — local development
+### Frontend
 
 ```bash
 cd frontend
 cp .env.example .env.local
-# Fill in the public Firebase web-config (apiKey, databaseURL, etc.) and
-# point VITE_API_BASE_URL at http://localhost:4000/api/v1
+# Fill in: VITE_API_BASE_URL=http://localhost:4000/api/v1
+# Fill in all VITE_FIREBASE_* values from Firebase Console > Project Settings
 npm install
-npm run dev         # UI live at http://localhost:5173
+npm run dev     # http://localhost:5173
 ```
 
-### 3. Data Mining pipeline — local execution
-
-The DM project is fully self-contained — it does not need the backend running:
+### Analytics Pipeline
 
 ```bash
 cd analytics
 pip install -r requirements.txt
-python run_pipeline.py            # simulator → preprocess → analytics → charts
-jupyter notebook notebooks/QueueLess_Analysis.ipynb
+python run_pipeline.py
+# Simulates 4,400+ events → cleans → trains model → generates 6 charts
+# If analytics/data/queue_events.csv exists from the live backend, uses real data
 ```
-
-If real backend data exists at `analytics/data/queue_events.csv`, the pipeline uses it.
-Otherwise the simulator produces statistically realistic synthetic events.
 
 ---
 
-## Cloud deployment
+## Deployment
 
-### Firebase
+### Firebase Rules
 
 ```bash
 cd firebase
 firebase login
-firebase use <your-project-id>
-firebase deploy --only database,functions
+firebase deploy --only database
 ```
 
-This pushes the security rules and the scheduled token-expiry Cloud Function. The function runs
-every 5 minutes (Asia/Karachi timezone) — see `firebase/functions/index.js`.
+### Backend → Render
 
-### Render — Backend
+1. New Web Service → connect this repo → root directory: `backend`
+2. Render auto-detects `render.yaml` for build/start commands
+3. Add secret environment variables in Render dashboard (see `backend/.env.example`)
 
-1. Create a new Web Service on Render, connect the GitHub repo, set the root directory to `backend/`.
-2. Build command: `npm ci`. Start command: `npm start`.
-3. Add every variable from `backend/.env.example` as an environment variable in the Render dashboard.
-4. Copy the deploy hook URL from Render → Settings → Deploy Hook.
-5. Add it as `RENDER_DEPLOY_HOOK` in GitHub repo Secrets.
+### Frontend → Vercel
 
-After this, every push to `main` triggers `.github/workflows/backend-ci.yml`, which runs the test
-suite and (on green) calls the deploy hook.
-
-### Vercel — Frontend
-
-1. Import the repo into Vercel, set the root directory to `frontend/`.
-2. Framework preset: Vite (auto-detected). Build command and output directory come from `vercel.json`.
-3. Add every variable from `frontend/.env.example` to Vercel's Environment Variables.
-4. That's it — Vercel auto-deploys every push to `main` and creates a preview URL for every PR.
+1. New Project → connect this repo → root directory: `frontend`
+2. Framework: Vite (auto-detected) — `frontend/vercel.json` handles SPA rewrites
+3. Add all `VITE_*` environment variables from `frontend/.env.example`
 
 ---
 
-## Architecture at a glance
+## Cloud Computing Concepts Demonstrated
 
-```
-                    ┌───────────────────────────┐
-                    │   React frontend (Vercel) │
-                    │   — public token UI       │
-                    │   — admin dashboard       │
-                    │   — analytics & report    │
-                    └──────────┬──────┬─────────┘
-                               │      │
-              REST (JWT)       │      │  WebSocket subscribe
-        for admin actions      │      │  for live queue state
-                               ▼      ▼
-                    ┌───────────────────────────┐
-                    │  Node/Express (Render)    │◄──── JWT auth
-                    │  — token issuance         │
-                    │  — queue control          │
-                    │  — DUAL-WRITE: every      │
-                    │    event → MongoDB +      │
-                    │    CSV simultaneously     │
-                    └──────────┬──────────┬─────┘
-                               │          │
-                               ▼          ▼
-        ┌─────────────────────────┐   ┌─────────────────────────┐
-        │  Firebase Realtime DB   │   │  MongoDB Atlas          │
-        │  — queue/state          │   │  — queue_events         │
-        │  — queue/tokens         │   │  (+ CSV fallback)       │
-        │  — admins (private)     │   │                         │
-        └─────────────────────────┘   └────────────┬────────────┘
-                    ▲                              │
-                    │ scheduled cron               ▼
-        ┌───────────┴─────────────┐   ┌─────────────────────────┐
-        │  Firebase Cloud Func.   │   │  Python DM pipeline     │
-        │  expireStaleTokens      │   │  pandas + scikit-learn  │
-        │  every 5 minutes        │   │  + matplotlib           │
-        └─────────────────────────┘   └─────────────────────────┘
-```
-
----
-
-## Cloud computing concepts demonstrated
-
-| Concept | Where it lives |
+| Concept | Implementation |
 |---|---|
-| Cloud hosting | Vercel (frontend) + Render (backend) |
-| Cloud database | Firebase Realtime Database + MongoDB Atlas |
-| Real-time data sync | Firebase WebSocket listeners in `useQueueState` hook |
-| REST API design | `backend/src/routes/` — versioned at `/api/v1/`, role-segregated |
-| Authentication | JWT issued by `auth.service.js`, verified by `middleware/auth.js` |
-| Role-based access control | `requireAdmin` middleware on all `/admin/*` routes |
-| Serverless computing | `firebase/functions/index.js` — scheduled token expiry |
-| CI/CD pipelines | `.github/workflows/` — automated tests + auto-deploy |
-| Security rules | `firebase/database.rules.json` — clients read-only, server writes |
-| Analytics pipeline | Admin Analytics + Generate Report pages with live MongoDB reads |
+| Cloud hosting (PaaS) | Vercel (frontend) + Render (backend) |
+| NoSQL cloud database | Firebase Realtime Database + MongoDB Atlas |
+| Real-time data sync | Firebase `onValue` WebSocket listeners |
+| REST API design | Versioned at `/api/v1/`, role-segregated routes |
+| JWT authentication | Admin + staff roles, service claim on staff token |
+| Role-based access control | `requireAdmin` / `requireStaff` middleware |
+| CI/CD pipelines | GitHub Actions — tests + build verification + rules deploy |
+| Security rules | Firebase RTDB rules — schema validation, read-only for clients |
+| Dual-write analytics | Every queue event → MongoDB + CSV simultaneously |
+| Presence detection | Firebase `onDisconnect()` for real-time staff online/offline |
 
-## Data mining concepts demonstrated
+## Data Mining Concepts Demonstrated
 
-| Concept | Where it lives |
+| Concept | Implementation |
 |---|---|
-| Structured data collection | Backend dual-write (MongoDB + CSV) + `data_simulator.py` |
-| Data cleaning & preprocessing | `data_cleaning/preprocess.py` — type coercion, outlier flagging, pivoting |
-| Aggregation / groupby | `analysis/waiting_time.py`, `analysis/peak_hours.py` |
+| Data collection | Backend dual-write + `data_simulator.py` synthetic generator |
+| Data cleaning | `preprocess.py` — type coercion, outlier flagging, derived columns |
+| Aggregation | Grouped wait times per service and hour |
 | Frequency distribution | Hourly volume bar chart, queue-length histogram |
-| Trend analysis | Daily mean wait line chart |
-| Linear regression | `analysis/linear_regression.py` — sklearn with cyclical hour encoding |
-| Moving-average predictor | `analysis/moving_average.py` — with proper backtest (no leakage) |
-| Model serialization | joblib in `analysis/linear_regression.py` |
-| Visualization | `visualization/charts.py` — six matplotlib charts |
-| Live in-browser analytics | `AdminAnalytics.jsx` — peak hours chart, drop-off rate, staffing recommendation |
-| Interactive report generation | `AdminReport.jsx` — dynamic heatmap + AI suggestions + print-to-PDF |
-| Reproducible report | `notebooks/QueueLess_Analysis.ipynb` — auto-generated by `build_notebook.py` |
+| Trend analysis | 7-day daily token count line chart |
+| Linear regression | sklearn with cyclical hour encoding (R² = 0.893, MAE = 2.21 min) |
+| Moving-average predictor | Backtest with no data leakage |
+| Model serialisation | joblib in `models/` |
+| Visualisation | 6 matplotlib charts in QueueLess editorial style |
+| Live in-browser analytics | AdminAnalytics — peak hours, service distribution, drop-off rate |
+| Interactive report | AdminReport — dynamic heatmap + AI staffing suggestions + print to PDF |
 
 ---
 
-## Verified working
+## License
 
-- **Backend tests:** 9/9 Jest tests pass (`cd backend && npm test`)
-- **Frontend build:** `cd frontend && npm run build` produces a clean production bundle
-- **Analytics pipeline:** `cd analytics && python run_pipeline.py` generates 6 charts and trains
-  the linear regression model end-to-end. The notebook executes cleanly start to finish.
-- **Live deployments:** Frontend on [queueless-liart.vercel.app](https://queueless-liart.vercel.app) · Backend on Render
-
----
-
-*QueueLess · Spring 2026 · Bahria University Karachi Campus*
+[MIT](LICENSE) © 2026 M Sufiyan Aasim ([@msufiyanpk](https://github.com/msufiyanpk))

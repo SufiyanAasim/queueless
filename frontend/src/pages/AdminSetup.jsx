@@ -7,11 +7,12 @@ import { INDUSTRY_PROFILES } from '../utils/industry.js';
 export default function AdminSetup() {
   const { user } = useAuth();
   const navigate = useNavigate();
-  if (!user) return <Navigate to="/admin/login" replace />;
   const [industry, setIndustry] = useState('general');
   const [orgName, setOrgName] = useState('');
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
+
+  if (!user) return <Navigate to="/admin/login" replace />;
 
   const handleSave = async () => {
     if (!orgName.trim()) { setError('Please enter your organisation name.'); return; }

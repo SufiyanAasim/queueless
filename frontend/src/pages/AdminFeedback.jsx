@@ -19,11 +19,12 @@ export default function AdminFeedback() {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  if (!user) return <Navigate to="/admin/login" replace />;
-
   useEffect(() => {
+    if (!user) return;
     apiFeedback().then(setData).finally(() => setLoading(false));
-  }, []);
+  }, [user]);
+
+  if (!user) return <Navigate to="/admin/login" replace />;
 
   if (loading) {
     return <div className="max-w-7xl mx-auto px-4 sm:px-6 xl:px-10 py-24 text-center text-graphite">Loading feedback…</div>;
