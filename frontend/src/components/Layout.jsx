@@ -76,7 +76,7 @@ export default function Layout({ children }) {
 
   return (
     <div className="min-h-screen flex flex-col">
-      <header className="border-b border-rule sticky top-0 z-40 bg-paper">
+      <header className="border-b border-rule sticky top-0 z-40 bg-paper print:hidden">
         <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 xl:px-10 py-3 flex items-center justify-between gap-4">
           {/* Logo + org identity */}
           <Link to={logoTarget} className="flex items-start gap-2 shrink-0 group">
@@ -378,7 +378,7 @@ export default function Layout({ children }) {
 
       <main className="flex-1">{children}</main>
 
-      <footer className="border-t border-rule mt-12">
+      <footer className="border-t border-rule mt-12 print:hidden">
         <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 xl:px-10 py-4 flex flex-col sm:flex-row gap-2 sm:gap-6 items-start sm:items-center justify-between text-xs text-graphite">
           <div className="flex items-center gap-2 min-w-0">
             {cfg?.orgName && cfg.orgName !== 'QueueLess' ? (
