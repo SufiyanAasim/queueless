@@ -104,4 +104,29 @@ async function deleteStaff(username) {
   ]);
 }
 
-module.exports = { createStaff, loginStaff, loginByPin, listStaff, deleteStaff };
+async function getStaffProfile(username) {
+  const snap = await refs.staffMember(username).once('value');
+  const a = snap.val();
+  if (!a) throw Object.assign(new Error('Account not found.'), { statusCode: 404 });
+  return { username: a.username, displayName: a.displayName || a.username, service: a.service, role: 'staff', createdAt: a.createdAt };
+}
+
+async function updateStaffProfile(username, { displayName }) {
+  if (!displayName || !displayName.trim()) throw Object.assign(new Error('Display name is required.'), { statusCode: 400 });
+  if (displayName.trim().length > 50) throw Object.assign(new Error('Display name must be 50 characters or less.'), { statusCode: 400 });
+  await refs.staffMember(username).update({ displayName: displayName.trim() });
+  return { displayName: displayName.trim() };
+}
+
+async function changeStaffPassword(username, currentPassword, newPassword) {
+  const snap = await refs.staffMember(username).once('value');
+  const account = snap.val();
+  if (!account) throw Object.assign(new Error('Account not found.'), { statusCode: 404 });
+  const ok = await bcrypt.compare(currentPassword, account.passwordHash);
+  if (!ok) throw Object.assign(new Error('Current password is incorrect.'), { statusCode: 401 });
+  if (newPassword.length < 8) throw Object.assign(new Error('New password must be at least 8 characters.'), { statusCode: 400 });
+  const passwordHash = await bcrypt.hash(newPassword, BCRYPT_ROUNDS);
+  await refs.staffMember(username).update({ passwordHash });
+}
+
+module.exports = { createStaff, loginStaff, loginByPin, listStaff, deleteStaff, getStaffProfile, updateStaffProfile, changeStaffPassword };

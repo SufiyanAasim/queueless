@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useNavigate, Navigate } from 'react-router-dom';
+import { useNavigate, Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext.jsx';
 
 export default function AdminLogin() {
@@ -7,6 +7,8 @@ export default function AdminLogin() {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const navigate = useNavigate();
+  const location = useLocation();
+  const justSignedOut = location.state?.signedOut === true;
 
   if (user) return <Navigate to="/admin" replace />;
 
@@ -18,6 +20,11 @@ export default function AdminLogin() {
 
   return (
     <div className="max-w-md mx-auto px-6 py-24">
+      {justSignedOut && (
+        <div className="mb-8 p-3 border border-success/30 bg-success/10 text-success text-sm">
+          You have been signed out successfully.
+        </div>
+      )}
       <div className="label mb-4">Admin access</div>
       <h1 className="font-display text-5xl tracking-tightest leading-[0.95]">
         Sign in to manage<br/>the queue.

@@ -2,10 +2,12 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import QRCode from 'qrcode';
 import { useQueueState } from '../hooks/useQueueState.js';
+import { useTheme } from '../context/ThemeContext.jsx';
 import StatusBadge from '../components/StatusBadge.jsx';
 
 export default function Home() {
-  const { state, tokens, loading } = useQueueState();
+  const { state, tokens } = useQueueState();
+  const { dark } = useTheme();
   const tokenList = Object.values(tokens || {});
   const waiting = tokenList.filter(t => t.status === 'waiting').length;
   const nowServing = state?.currentTokenNumber || 0;
@@ -13,17 +15,24 @@ export default function Home() {
 
   useEffect(() => {
     const takeUrl = `${window.location.origin}/take`;
-    QRCode.toDataURL(takeUrl, { width: 160, margin: 1, color: { dark: '#171615', light: '#FBF7F0' } })
+    // QR foreground adapts to current theme
+    const qrDark = dark ? '#F0EBE3' : '#171615';
+    const qrLight = dark ? '#1C1A18' : '#FBF7F0';
+    QRCode.toDataURL(takeUrl, { width: 160, margin: 1, color: { dark: qrDark, light: qrLight } })
       .then(setQrDataUrl)
       .catch(() => {});
-  }, []);
+  }, [dark]);
 
   return (
     <div className="max-w-6xl mx-auto px-6 py-10 lg:py-16">
       {/* Hero */}
       <div className="grid lg:grid-cols-12 gap-8 lg:gap-12 items-center">
         <div className="lg:col-span-6">
-          <img src="/svg/queueless-lockup.svg" alt="QueueLess - Smart Queue Management" className="h-12 sm:h-16 w-auto mb-6" />
+          <img
+            src={dark ? '/svg/queueless-wordmark-dark.svg' : '/svg/queueless-lockup.svg'}
+            alt="QueueLess - Smart Queue Management"
+            className="h-12 sm:h-16 w-auto mb-6"
+          />
           <h1 className="font-display text-5xl sm:text-6xl lg:text-7xl tracking-tightest leading-[0.95]">
             Take a digital<br />
             <em className="text-accent">token.</em> Watch<br />

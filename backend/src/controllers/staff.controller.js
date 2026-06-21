@@ -27,4 +27,20 @@ async function callNext(req, res) {
   res.json(result);
 }
 
-module.exports = { login, loginPin, getQueue, callNext };
+async function getProfile(req, res) {
+  const profile = await staffService.getStaffProfile(req.user.sub);
+  res.json(profile);
+}
+
+async function updateProfile(req, res) {
+  const result = await staffService.updateStaffProfile(req.user.sub, req.body);
+  res.json({ message: 'Profile updated.', ...result });
+}
+
+async function changePassword(req, res) {
+  const { currentPassword, newPassword } = req.body;
+  await staffService.changeStaffPassword(req.user.sub, currentPassword, newPassword);
+  res.json({ message: 'Password updated successfully.' });
+}
+
+module.exports = { login, loginPin, getQueue, callNext, getProfile, updateProfile, changePassword };

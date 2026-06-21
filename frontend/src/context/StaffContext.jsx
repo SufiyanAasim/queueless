@@ -44,8 +44,16 @@ export function StaffProvider({ children }) {
     setStaff(null);
   }, []);
 
+  const updateStaff = useCallback((patch) => {
+    setStaff(prev => {
+      const next = typeof patch === 'function' ? patch(prev) : { ...prev, ...patch };
+      localStorage.setItem(STAFF_USER_KEY, JSON.stringify(next));
+      return next;
+    });
+  }, []);
+
   return (
-    <StaffContext.Provider value={{ staff, login, loginDirect, logout, error, loading }}>
+    <StaffContext.Provider value={{ staff, login, loginDirect, logout, updateStaff, error, loading }}>
       {children}
     </StaffContext.Provider>
   );

@@ -109,6 +109,16 @@ async function changePassword(req, res) {
   res.json({ message: 'Password updated successfully.' });
 }
 
+async function getProfile(req, res) {
+  const profile = await authService.getAdminProfile(req.user.sub);
+  res.json(profile);
+}
+
+async function updateProfile(req, res) {
+  const result = await authService.updateAdminProfile(req.user.sub, req.body);
+  res.json({ message: 'Profile updated.', ...result });
+}
+
 module.exports = {
   callNext, pause, resume, activeQueue, reset,
   getAnalytics, exportAnalyticsCsv,
@@ -118,4 +128,5 @@ module.exports = {
   listStaff, createStaff, removeStaff,
   skipToken,
   changePassword,
+  getProfile, updateProfile,
 };

@@ -29,5 +29,7 @@ router.delete('/staff/:username',       asyncHandler(controller.removeStaff));
 
 router.post('/queue/skip/:tokenId',     asyncHandler(controller.skipToken));
 router.post('/change-password',         asyncHandler(controller.changePassword));
+router.get('/profile',                  asyncHandler(controller.getProfile));
+router.put('/profile',                  asyncHandler(controller.updateProfile));
 
 module.exports = router;

@@ -176,8 +176,10 @@ export default function MyToken() {
   const isPriority = token.priority === 'priority';
 
   return (
+    <>
+    {/* PrintableToken MUST be outside print:hidden so it renders when printing */}
+    <PrintableToken token={token} serviceLabel={serviceLabel} />
     <div className="max-w-3xl mx-auto px-6 py-12 lg:py-16 print:hidden">
-      <PrintableToken token={token} serviceLabel={serviceLabel} />
 
       {/* Header row */}
       <div className="flex items-center justify-between mb-8 flex-wrap gap-3">
@@ -321,5 +323,6 @@ export default function MyToken() {
         </span>
       </div>
     </div>
+    </>
   );
 }

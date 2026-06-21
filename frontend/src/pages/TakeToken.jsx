@@ -56,11 +56,11 @@ export default function TakeToken() {
                 : 'border-rule bg-cream hover:border-ink'
             }`}
           >
-            <div className="label" style={service === s.id ? { color: '#F7F3EC99' } : {}}>
+            <div className="label" style={service === s.id ? { color: 'currentColor', opacity: 0.6 } : {}}>
               {service === s.id ? 'Selected' : 'Service'}
             </div>
             <div className="mt-3 font-display text-xl leading-tight">{s.title}</div>
-            <div className={`mt-2 text-xs ${service === s.id ? 'text-paper/70' : 'text-graphite'}`}>
+            <div className={`mt-2 text-xs opacity-70 ${service === s.id ? '' : 'text-graphite'}`}>
               {s.desc}
             </div>
           </button>

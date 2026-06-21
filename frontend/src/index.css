@@ -42,6 +42,20 @@
 .dark .divide-rule > * + * { border-color: #353028 !important; }
 .dark .bg-rule    { background-color: #353028 !important; }
 
+/* In dark mode bg-ink flips to cream (#F0EBE3) — ALL text on it must be dark.
+   This covers btn-primary, selected service cards, table headers, etc. */
+.dark .bg-ink {
+  color: #171615 !important;
+}
+/* btn-primary hover switches to accent (dark red) — text should be light */
+.dark .btn-primary:hover {
+  color: #F0EBE3 !important;
+}
+/* btn-secondary hover: bg flips light so text must be dark */
+.dark .btn-secondary:hover {
+  color: #171615 !important;
+}
+
 /* dark body & html bg */
 .dark body, .dark html { background-color: #1C1A18; color: #F0EBE3; }
 

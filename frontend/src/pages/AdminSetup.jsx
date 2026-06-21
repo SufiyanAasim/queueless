@@ -1,10 +1,13 @@
 import { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, Link, Navigate } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext.jsx';
 import { apiUpdateConfig } from '../services/api.js';
 import { INDUSTRY_PROFILES } from '../utils/industry.js';
 
 export default function AdminSetup() {
+  const { user } = useAuth();
   const navigate = useNavigate();
+  if (!user) return <Navigate to="/admin/login" replace />;
   const [industry, setIndustry] = useState('general');
   const [orgName, setOrgName] = useState('');
   const [saving, setSaving] = useState(false);
@@ -27,7 +30,7 @@ export default function AdminSetup() {
   };
 
   return (
-    <div className="max-w-3xl mx-auto px-6 py-16">
+    <div className="max-w-4xl mx-auto px-4 sm:px-6 xl:px-10 py-12">
       <div className="label mb-4">First-time setup</div>
       <h1 className="font-display text-5xl tracking-tightest leading-[0.95]">Configure your queue</h1>
       <p className="mt-4 text-graphite max-w-xl">

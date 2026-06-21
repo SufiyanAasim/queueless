@@ -13,9 +13,12 @@ import AdminReport from './pages/AdminReport.jsx';
 import AdminFeedback from './pages/AdminFeedback.jsx';
 import AdminStaff from './pages/AdminStaff.jsx';
 import AdminChangePassword from './pages/AdminChangePassword.jsx';
+import AdminProfile from './pages/AdminProfile.jsx';
 import StaffLogin from './pages/StaffLogin.jsx';
 import StaffKiosk from './pages/StaffKiosk.jsx';
 import StaffDashboard from './pages/StaffDashboard.jsx';
+import StaffProfile from './pages/StaffProfile.jsx';
+import StaffChangePassword from './pages/StaffChangePassword.jsx';
 import Display from './pages/Display.jsx';
 import TokenHistory from './pages/TokenHistory.jsx';
 import { StaffProvider } from './context/StaffContext.jsx';
@@ -44,7 +47,10 @@ export default function App() {
             <Route path="feedback"         element={<AdminFeedback />} />
             <Route path="staff"            element={<AdminStaff />} />
             <Route path="change-password"  element={<AdminChangePassword />} />
+            <Route path="profile"          element={<AdminProfile />} />
           </Route>
+          <Route path="/staff/profile"          element={<StaffProfile />} />
+          <Route path="/staff/change-password"  element={<StaffChangePassword />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </Layout>

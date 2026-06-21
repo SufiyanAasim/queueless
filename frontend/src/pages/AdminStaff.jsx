@@ -68,7 +68,7 @@ export default function AdminStaff() {
   const onlineCount = Object.values(presence).filter(p => p.online).length;
 
   return (
-    <div className="max-w-4xl mx-auto px-6 py-10">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 xl:px-10 py-10">
       <div className="flex items-end justify-between mb-10 flex-wrap gap-4">
         <div>
           <div className="label">Admin · Staff</div>

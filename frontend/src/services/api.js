@@ -28,9 +28,18 @@ api.interceptors.request.use((config) => {
 api.interceptors.response.use(
   (res) => res,
   (err) => {
+    // Only force-logout on 401 from protected routes, not public endpoints.
+    // This prevents a cold-start backend error from silently wiping the session.
     if (err.response?.status === 401) {
-      localStorage.removeItem(ADMIN_TOKEN_KEY);
-      localStorage.removeItem(STAFF_TOKEN_KEY);
+      const url = err.config?.url || '';
+      const isProtected = url.startsWith('/admin/') || url.startsWith('/staff/');
+      if (isProtected) {
+        localStorage.removeItem(ADMIN_TOKEN_KEY);
+        localStorage.removeItem(STAFF_TOKEN_KEY);
+        // Hard redirect so React state resets cleanly.
+        const isStaff = url.startsWith('/staff/');
+        window.location.href = isStaff ? '/staff/login' : '/admin/login';
+      }
     }
     return Promise.reject(err);
   }
@@ -68,7 +77,15 @@ export const apiListStaff    = () => api.get('/admin/staff').then(r => r.data);
 export const apiCreateStaff  = (data) => api.post('/admin/staff', data).then(r => r.data);
 export const apiDeleteStaff  = (username) => api.delete(`/admin/staff/${username}`).then(r => r.data);
 
+// Admin profile
+export const apiAdminProfile       = () => api.get('/admin/profile').then(r => r.data);
+export const apiUpdateAdminProfile = (data) => api.put('/admin/profile', data).then(r => r.data);
+
 // Staff portal
-export const apiStaffQueue    = () => api.get('/staff/queue').then(r => r.data);
-export const apiStaffCallNext = () => api.post('/staff/queue/call-next', {}).then(r => r.data);
-export const apiStaffPinLogin = (pin) => api.post('/staff/login/pin', { pin }).then(r => r.data);
+export const apiStaffQueue          = () => api.get('/staff/queue').then(r => r.data);
+export const apiStaffCallNext       = () => api.post('/staff/queue/call-next', {}).then(r => r.data);
+export const apiStaffPinLogin       = (pin) => api.post('/staff/login/pin', { pin }).then(r => r.data);
+export const apiStaffProfile        = () => api.get('/staff/profile').then(r => r.data);
+export const apiUpdateStaffProfile  = (data) => api.put('/staff/profile', data).then(r => r.data);
+export const apiStaffChangePassword = (currentPassword, newPassword) =>
+  api.post('/staff/change-password', { currentPassword, newPassword }).then(r => r.data);

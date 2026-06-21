@@ -34,8 +34,16 @@ export function AuthProvider({ children }) {
     setUser(null);
   }, []);
 
+  const updateUser = useCallback((patch) => {
+    setUser(prev => {
+      const next = typeof patch === 'function' ? patch(prev) : { ...prev, ...patch };
+      localStorage.setItem('queueless.adminUser', JSON.stringify(next));
+      return next;
+    });
+  }, []);
+
   return (
-    <AuthContext.Provider value={{ user, login, logout, error, loading }}>
+    <AuthContext.Provider value={{ user, login, logout, updateUser, error, loading }}>
       {children}
     </AuthContext.Provider>
   );

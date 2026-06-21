@@ -4,7 +4,7 @@ import { useAuth } from '../context/AuthContext.jsx';
 import { useQueueState } from '../hooks/useQueueState.js';
 import { useAppConfig } from '../hooks/useAppConfig.js';
 import { getServices, getServiceLabel } from '../utils/industry.js';
-import { apiCallNext, apiSkipToken, apiPause, apiResume, apiReset, apiStartAutoMode, apiStopAutoMode } from '../services/api.js';
+import { apiCallNext, apiSkipToken, apiPause, apiResume, apiReset, apiStartAutoMode, apiStopAutoMode, apiActiveQueue } from '../services/api.js';
 import StatusBadge from '../components/StatusBadge.jsx';
 import Stat from '../components/Stat.jsx';
 
@@ -211,17 +211,44 @@ function AutoModePanel({ services, isPaused, queueState }) {
 
 export default function AdminDashboard() {
   const { user } = useAuth();
-  const { state, tokens } = useQueueState();
+  const { state: fbState, tokens: fbTokens, error: fbError, loading: fbLoading } = useQueueState();
   const cfg = useAppConfig();
   const [busy, setBusy] = useState(false);
   const [skipBusy, setSkipBusy] = useState(false);
   const [err, setErr] = useState(null);
   const [activeTab, setActiveTab] = useState(0);
 
+  // REST API fallback: if Firebase returns a permission error (rules not yet deployed)
+  // or returns no data, poll the backend directly every 4 seconds.
+  const [restData, setRestData] = useState(null);
+  // Firebase is working once it finishes loading AND has no error.
+  // During the initial load (fbLoading true) we don't switch to REST yet.
+  const firebaseWorking = fbLoading || (!fbError && fbState !== null);
+
+  useEffect(() => {
+    if (firebaseWorking) return; // Firebase is fine, no need to poll
+    const poll = async () => {
+      try {
+        const data = await apiActiveQueue();
+        setRestData(data);
+      } catch {}
+    };
+    poll();
+    const id = setInterval(poll, 4000);
+    return () => clearInterval(id);
+  }, [firebaseWorking]);
+
+  // Use Firebase data when available, fall back to REST poll
+  const state  = firebaseWorking ? fbState  : restData?.state  ?? null;
+  const tokensObj = firebaseWorking ? fbTokens : (() => {
+    const all = [...(restData?.waiting || []), ...(restData ? Object.values(restData.nowServing || {}) : [])];
+    return all.reduce((acc, t) => { acc[t.id] = t; return acc; }, {});
+  })();
+
   if (!user) return <Navigate to="/admin/login" replace />;
 
   const services = getServices(cfg.industry);
-  const tokenList = Object.values(tokens || {});
+  const tokenList = Object.values(tokensObj || {});
   const isPaused = state?.status === 'paused';
   const servedCount = tokenList.filter(t => t.status === 'served').length;
   const expiredCount = tokenList.filter(t => t.status === 'expired').length;
@@ -261,7 +288,7 @@ export default function AdminDashboard() {
   };
 
   return (
-    <div className="max-w-7xl mx-auto px-6 py-10">
+    <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 xl:px-10 py-10">
       <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-10">
         <div>
           <div className="label">{cfg.orgName} · Admin dashboard</div>
@@ -304,6 +331,13 @@ export default function AdminDashboard() {
         </button>
       </div>
 
+      {!firebaseWorking && (
+        <div className="mb-6 p-4 border border-warn bg-warn/5 text-warn text-sm">
+          Live updates are limited — Firebase security rules have not been deployed yet.
+          Run <code className="font-mono bg-warn/10 px-1">firebase deploy --only database</code> from the <code className="font-mono bg-warn/10 px-1">firebase/</code> folder to enable real-time queue sync.
+          Dashboard is currently polling every 4s via REST API as a fallback.
+        </div>
+      )}
       {err && (
         <div className="mb-6 p-3 border border-accent bg-accent/5 text-accent-deep text-sm">{err}</div>
       )}

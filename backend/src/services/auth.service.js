@@ -65,8 +65,22 @@ async function changePassword(username, currentPassword, newPassword) {
   await refs.admin(username).update({ passwordHash });
 }
 
+async function getAdminProfile(username) {
+  const snap = await refs.admin(username).once('value');
+  const a = snap.val();
+  if (!a) throw Object.assign(new Error('Account not found.'), { statusCode: 404 });
+  return { username: a.username, displayName: a.displayName || a.username, role: a.role || 'admin', createdAt: a.createdAt };
+}
+
+async function updateAdminProfile(username, { displayName }) {
+  if (!displayName || !displayName.trim()) throw Object.assign(new Error('Display name is required.'), { statusCode: 400 });
+  if (displayName.trim().length > 50) throw Object.assign(new Error('Display name must be 50 characters or less.'), { statusCode: 400 });
+  await refs.admin(username).update({ displayName: displayName.trim() });
+  return { displayName: displayName.trim() };
+}
+
 function verifyToken(token) {
   return jwt.verify(token, config.jwt.secret);
 }
 
-module.exports = { bootstrapAdmin, login, verifyToken, changePassword };
+module.exports = { bootstrapAdmin, login, verifyToken, changePassword, getAdminProfile, updateAdminProfile };

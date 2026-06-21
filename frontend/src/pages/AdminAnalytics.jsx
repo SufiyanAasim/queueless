@@ -53,11 +53,13 @@ export default function AdminAnalytics() {
   if (!user) return <Navigate to="/admin/login" replace />;
 
   if (loading) return (
-    <div className="max-w-7xl mx-auto px-6 py-20 text-center text-graphite animate-pulse">Loading analytics…</div>
+    <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 xl:px-10 py-20 text-center text-graphite animate-pulse">Loading analytics…</div>
   );
-  if (error) return (
-    <div className="max-w-7xl mx-auto px-6 py-20 text-center text-warn">{error}</div>
-  );
+  if (error) {
+    const isAuth = error.toLowerCase().includes('authorization') || error.toLowerCase().includes('token') || error.toLowerCase().includes('unauthorized');
+    if (isAuth) return <Navigate to="/admin/login" replace />;
+    return <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 xl:px-10 py-20 text-center text-warn">{error}</div>;
+  }
 
   const {
     peakHours = {}, peakHoursByService = {},
@@ -97,7 +99,7 @@ export default function AdminAnalytics() {
   const serviceKeys = Object.keys(peakHoursByService);
 
   return (
-    <div className="max-w-7xl mx-auto px-6 py-10">
+    <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 xl:px-10 py-10">
       {/* Header */}
       <div className="mb-8 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>

@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { useState, useRef, useEffect } from 'react';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext.jsx';
 import { useStaff } from '../context/StaffContext.jsx';
 import { useTheme } from '../context/ThemeContext.jsx';
@@ -9,68 +9,268 @@ export default function Layout({ children }) {
   const { staff, logout: staffLogout } = useStaff();
   const { dark, toggle: toggleTheme } = useTheme();
   const loc = useLocation();
+  const navigate = useNavigate();
   const onDisplay = loc.pathname === '/display';
   const onAdmin = loc.pathname.startsWith('/admin');
   const onStaff = loc.pathname.startsWith('/staff');
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [signingOut, setSigningOut] = useState(false);
+  const [signedOutMsg, setSignedOutMsg] = useState(false);
+  const [adminDropOpen, setAdminDropOpen] = useState(false);
+  const dropRef = useRef(null);
 
-  // TV display — no chrome at all
   if (onDisplay) return <>{children}</>;
 
-  const adminLinks = [
+  const logoTarget = user ? '/admin' : staff ? '/staff' : '/';
+  const logoSrc = dark
+    ? '/svg/queueless-wordmark-dark.svg'
+    : '/svg/queueless-wordmark-light.svg';
+
+  const handleLogout = async (isStaff = false) => {
+    setMobileOpen(false);
+    setAdminDropOpen(false);
+    setSigningOut(true);
+    await new Promise(r => setTimeout(r, 600));
+    if (isStaff) {
+      staffLogout();
+      navigate('/staff/login', { replace: true, state: { signedOut: true } });
+    } else {
+      logout();
+      navigate('/admin/login', { replace: true, state: { signedOut: true } });
+    }
+    setSigningOut(false);
+    setSignedOutMsg(true);
+    setTimeout(() => setSignedOutMsg(false), 3000);
+  };
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handler = (e) => {
+      if (dropRef.current && !dropRef.current.contains(e.target)) {
+        setAdminDropOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, []);
+
+  // Close dropdown on Escape
+  useEffect(() => {
+    const handler = (e) => {
+      if (e.key === 'Escape') setAdminDropOpen(false);
+    };
+    document.addEventListener('keydown', handler);
+    return () => document.removeEventListener('keydown', handler);
+  }, []);
+
+  const adminNavLinks = [
     { to: '/admin', label: 'Dashboard' },
     { to: '/admin/analytics', label: 'Analytics' },
     { to: '/admin/staff', label: 'Staff' },
     { to: '/admin/feedback', label: 'Feedback' },
     { to: '/admin/setup', label: 'Settings' },
-    { to: '/admin/change-password', label: 'Password' },
   ];
 
   return (
     <div className="min-h-screen flex flex-col">
-      <header className="border-b border-rule">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 py-4 flex items-center justify-between">
-          <Link to="/" className="flex items-center gap-2 shrink-0">
-            <img src="/svg/queueless-wordmark-light.svg" alt="QueueLess" className="h-6 sm:h-7 w-auto" />
+      <header className="border-b border-rule sticky top-0 z-40 bg-paper">
+        <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 xl:px-10 py-3 flex items-center justify-between gap-4">
+          {/* Logo */}
+          <Link to={logoTarget} className="flex items-center gap-2 shrink-0">
+            <img
+              src={logoSrc}
+              alt="QueueLess"
+              className="h-6 sm:h-7 w-auto transition-opacity duration-200"
+            />
           </Link>
 
           {/* Desktop nav */}
-          <nav className="hidden md:flex items-center gap-5 text-sm">
+          <nav className="hidden md:flex items-center gap-1 text-sm flex-1 justify-center">
             {!onAdmin && !onStaff && !user && !staff && (
               <>
-                <Link to="/history" className="text-graphite hover:text-ink transition-colors">My tokens</Link>
-                <Link to="/staff/login" className="text-graphite hover:text-ink transition-colors">Staff</Link>
-                <Link to="/admin/login" className="text-graphite hover:text-ink transition-colors">Admin</Link>
+                <Link to="/history" className="px-3 py-1.5 text-graphite hover:text-ink transition-colors rounded">My tokens</Link>
+                <Link to="/staff/login" className="px-3 py-1.5 text-graphite hover:text-ink transition-colors rounded">Staff</Link>
+                <Link to="/admin/login" className="px-3 py-1.5 text-graphite hover:text-ink transition-colors rounded">Admin</Link>
               </>
             )}
-            {user && adminLinks.map(l => (
-              <Link key={l.to} to={l.to} className="text-graphite hover:text-ink transition-colors font-medium">{l.label}</Link>
+            {user && adminNavLinks.map(l => (
+              <Link
+                key={l.to}
+                to={l.to}
+                className={`px-3 py-1.5 transition-colors rounded font-medium ${
+                  loc.pathname === l.to
+                    ? 'text-ink bg-ink/5'
+                    : 'text-graphite hover:text-ink hover:bg-ink/5'
+                }`}
+              >
+                {l.label}
+              </Link>
             ))}
-            {user && (
-              <>
-                <span className="label hidden lg:inline ml-2 border-l border-rule pl-4">{user.username}</span>
-                <button onClick={logout} className="text-graphite hover:text-accent transition-colors">Sign out</button>
-              </>
-            )}
             {staff && !user && (
-              <>
-                <Link to="/staff" className="text-graphite hover:text-ink transition-colors font-medium">My Queue</Link>
-                <span className="label border-l border-rule pl-4">{staff.displayName || staff.username}</span>
-                <button onClick={staffLogout} className="text-graphite hover:text-accent transition-colors">Sign out</button>
-              </>
+              <Link to="/staff" className="px-3 py-1.5 text-graphite hover:text-ink transition-colors rounded font-medium">My Queue</Link>
             )}
           </nav>
 
-          <div className="flex items-center gap-2">
-            {/* Dark mode toggle */}
-            <button
-              onClick={toggleTheme}
-              className="p-2 text-graphite hover:text-ink transition-colors"
-              aria-label={dark ? 'Switch to light mode' : 'Switch to dark mode'}
-              title={dark ? 'Light mode' : 'Dark mode'}
-            >
-              {dark ? '☀' : '◑'}
-            </button>
+          {/* Right side controls */}
+          <div className="flex items-center gap-2 shrink-0">
+            {/* Public theme toggle (when not admin) */}
+            {!user && (
+              <button
+                onClick={toggleTheme}
+                className="p-2 text-graphite hover:text-ink transition-colors"
+                aria-label={dark ? 'Switch to light mode' : 'Switch to dark mode'}
+                title={dark ? 'Light mode' : 'Dark mode'}
+              >
+                {dark ? '☀' : '◑'}
+              </button>
+            )}
+
+            {/* Staff dropdown (not admin) */}
+            {staff && !user && (
+              <div className="relative hidden md:block" ref={dropRef}>
+                <button
+                  onClick={() => setAdminDropOpen(o => !o)}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 border transition-colors text-xs font-medium tracking-wide ${
+                    adminDropOpen
+                      ? 'border-ink bg-ink text-paper'
+                      : 'border-rule text-graphite hover:border-ink hover:text-ink'
+                  }`}
+                  aria-expanded={adminDropOpen}
+                  aria-haspopup="true"
+                >
+                  <span>{(staff.displayName || staff.username || 'STAFF').toUpperCase()}</span>
+                  <svg className={`w-3 h-3 transition-transform ${adminDropOpen ? 'rotate-180' : ''}`} viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.5">
+                    <path d="M2 4l4 4 4-4" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
+                </button>
+
+                {adminDropOpen && (
+                  <div className="absolute right-0 top-full mt-1 w-52 bg-paper border border-rule shadow-lg z-50">
+                    {/* Theme toggle */}
+                    <div className="px-4 py-3 border-b border-rule">
+                      <div className="label mb-2">Theme</div>
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs text-graphite">{dark ? 'Dark mode' : 'Light mode'}</span>
+                        <button
+                          onClick={toggleTheme}
+                          className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors focus:outline-none ${dark ? 'bg-ink' : 'bg-rule'}`}
+                          role="switch" aria-checked={dark} aria-label="Toggle dark mode"
+                        >
+                          <span className={`inline-block h-3.5 w-3.5 rounded-full bg-paper shadow transition-transform ${dark ? 'translate-x-4' : 'translate-x-1'}`} />
+                        </button>
+                      </div>
+                    </div>
+                    <div className="py-1">
+                      <Link to="/staff" onClick={() => setAdminDropOpen(false)} className="flex items-center gap-3 px-4 py-2.5 text-sm text-graphite hover:text-ink hover:bg-cream transition-colors">
+                        <span className="text-base leading-none">🖥</span>
+                        <span>My queue</span>
+                      </Link>
+                      <Link to="/staff/profile" onClick={() => setAdminDropOpen(false)} className="flex items-center gap-3 px-4 py-2.5 text-sm text-graphite hover:text-ink hover:bg-cream transition-colors">
+                        <span className="text-base leading-none">👤</span>
+                        <span>My profile</span>
+                      </Link>
+                      <Link to="/staff/change-password" onClick={() => setAdminDropOpen(false)} className="flex items-center gap-3 px-4 py-2.5 text-sm text-graphite hover:text-ink hover:bg-cream transition-colors">
+                        <span className="text-base leading-none">🔑</span>
+                        <span>Change password</span>
+                      </Link>
+                    </div>
+                    <div className="border-t border-rule py-1">
+                      <button
+                        onClick={() => handleLogout(true)}
+                        disabled={signingOut}
+                        className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-graphite hover:text-accent hover:bg-accent/5 transition-colors disabled:opacity-50"
+                      >
+                        <span className="text-base leading-none">↩</span>
+                        <span>{signingOut ? 'Signing out…' : 'Sign out'}</span>
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Admin dropdown */}
+            {user && (
+              <div className="relative hidden md:block" ref={dropRef}>
+                <button
+                  onClick={() => setAdminDropOpen(o => !o)}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 border transition-colors text-xs font-medium tracking-wide ${
+                    adminDropOpen
+                      ? 'border-ink bg-ink text-paper'
+                      : 'border-rule text-graphite hover:border-ink hover:text-ink'
+                  }`}
+                  aria-expanded={adminDropOpen}
+                  aria-haspopup="true"
+                >
+                  <span>{user.username?.toUpperCase() || 'ADMIN'}</span>
+                  <svg
+                    className={`w-3 h-3 transition-transform ${adminDropOpen ? 'rotate-180' : ''}`}
+                    viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.5"
+                  >
+                    <path d="M2 4l4 4 4-4" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
+                </button>
+
+                {adminDropOpen && (
+                  <div className="absolute right-0 top-full mt-1 w-52 bg-paper border border-rule shadow-lg z-50">
+                    {/* Theme toggle row */}
+                    <div className="px-4 py-3 border-b border-rule">
+                      <div className="label mb-2">Theme</div>
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs text-graphite">{dark ? 'Dark mode' : 'Light mode'}</span>
+                        <button
+                          onClick={toggleTheme}
+                          className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors focus:outline-none ${
+                            dark ? 'bg-ink' : 'bg-rule'
+                          }`}
+                          role="switch"
+                          aria-checked={dark}
+                          aria-label="Toggle dark mode"
+                        >
+                          <span
+                            className={`inline-block h-3.5 w-3.5 rounded-full bg-paper shadow transition-transform ${
+                              dark ? 'translate-x-4' : 'translate-x-1'
+                            }`}
+                          />
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Menu items */}
+                    <div className="py-1">
+                      <Link
+                        to="/admin/profile"
+                        onClick={() => setAdminDropOpen(false)}
+                        className="flex items-center gap-3 px-4 py-2.5 text-sm text-graphite hover:text-ink hover:bg-cream transition-colors"
+                      >
+                        <span className="text-base leading-none">👤</span>
+                        <span>My profile</span>
+                      </Link>
+                      <Link
+                        to="/admin/change-password"
+                        onClick={() => setAdminDropOpen(false)}
+                        className="flex items-center gap-3 px-4 py-2.5 text-sm text-graphite hover:text-ink hover:bg-cream transition-colors"
+                      >
+                        <span className="text-base leading-none">🔑</span>
+                        <span>Change password</span>
+                      </Link>
+                    </div>
+
+                    <div className="border-t border-rule py-1">
+                      <button
+                        onClick={() => handleLogout(false)}
+                        disabled={signingOut}
+                        className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-graphite hover:text-accent hover:bg-accent/5 transition-colors disabled:opacity-50"
+                      >
+                        <span className="text-base leading-none">↩</span>
+                        <span>{signingOut ? 'Signing out…' : 'Sign out'}</span>
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
             {/* Mobile hamburger */}
             <button
               className="md:hidden p-2 text-graphite hover:text-ink"
@@ -93,29 +293,87 @@ export default function Layout({ children }) {
                   <Link to="/admin/login" onClick={() => setMobileOpen(false)} className="py-2 text-graphite hover:text-ink">Admin portal</Link>
                 </>
               )}
-              {user && adminLinks.map(l => (
+              {user && adminNavLinks.map(l => (
                 <Link key={l.to} to={l.to} onClick={() => setMobileOpen(false)} className="py-2 text-graphite hover:text-ink font-medium">{l.label}</Link>
               ))}
               {user && (
-                <button onClick={() => { setMobileOpen(false); logout(); }} className="text-left py-2 text-graphite hover:text-accent">Sign out</button>
+                <>
+                  <div className="py-2 flex items-center justify-between border-t border-rule mt-1">
+                    <span className="text-graphite text-xs">{dark ? 'Dark mode' : 'Light mode'}</span>
+                    <button
+                      onClick={toggleTheme}
+                      className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors ${dark ? 'bg-ink' : 'bg-rule'}`}
+                      aria-label="Toggle theme"
+                    >
+                      <span className={`inline-block h-3.5 w-3.5 rounded-full bg-paper shadow transition-transform ${dark ? 'translate-x-4' : 'translate-x-1'}`} />
+                    </button>
+                  </div>
+                  <Link to="/admin/profile" onClick={() => setMobileOpen(false)} className="py-2 text-graphite hover:text-ink">My profile</Link>
+                  <Link to="/admin/change-password" onClick={() => setMobileOpen(false)} className="py-2 text-graphite hover:text-ink">Change password</Link>
+                  <button
+                    onClick={() => handleLogout(false)}
+                    disabled={signingOut}
+                    className="text-left py-2 text-graphite hover:text-accent disabled:opacity-50"
+                  >
+                    {signingOut ? 'Signing out…' : 'Sign out'}
+                  </button>
+                </>
               )}
               {staff && !user && (
                 <>
                   <Link to="/staff" onClick={() => setMobileOpen(false)} className="py-2 text-graphite hover:text-ink font-medium">My Queue</Link>
-                  <button onClick={() => { setMobileOpen(false); staffLogout(); }} className="text-left py-2 text-graphite hover:text-accent">Sign out</button>
+                  <Link to="/staff/profile" onClick={() => setMobileOpen(false)} className="py-2 text-graphite hover:text-ink">My profile</Link>
+                  <Link to="/staff/change-password" onClick={() => setMobileOpen(false)} className="py-2 text-graphite hover:text-ink">Change password</Link>
+                  <div className="py-2 flex items-center justify-between border-t border-rule mt-1">
+                    <span className="text-graphite text-xs">{dark ? 'Dark mode' : 'Light mode'}</span>
+                    <button
+                      onClick={toggleTheme}
+                      className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors ${dark ? 'bg-ink' : 'bg-rule'}`}
+                      aria-label="Toggle theme"
+                    >
+                      <span className={`inline-block h-3.5 w-3.5 rounded-full bg-paper shadow transition-transform ${dark ? 'translate-x-4' : 'translate-x-1'}`} />
+                    </button>
+                  </div>
+                  <button
+                    onClick={() => handleLogout(true)}
+                    disabled={signingOut}
+                    className="text-left py-2 text-graphite hover:text-accent disabled:opacity-50"
+                  >
+                    {signingOut ? 'Signing out…' : 'Sign out'}
+                  </button>
                 </>
+              )}
+              {/* Public theme toggle in mobile */}
+              {!user && !staff && (
+                <div className="py-2 flex items-center justify-between border-t border-rule mt-1">
+                  <span className="text-graphite text-xs">{dark ? 'Dark mode' : 'Light mode'}</span>
+                  <button
+                    onClick={toggleTheme}
+                    className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors ${dark ? 'bg-ink' : 'bg-rule'}`}
+                    aria-label="Toggle theme"
+                  >
+                    <span className={`inline-block h-3.5 w-3.5 rounded-full bg-paper shadow transition-transform ${dark ? 'translate-x-4' : 'translate-x-1'}`} />
+                  </button>
+                </div>
               )}
             </nav>
           </div>
         )}
       </header>
 
+      {/* Sign-out success banner */}
+      {signedOutMsg && (
+        <div className="bg-success/10 border-b border-success/30 text-success text-sm text-center py-2 px-4">
+          You have been signed out successfully.
+        </div>
+      )}
+
       <main className="flex-1">{children}</main>
 
       <footer className="border-t border-rule mt-12">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 py-5 flex flex-col sm:flex-row gap-2 sm:gap-6 items-start sm:items-center justify-between text-xs text-graphite">
+        <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 xl:px-10 py-4 flex flex-col sm:flex-row gap-2 sm:gap-6 items-start sm:items-center justify-between text-xs text-graphite">
           <span className="font-semibold tracking-wide">Karachi, Pakistan</span>
-          <span className="font-mono">v1.2.0 · cloud-native queue management</span>
+          <span className="font-mono">v1.3.0 (latest) · cloud-native token qms</span>
         </div>
       </footer>
     </div>

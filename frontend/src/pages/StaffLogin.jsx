@@ -1,10 +1,12 @@
 import { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { useStaff } from '../context/StaffContext.jsx';
 
 export default function StaffLogin() {
   const { login, error, loading } = useStaff();
   const navigate = useNavigate();
+  const location = useLocation();
+  const justSignedOut = location.state?.signedOut === true;
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
 
@@ -16,6 +18,11 @@ export default function StaffLogin() {
 
   return (
     <div className="max-w-sm mx-auto px-6 py-24">
+      {justSignedOut && (
+        <div className="mb-6 p-3 border border-success/30 bg-success/10 text-success text-sm">
+          You have been signed out successfully.
+        </div>
+      )}
       <div className="label mb-4">Staff portal</div>
       <h1 className="font-display text-5xl tracking-tightest leading-[0.95] mb-10">
         Staff sign in

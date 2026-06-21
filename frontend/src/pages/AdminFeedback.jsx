@@ -26,7 +26,7 @@ export default function AdminFeedback() {
   }, []);
 
   if (loading) {
-    return <div className="max-w-4xl mx-auto px-6 py-24 text-center text-graphite">Loading feedback…</div>;
+    return <div className="max-w-7xl mx-auto px-4 sm:px-6 xl:px-10 py-24 text-center text-graphite">Loading feedback…</div>;
   }
 
   const { entries = [], avgRating, total } = data || {};
@@ -40,7 +40,7 @@ export default function AdminFeedback() {
   });
 
   return (
-    <div className="max-w-4xl mx-auto px-6 py-10">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 xl:px-10 py-10">
       <div className="flex items-end justify-between mb-10 flex-wrap gap-4">
         <div>
           <div className="label">Admin · Feedback</div>
