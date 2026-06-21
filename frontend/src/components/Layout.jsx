@@ -142,9 +142,12 @@ export default function Layout({ children }) {
                   aria-haspopup="true"
                 >
                   <span>{(staff.displayName || staff.username || 'STAFF').toUpperCase()}</span>
-                  <svg className={`w-3 h-3 transition-transform ${adminDropOpen ? 'rotate-180' : ''}`} viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.5">
-                    <path d="M2 4l4 4 4-4" strokeLinecap="round" strokeLinejoin="round" />
-                  </svg>
+                  <img
+                    src="/svg/chevron-down.svg"
+                    alt=""
+                    aria-hidden="true"
+                    className={`w-3 h-3 transition-transform ${adminDropOpen ? 'rotate-180 brightness-0 invert' : ''}`}
+                  />
                 </button>
 
                 {adminDropOpen && (
@@ -206,12 +209,12 @@ export default function Layout({ children }) {
                   aria-haspopup="true"
                 >
                   <span>{user.username?.toUpperCase() || 'ADMIN'}</span>
-                  <svg
-                    className={`w-3 h-3 transition-transform ${adminDropOpen ? 'rotate-180' : ''}`}
-                    viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.5"
-                  >
-                    <path d="M2 4l4 4 4-4" strokeLinecap="round" strokeLinejoin="round" />
-                  </svg>
+                  <img
+                    src="/svg/chevron-down.svg"
+                    alt=""
+                    aria-hidden="true"
+                    className={`w-3 h-3 transition-transform ${adminDropOpen ? 'rotate-180 brightness-0 invert' : ''}`}
+                  />
                 </button>
 
                 {adminDropOpen && (
