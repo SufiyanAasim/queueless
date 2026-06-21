@@ -400,8 +400,8 @@ For detailed release notes and changelogs, see [CHANGELOG.md](CHANGELOG.md).
 | Version | Codename | Highlights |
 |---|---|---|
 | [v1.3.0](CHANGELOG.md#queueless-v130--crew-latest) | Crew | Profile management, priority queue engine, 8 new features, 0 vulnerabilities |
-| [v1.2.2](CHANGELOG.md#queueless-v122--analytics--stability) | — | Analytics report, AI suggestions, dynamic heatmap, UI fixes |
-| [v1.2.0](CHANGELOG.md#queueless-v120--initial-public-release) | — | Initial release — core queue system, analytics dashboard, staff portal |
+| [v1.2.2](CHANGELOG.md#queueless-v122--vision) | Vision | Analytics report, AI suggestions, dynamic heatmap, UI fixes |
+| [v1.2.0](CHANGELOG.md#queueless-v120--scope) | Scope | Initial release — core queue system, analytics dashboard, staff portal |
 
 ---
 
