@@ -35,6 +35,11 @@
           "skippedAt": { ".validate": "newData.isNumber() || newData.val() == null" },
           "$other":    { ".validate": false }
         }
+      },
+
+      "announcement": {
+        ".read": true,
+        ".write": false
       }
     },
 
