@@ -54,22 +54,27 @@ function formatWait(seconds) {
   return `${Math.floor(m / 60)}h ${m % 60}m`;
 }
 
-function PrintableToken({ token, serviceLabel }) {
+function PrintableToken({ token, serviceLabel, orgName, location }) {
   const issuedAt = token.issuedAt ? new Date(token.issuedAt).toLocaleString() : '';
   const tokenNum = String(token.number).padStart(2, '0');
-  const url = typeof window !== 'undefined' ? window.location.href : '';
+  const shortUrl = `token/${token.id}`;
   return (
     <div className="hidden print:flex print:items-center print:justify-center print:min-h-screen print:bg-white"
       style={{ fontFamily: '"Georgia", serif' }}>
-      <div style={{
-        width: '340px', border: '1.5px solid #1A1714',
-        display: 'flex', flexDirection: 'column',
-      }}>
-        {/* Ticket header stripe */}
-        <div style={{ background: '#1A1714', padding: '14px 24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <span style={{ color: '#F7F3EC', fontSize: '11px', letterSpacing: '0.18em', textTransform: 'uppercase' }}>QueueLess</span>
+      <div style={{ width: '340px', border: '1.5px solid #1A1714', display: 'flex', flexDirection: 'column' }}>
+
+        {/* Ticket header — org name + location */}
+        <div style={{ background: '#1A1714', padding: '14px 24px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+          <div>
+            <div style={{ color: '#F7F3EC', fontSize: '11px', letterSpacing: '0.18em', textTransform: 'uppercase', fontWeight: '600' }}>
+              {orgName || 'QueueLess'}
+            </div>
+            {location && (
+              <div style={{ color: '#A89E94', fontSize: '9px', marginTop: '3px' }}>{location}</div>
+            )}
+          </div>
           {token.priority === 'priority' && (
-            <span style={{ color: '#F59E0B', fontSize: '9px', letterSpacing: '0.15em', textTransform: 'uppercase', fontWeight: 'bold', border: '1px solid #F59E0B', padding: '2px 6px' }}>Priority</span>
+            <span style={{ color: '#F59E0B', fontSize: '9px', letterSpacing: '0.15em', textTransform: 'uppercase', fontWeight: 'bold', border: '1px solid #F59E0B', padding: '2px 6px', flexShrink: 0, marginLeft: '8px' }}>Priority</span>
           )}
         </div>
 
@@ -79,22 +84,16 @@ function PrintableToken({ token, serviceLabel }) {
           <div style={{ fontSize: '96px', fontWeight: '700', lineHeight: 1, letterSpacing: '-0.04em', color: '#1A1714' }}>#{tokenNum}</div>
         </div>
 
-        {/* Details */}
-        <div style={{ padding: '16px 24px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', borderBottom: '1px dashed #D4CFC8' }}>
-          <div>
-            <div style={{ fontSize: '8px', letterSpacing: '0.18em', textTransform: 'uppercase', color: '#8A8278', marginBottom: '3px' }}>Status</div>
-            <div style={{ fontSize: '12px', color: '#1A1714', fontWeight: '600', textTransform: 'capitalize' }}>{token.status}</div>
-          </div>
-          <div>
-            <div style={{ fontSize: '8px', letterSpacing: '0.18em', textTransform: 'uppercase', color: '#8A8278', marginBottom: '3px' }}>Issued</div>
-            <div style={{ fontSize: '11px', color: '#4A4542' }}>{issuedAt}</div>
-          </div>
+        {/* Issued time */}
+        <div style={{ padding: '14px 24px', borderBottom: '1px dashed #D4CFC8' }}>
+          <div style={{ fontSize: '8px', letterSpacing: '0.18em', textTransform: 'uppercase', color: '#8A8278', marginBottom: '3px' }}>Issued</div>
+          <div style={{ fontSize: '11px', color: '#4A4542' }}>{issuedAt}</div>
         </div>
 
-        {/* Track URL footer */}
+        {/* Short tracking reference */}
         <div style={{ padding: '12px 24px', background: '#F7F3EC' }}>
           <div style={{ fontSize: '8px', letterSpacing: '0.15em', textTransform: 'uppercase', color: '#8A8278', marginBottom: '4px' }}>Track your position</div>
-          <div style={{ fontSize: '9px', color: '#5C5854', wordBreak: 'break-all' }}>{url}</div>
+          <div style={{ fontSize: '9px', color: '#5C5854', fontFamily: 'monospace', wordBreak: 'break-all' }}>{shortUrl}</div>
         </div>
       </div>
     </div>
@@ -200,7 +199,7 @@ export default function MyToken() {
   return (
     <>
     {/* PrintableToken MUST be outside print:hidden so it renders when printing */}
-    <PrintableToken token={token} serviceLabel={serviceLabel} />
+    <PrintableToken token={token} serviceLabel={serviceLabel} orgName={cfg.orgName} location={cfg.location} />
     <div className="max-w-3xl mx-auto px-6 py-12 lg:py-16 print:hidden">
 
       {/* Header row */}

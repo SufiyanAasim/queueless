@@ -102,9 +102,16 @@ export default function AdminReport() {
       
       {/* Report Header - Hidden on screen, visible on print */}
       <div className="hidden print:block mb-8 border-b border-rule pb-4">
-        <h1 className="font-display text-4xl mb-2">QueueLess Analytics Report</h1>
-        <div className="text-sm text-graphite">Generated on: {new Date().toLocaleDateString()} at {new Date().toLocaleTimeString()}</div>
-        <div className="text-sm text-graphite">Organisation: {cfg.orgName}</div>
+        <div className="flex items-start justify-between mb-3">
+          <div>
+            <div className="font-display text-3xl leading-tight">{cfg.orgName && cfg.orgName !== 'QueueLess' ? cfg.orgName : 'QueueLess'}</div>
+            {cfg.location && <div className="text-sm text-graphite mt-0.5">{cfg.location}</div>}
+          </div>
+          <div className="text-right text-xs text-graphite">
+            <div>Analytics Report</div>
+            <div className="mt-0.5">{new Date().toLocaleDateString()} · {new Date().toLocaleTimeString()}</div>
+          </div>
+        </div>
       </div>
 
       <div className="flex justify-between items-end mb-10 print:hidden">

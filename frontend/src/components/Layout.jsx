@@ -4,7 +4,6 @@ import { useAuth } from '../context/AuthContext.jsx';
 import { useStaff } from '../context/StaffContext.jsx';
 import { useTheme } from '../context/ThemeContext.jsx';
 import { useAppConfig } from '../hooks/useAppConfig.js';
-import { INDUSTRY_PROFILES } from '../utils/industry.js';
 
 export default function Layout({ children }) {
   const { user, logout } = useAuth();
@@ -22,7 +21,6 @@ export default function Layout({ children }) {
   const dropRef = useRef(null);
 
   const cfg = useAppConfig();
-  const industryName = INDUSTRY_PROFILES[cfg?.industry]?.name || null;
 
   if (onDisplay) return <>{children}</>;
 
@@ -90,7 +88,6 @@ export default function Layout({ children }) {
             {cfg?.orgName && cfg.orgName !== 'QueueLess' && (
               <div className="hidden sm:flex flex-col justify-center leading-none">
                 <span className="text-xs font-medium text-ink">{cfg.orgName}</span>
-                {industryName && <span className="text-[10px] text-graphite mt-0.5">({industryName})</span>}
               </div>
             )}
           </Link>
@@ -383,14 +380,23 @@ export default function Layout({ children }) {
 
       <footer className="border-t border-rule mt-12">
         <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 xl:px-10 py-4 flex flex-col sm:flex-row gap-2 sm:gap-6 items-start sm:items-center justify-between text-xs text-graphite">
-          <div className="flex items-center gap-3">
-            <span className="font-semibold tracking-wide">Karachi, Pakistan</span>
-            {cfg?.orgName && cfg.orgName !== 'QueueLess' && (
-              <>
-                <span className="text-rule">·</span>
-                <span className="font-medium text-ink">{cfg.orgName}</span>
-                {industryName && <span className="text-graphite">({industryName})</span>}
-              </>
+          <div className="flex items-center gap-2 min-w-0">
+            {cfg?.orgName && cfg.orgName !== 'QueueLess' ? (
+              <span
+                className="font-medium text-ink truncate"
+                title={cfg.location ? `${cfg.orgName} · ${cfg.location}` : cfg.orgName}
+              >
+                <span className="mr-1 opacity-60">📍</span>
+                <span>{cfg.orgName}</span>
+                {cfg.location && (
+                  <>
+                    <span className="mx-1.5 text-rule">·</span>
+                    <span className="text-graphite font-normal">{cfg.location}</span>
+                  </>
+                )}
+              </span>
+            ) : (
+              <span className="font-medium text-ink">QueueLess</span>
             )}
           </div>
           <span className="font-mono">v1.3.0 (latest) · cloud-native token qms</span>

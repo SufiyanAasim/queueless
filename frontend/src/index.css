@@ -85,3 +85,11 @@
     @apply text-xs font-medium tracking-[0.18em] uppercase text-graphite;
   }
 }
+
+@media print {
+  @page {
+    margin: 0;
+    size: A4 portrait;
+  }
+}
+

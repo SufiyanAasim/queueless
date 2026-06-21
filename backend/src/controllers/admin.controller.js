@@ -73,12 +73,12 @@ async function getAppConfig(req, res) {
 const VALID_INDUSTRIES = ['general', 'bank', 'medical', 'restaurant'];
 
 async function updateAppConfig(req, res) {
-  const { industry, orgName } = req.body;
+  const { industry, orgName, location } = req.body;
   if (industry && !VALID_INDUSTRIES.includes(industry)) {
     throw Object.assign(new Error(`Invalid industry. Must be one of: ${VALID_INDUSTRIES.join(', ')}.`), { statusCode: 400 });
   }
-  await refs.appConfig().update({ industry, orgName });
-  res.json({ message: 'Config updated.', industry, orgName });
+  await refs.appConfig().update({ industry, orgName, location: location ?? null });
+  res.json({ message: 'Config updated.', industry, orgName, location });
 }
 
 async function getFeedback(req, res) {

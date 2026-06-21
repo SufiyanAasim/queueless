@@ -72,7 +72,7 @@ export const apiStopAutoMode  = () => api.post('/admin/auto-mode/stop').then(r =
 // Admin analytics + config + feedback + staff
 export const apiAnalytics    = () => api.get('/admin/analytics').then(r => r.data);
 export const apiAdminConfig  = () => api.get('/admin/config').then(r => r.data);
-export const apiUpdateConfig = (industry, orgName) => api.put('/admin/config', { industry, orgName }).then(r => r.data);
+export const apiUpdateConfig = (industry, orgName, location) => api.put('/admin/config', { industry, orgName, location }).then(r => r.data);
 export const apiFeedback     = () => api.get('/admin/feedback').then(r => r.data);
 export const apiListStaff    = () => api.get('/admin/staff').then(r => r.data);
 export const apiCreateStaff  = (data) => api.post('/admin/staff', data).then(r => r.data);
