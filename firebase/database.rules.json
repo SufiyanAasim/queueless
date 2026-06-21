@@ -33,6 +33,8 @@
           "expiresAt": { ".validate": "newData.isNumber()" },
           "expiredAt": { ".validate": "newData.isNumber() || newData.val() == null" },
           "skippedAt": { ".validate": "newData.isNumber() || newData.val() == null" },
+          "groupSize": { ".validate": "newData.isNumber() && newData.val() >= 1 && newData.val() <= 10" },
+          "note":      { ".validate": "newData.isString() && newData.val().length <= 500 || newData.val() == null" },
           "$other":    { ".validate": false }
         }
       },
