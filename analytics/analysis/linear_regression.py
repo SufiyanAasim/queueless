@@ -1,8 +1,6 @@
 """
 Linear regression wait-time predictor.
 
-Owner: Taha (Analysis & Prediction - DM Module 3).
-
 The optional ML-flavored predictor called for in the proposal. We train a
 plain ordinary-least-squares LinearRegression on two features:
     - queue_length_at_issue

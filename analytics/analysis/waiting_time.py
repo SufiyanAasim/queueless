@@ -1,8 +1,6 @@
 """
 Waiting time analysis.
 
-Owner: Taha (Analysis & Prediction - DM Module 3).
-
 Computes the foundational waiting-time metrics that every other analysis
 builds on top of. Uses pandas groupby aggregations exclusively - no ML, no
 heuristics, just clean descriptive statistics with proper handling of

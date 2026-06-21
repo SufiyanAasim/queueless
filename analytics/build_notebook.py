@@ -43,23 +43,17 @@ def build():
     cells.append(md(
 """# QueueLess — Smart Queue Analytics & Prediction
 
-**Course:** CSL-460 Data Mining Lab · **Semester:** Spring 2026
-**Class:** BSE 6 A/C · **Department:** Software Engineering, Bahria University Karachi
-
-**Group Members**
-| # | Name | Enrollment | Module |
-|---|---|---|---|
-| 1 | M Sufiyan Aasim *(Team Lead)* | 02-131222-019 | Data Collection & Storage · Data Cleaning & Preprocessing |
-| 2 | M Taha Siddiqui | 02-131232-061 | Analysis & Prediction · Visualization & Reporting |
+**Author:** M Sufiyan Aasim · [@msufiyanpk](https://github.com/msufiyanpk)
+**Project:** [github.com/msufiyanpk/queueless](https://github.com/msufiyanpk/queueless)
 
 ---
 
 ## 1. Project Overview
 
-QueueLess is a digital queue-management system built for the parallel Cloud Computing project.
-The CC system issues digital tokens, tracks live queue state in Firebase, and exposes admin controls
-through a JWT-secured REST API. Every queue event the CC backend handles is *dual-written* to a
-structured event log — that log is the dataset this notebook mines.
+QueueLess is a cloud-native digital queue management system. The backend issues digital tokens,
+tracks live queue state in Firebase Realtime Database, and exposes admin controls through a
+JWT-secured REST API. Every queue event is *dual-written* to a structured event log — that log is
+the dataset this notebook mines.
 
 This notebook executes the full Data Mining pipeline end-to-end:
 
@@ -328,8 +322,7 @@ comparison
 """### 6.4 Discussion — which predictor wins?
 
 The *honest* answer depends on which dataset run you executed, but the typical pattern observed
-across our seeded simulations is interesting and worth the academic submission's discussion
-section:
+across seeded simulations is:
 
 - **The moving-average baseline often matches or beats the linear regression on MAE** despite the
   linear model achieving a high R².

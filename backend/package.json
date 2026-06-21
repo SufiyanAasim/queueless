@@ -1,7 +1,7 @@
 {
   "name": "queueless-backend",
   "version": "1.3.0",
-  "description": "QueueLess - REST API server for Smart Token & Queue Management. Owner: Taha Siddiqui (Backend Module).",
+  "description": "QueueLess — REST API server for Smart Token & Queue Management System.",
   "main": "src/server.js",
   "type": "commonjs",
   "engines": {

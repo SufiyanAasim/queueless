@@ -1,8 +1,6 @@
 """
 Moving average predictor.
 
-Owner: Taha (Analysis & Prediction - DM Module 3).
-
 The simplest possible wait-time estimator: take the rolling average of the
 last N served tokens' waiting times, multiply by the current queue length,
 and that's your prediction for the next user.

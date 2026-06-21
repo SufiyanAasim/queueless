@@ -1,10 +1,7 @@
 """
 Visualization module.
 
-Owner: Taha (Visualization & Reporting - DM Module 4).
-
-Produces the matplotlib charts that go into the final Jupyter notebook and
-the academic report. Every function:
+Produces the matplotlib charts that go into the analytics report. Every function:
   - Takes a DataFrame produced by the analysis modules.
   - Returns a matplotlib Figure (not just `plt.show()`-ing) so the caller
     can decide whether to display, save, or both.

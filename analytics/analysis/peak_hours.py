@@ -1,8 +1,6 @@
 """
 Peak hour detection.
 
-Owner: Taha (Analysis & Prediction - DM Module 3).
-
 Identifies the hours of the day with the highest token-issuance volume.
 This is the single most actionable insight an admin can get - it tells them
 exactly when to schedule extra staff.
