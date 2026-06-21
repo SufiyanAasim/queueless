@@ -381,10 +381,7 @@ export default function Layout({ children }) {
                 className="flex items-center gap-1.5 min-w-0 truncate"
                 title={cfg.location ? `${cfg.orgName} · ${cfg.location}` : cfg.orgName}
               >
-                {/* Location pin SVG — inherits currentColor for light/dark */}
-                <svg className="w-3 h-3 text-graphite shrink-0" viewBox="0 0 12 16" fill="currentColor" aria-hidden="true">
-                  <path d="M6 0C3.24 0 1 2.24 1 5c0 3.75 5 11 5 11s5-7.25 5-11c0-2.76-2.24-5-5-5zm0 6.75A1.75 1.75 0 1 1 6 3.25a1.75 1.75 0 0 1 0 3.5z"/>
-                </svg>
+                <img src="/svg/location-pin.svg" alt="" aria-hidden="true" className="w-3 h-3 shrink-0 opacity-70" />
                 <span className="font-medium text-ink">{cfg.orgName}</span>
                 {cfg.location && (
                   <>
