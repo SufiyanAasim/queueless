@@ -4,7 +4,7 @@ import { useAuth } from '../context/AuthContext.jsx';
 import { useQueueState } from '../hooks/useQueueState.js';
 import { useAppConfig } from '../hooks/useAppConfig.js';
 import { getServices, getServiceLabel } from '../utils/industry.js';
-import { apiCallNext, apiCallNextPriority, apiSkipToken, apiPause, apiResume, apiReset, apiStartAutoMode, apiStopAutoMode, apiActiveQueue } from '../services/api.js';
+import { apiCallNext, apiCallNextPriority, apiSkipToken, apiPause, apiResume, apiReset, apiStartAutoMode, apiStopAutoMode, apiActiveQueue, apiSetAnnouncement, apiClearAnnouncement, apiSetAdminTokenNote } from '../services/api.js';
 import StatusBadge from '../components/StatusBadge.jsx';
 import Stat from '../components/Stat.jsx';
 
@@ -290,12 +290,19 @@ function AutoModePanel({ services, isPaused, queueState }) {
 
 export default function AdminDashboard() {
   const { user } = useAuth();
-  const { state: fbState, tokens: fbTokens, error: fbError, loading: fbLoading } = useQueueState();
+  const { state: fbState, tokens: fbTokens, announcement: fbAnnouncement, error: fbError, loading: fbLoading } = useQueueState();
   const cfg = useAppConfig();
   const [busy, setBusy] = useState(false);
   const [skipBusy, setSkipBusy] = useState(false);
   const [err, setErr] = useState(null);
   const [activeTab, setActiveTab] = useState(0);
+  const [announcementText, setAnnouncementText] = useState('');
+  const [announcementBusy, setAnnouncementBusy] = useState(false);
+  const [lookupQuery, setLookupQuery] = useState('');
+  const [noteTarget, setNoteTarget] = useState(null);
+  const [noteText, setNoteText] = useState('');
+  const [noteBusy, setNoteBusy] = useState(false);
+  const [noteSaved, setNoteSaved] = useState(false);
 
   // REST API fallback: if Firebase returns a permission error (rules not yet deployed)
   // or returns no data, poll the backend directly every 4 seconds.
@@ -371,6 +378,40 @@ export default function AdminDashboard() {
     finally { setSkipBusy(false); }
   };
 
+  const handleSetAnnouncement = async () => {
+    if (!announcementText.trim()) return;
+    setAnnouncementBusy(true);
+    try { await apiSetAnnouncement(announcementText.trim()); }
+    catch {}
+    finally { setAnnouncementBusy(false); }
+  };
+
+  const handleClearAnnouncement = async () => {
+    setAnnouncementBusy(true);
+    try { await apiClearAnnouncement(); setAnnouncementText(''); }
+    catch {}
+    finally { setAnnouncementBusy(false); }
+  };
+
+  const handleSaveNote = async () => {
+    if (!noteTarget || !noteText.trim()) return;
+    setNoteBusy(true);
+    try {
+      await apiSetAdminTokenNote(noteTarget, noteText.trim());
+      setNoteSaved(true);
+      setTimeout(() => { setNoteSaved(false); setNoteTarget(null); setNoteText(''); }, 1500);
+    } catch {}
+    finally { setNoteBusy(false); }
+  };
+
+  // Token lookup — filter all tokens by number or partial ID
+  const lookupResults = lookupQuery.trim()
+    ? tokenList.filter(t => {
+        const q = lookupQuery.trim().toLowerCase();
+        return String(t.number).includes(q) || t.id.toLowerCase().includes(q) || (t.note || '').toLowerCase().includes(q);
+      }).sort((a, b) => b.issuedAt - a.issuedAt).slice(0, 10)
+    : [];
+
   return (
     <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 xl:px-10 py-10">
       <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-10">
@@ -379,6 +420,7 @@ export default function AdminDashboard() {
           <h1 className="font-display text-5xl tracking-tightest leading-none mt-2">Queue control</h1>
         </div>
         <div className="flex items-center gap-4 flex-wrap">
+          <Link to="/admin/appointments" className="btn-secondary text-sm">Appointments</Link>
           <Link to="/admin/setup" className="btn-secondary text-sm">Settings</Link>
           <Link to="/admin/feedback" className="btn-secondary text-sm">Feedback</Link>
           <Link to="/admin/report" className="btn-secondary text-sm">Report</Link>
@@ -400,7 +442,7 @@ export default function AdminDashboard() {
       </div>
 
       {/* Action bar */}
-      <div className="mb-8 flex flex-wrap gap-3">
+      <div className="mb-6 flex flex-wrap gap-3">
         {!isPaused ? (
           <button onClick={() => run(apiPause)} disabled={busy} className="btn-secondary">Pause queue</button>
         ) : (
@@ -413,6 +455,99 @@ export default function AdminDashboard() {
         >
           Reset queue
         </button>
+      </div>
+
+      {/* Announcement panel */}
+      <div className="mb-6 border border-rule bg-cream p-4">
+        <div className="label mb-3">Live announcement</div>
+        {fbAnnouncement?.message && (
+          <div className="mb-3 flex items-start gap-3 p-3 border border-warn bg-warn/5 text-warn text-sm">
+            <span className="w-2 h-2 rounded-full bg-warn animate-pulse mt-0.5 shrink-0" />
+            <span className="flex-1">{fbAnnouncement.message}</span>
+            <button onClick={handleClearAnnouncement} disabled={announcementBusy} className="text-xs underline underline-offset-2 shrink-0 disabled:opacity-40">
+              Clear
+            </button>
+          </div>
+        )}
+        <div className="flex gap-2">
+          <input
+            type="text"
+            value={announcementText}
+            onChange={e => setAnnouncementText(e.target.value)}
+            onKeyDown={e => e.key === 'Enter' && handleSetAnnouncement()}
+            placeholder="Broadcast a message to the display board and customer screens…"
+            maxLength={200}
+            className="flex-1 border border-rule bg-paper px-3 py-2 text-sm focus:outline-none focus:border-ink"
+          />
+          <button
+            onClick={handleSetAnnouncement}
+            disabled={announcementBusy || !announcementText.trim()}
+            className="btn-primary text-sm px-4 disabled:opacity-40"
+          >
+            Broadcast
+          </button>
+        </div>
+      </div>
+
+      {/* Token lookup */}
+      <div className="mb-8 border border-rule bg-cream p-4">
+        <div className="label mb-3">Token lookup</div>
+        <input
+          type="text"
+          value={lookupQuery}
+          onChange={e => setLookupQuery(e.target.value)}
+          placeholder="Search by token #, ID, or note…"
+          className="w-full border border-rule bg-paper px-3 py-2 text-sm focus:outline-none focus:border-ink"
+        />
+        {lookupResults.length > 0 && (
+          <div className="mt-3 border border-rule divide-y divide-rule">
+            {lookupResults.map(t => (
+              <div key={t.id} className="px-4 py-3 flex items-center gap-4 text-sm bg-paper hover:bg-cream transition-colors">
+                <span className="font-display text-2xl num w-10">{String(t.number).padStart(2, '0')}</span>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className={`text-xs px-1.5 py-0.5 border ${t.status === 'waiting' ? 'border-rule text-graphite' : t.status === 'called' ? 'border-accent text-accent' : t.status === 'served' ? 'border-success text-success' : 'border-rule text-ash'}`}>{t.status}</span>
+                    <span className="text-graphite">{getServiceLabel(t.service, cfg.industry)}</span>
+                    {t.priority === 'priority' && <span className="text-warn text-xs font-bold">Priority</span>}
+                  </div>
+                  {t.note && <p className="text-xs text-graphite mt-1 italic truncate">{t.note}</p>}
+                </div>
+                <div className="text-right shrink-0">
+                  <div className="text-xs text-graphite font-mono">{new Date(t.issuedAt).toLocaleTimeString()}</div>
+                  {t.status === 'waiting' && (
+                    <button
+                      onClick={() => { setNoteTarget(t.id); setNoteText(t.note || ''); }}
+                      className="text-xs underline underline-offset-2 text-graphite hover:text-ink mt-1"
+                    >
+                      Add note
+                    </button>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+        {lookupQuery.trim() && lookupResults.length === 0 && (
+          <p className="mt-3 text-sm text-graphite">No tokens match "{lookupQuery}".</p>
+        )}
+        {/* Inline note editor */}
+        {noteTarget && (
+          <div className="mt-3 flex gap-2">
+            <input
+              type="text"
+              value={noteText}
+              onChange={e => setNoteText(e.target.value)}
+              onKeyDown={e => e.key === 'Enter' && handleSaveNote()}
+              placeholder="Note for this token…"
+              maxLength={120}
+              className="flex-1 border border-rule bg-paper px-3 py-2 text-sm focus:outline-none focus:border-ink"
+            />
+            <button onClick={handleSaveNote} disabled={noteBusy || !noteText.trim()} className="btn-primary text-sm px-3 disabled:opacity-40">
+              {noteSaved ? 'Saved!' : noteBusy ? '…' : 'Save'}
+            </button>
+            <button onClick={() => { setNoteTarget(null); setNoteText(''); }} className="btn-secondary text-sm px-3">Cancel</button>
+          </div>
+        )}
       </div>
 
       {/* Priority Queue Section — shown whenever any priority token is waiting */}

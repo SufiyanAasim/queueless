@@ -28,9 +28,15 @@ router.get('/staff',                    asyncHandler(controller.listStaff));
 router.post('/staff',                   asyncHandler(controller.createStaff));
 router.delete('/staff/:username',       asyncHandler(controller.removeStaff));
 
-router.post('/queue/skip/:tokenId',     asyncHandler(controller.skipToken));
-router.post('/change-password',         asyncHandler(controller.changePassword));
-router.get('/profile',                  asyncHandler(controller.getProfile));
-router.put('/profile',                  asyncHandler(controller.updateProfile));
+router.post('/queue/skip/:tokenId',          asyncHandler(controller.skipToken));
+router.put('/queue/tokens/:tokenId/note',    asyncHandler(controller.setTokenNote));
+router.post('/change-password',              asyncHandler(controller.changePassword));
+router.get('/profile',                       asyncHandler(controller.getProfile));
+router.put('/profile',                       asyncHandler(controller.updateProfile));
+router.put('/announcement',                  asyncHandler(controller.setAnnouncement));
+router.delete('/announcement',               asyncHandler(controller.clearAnnouncement));
+router.get('/appointments',                  asyncHandler(controller.listAppointments));
+router.put('/appointments/:id/confirm',      asyncHandler(controller.confirmAppointment));
+router.put('/appointments/:id/cancel',       asyncHandler(controller.cancelAppointment));
 
 module.exports = router;

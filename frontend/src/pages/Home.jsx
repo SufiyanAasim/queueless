@@ -6,7 +6,7 @@ import { useTheme } from '../context/ThemeContext.jsx';
 import StatusBadge from '../components/StatusBadge.jsx';
 
 export default function Home() {
-  const { state, tokens, loading } = useQueueState();
+  const { state, tokens, announcement, loading } = useQueueState();
   const { dark } = useTheme();
   const tokenList = Object.values(tokens || {});
   const waiting = tokenList.filter(t => t.status === 'waiting').length;
@@ -25,6 +25,11 @@ export default function Home() {
 
   return (
     <div className="max-w-6xl mx-auto px-6 py-10 lg:py-16">
+      {announcement?.message && (
+        <div className="mb-8 p-4 border border-warn bg-warn/10 text-warn text-sm font-medium">
+          {announcement.message}
+        </div>
+      )}
       {/* Hero */}
       <div className="grid lg:grid-cols-12 gap-8 lg:gap-12 items-center">
         <div className="lg:col-span-6">
@@ -46,6 +51,7 @@ export default function Home() {
 
           <div className="mt-8 flex flex-col sm:flex-row gap-4">
             <Link to="/take" className="btn-primary">Take a token →</Link>
+            <Link to="/book" className="btn-secondary">Book an appointment</Link>
             <Link to="/lookup" className="btn-secondary">I already have a token</Link>
           </div>
         </div>

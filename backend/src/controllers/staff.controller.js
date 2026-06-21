@@ -1,5 +1,6 @@
 const staffService = require('../services/staff.service');
 const queueService = require('../services/queue.service');
+const { refs } = require('../config/firebase');
 
 async function login(req, res) {
   const { username, password } = req.body;
@@ -43,4 +44,13 @@ async function changePassword(req, res) {
   res.json({ message: 'Password updated successfully.' });
 }
 
-module.exports = { login, loginPin, getQueue, callNext, getProfile, updateProfile, changePassword };
+async function setTokenNote(req, res) {
+  const { tokenId } = req.params;
+  const { note } = req.body;
+  const snap = await refs.token(tokenId).once('value');
+  if (!snap.exists()) throw Object.assign(new Error('Token not found.'), { statusCode: 404 });
+  await refs.token(tokenId).update({ note: note?.trim() || null });
+  res.json({ message: 'Note saved.' });
+}
+
+module.exports = { login, loginPin, getQueue, callNext, getProfile, updateProfile, changePassword, setTokenNote };

@@ -21,6 +21,8 @@ import StaffProfile from './pages/StaffProfile.jsx';
 import StaffChangePassword from './pages/StaffChangePassword.jsx';
 import Display from './pages/Display.jsx';
 import TokenHistory from './pages/TokenHistory.jsx';
+import BookAppointment from './pages/BookAppointment.jsx';
+import AdminAppointments from './pages/AdminAppointments.jsx';
 import { StaffProvider } from './context/StaffContext.jsx';
 
 export default function App() {
@@ -34,6 +36,7 @@ export default function App() {
           <Route path="/token/:id"          element={<MyToken />} />
           <Route path="/feedback/:tokenId"  element={<Feedback />} />
           <Route path="/display"            element={<Display />} />
+          <Route path="/book"               element={<BookAppointment />} />
           <Route path="/history"            element={<TokenHistory />} />
           <Route path="/staff/login"        element={<StaffLogin />} />
           <Route path="/kiosk"              element={<StaffKiosk />} />
@@ -46,6 +49,7 @@ export default function App() {
             <Route path="report"    element={<AdminReport />} />
             <Route path="feedback"         element={<AdminFeedback />} />
             <Route path="staff"            element={<AdminStaff />} />
+            <Route path="appointments"     element={<AdminAppointments />} />
             <Route path="change-password"  element={<AdminChangePassword />} />
             <Route path="profile"          element={<AdminProfile />} />
           </Route>

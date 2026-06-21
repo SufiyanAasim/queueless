@@ -124,6 +124,53 @@ async function updateProfile(req, res) {
   res.json({ message: 'Profile updated.', ...result });
 }
 
+async function setAnnouncement(req, res) {
+  const { message } = req.body;
+  if (!message?.trim()) throw Object.assign(new Error('Message is required.'), { statusCode: 400 });
+  await refs.announcement().set({ message: message.trim(), createdAt: Date.now() });
+  res.json({ message: 'Announcement set.' });
+}
+
+async function clearAnnouncement(req, res) {
+  await refs.announcement().remove();
+  res.json({ message: 'Announcement cleared.' });
+}
+
+async function setTokenNote(req, res) {
+  const { tokenId } = req.params;
+  const { note } = req.body;
+  const snap = await refs.token(tokenId).once('value');
+  if (!snap.exists()) throw Object.assign(new Error('Token not found.'), { statusCode: 404 });
+  await refs.token(tokenId).update({ note: note?.trim() || null });
+  res.json({ message: 'Note saved.' });
+}
+
+async function listAppointments(req, res) {
+  const snap = await refs.appointments().once('value');
+  const all = Object.values(snap.val() || {}).sort((a, b) => {
+    const da = `${a.date}T${a.timeSlot}`;
+    const db_ = `${b.date}T${b.timeSlot}`;
+    return da < db_ ? -1 : da > db_ ? 1 : 0;
+  });
+  res.json(all);
+}
+
+async function cancelAppointment(req, res) {
+  const { id } = req.params;
+  const snap = await refs.appointment(id).once('value');
+  if (!snap.exists()) throw Object.assign(new Error('Appointment not found.'), { statusCode: 404 });
+  await refs.appointment(id).update({ status: 'cancelled' });
+  res.json({ message: 'Appointment cancelled.' });
+}
+
+async function confirmAppointment(req, res) {
+  const { id } = req.params;
+  const snap = await refs.appointment(id).once('value');
+  if (!snap.exists()) throw Object.assign(new Error('Appointment not found.'), { statusCode: 404 });
+  await refs.appointment(id).update({ status: 'confirmed' });
+  res.json({ message: 'Appointment confirmed.' });
+}
+
 module.exports = {
   callNext, callNextPriority, pause, resume, activeQueue, reset,
   getAnalytics, exportAnalyticsCsv,
@@ -134,4 +181,7 @@ module.exports = {
   skipToken,
   changePassword,
   getProfile, updateProfile,
+  setAnnouncement, clearAnnouncement,
+  setTokenNote,
+  listAppointments, cancelAppointment, confirmAppointment,
 };

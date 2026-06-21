@@ -28,6 +28,9 @@ const refs = {
   appConfig: () => db.ref('config'),
   feedback: () => db.ref('feedback'),
   feedbackEntry: (tokenId) => db.ref(`feedback/${tokenId}`),
+  announcement: () => db.ref('queue/announcement'),
+  appointments: () => db.ref('appointments'),
+  appointment: (id) => db.ref(`appointments/${id}`),
 };
 
 module.exports = { admin, db, refs };

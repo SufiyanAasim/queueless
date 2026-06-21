@@ -1,22 +1,24 @@
 import { useState } from 'react';
-import { Navigate } from 'react-router-dom';
+import { Navigate, Link } from 'react-router-dom';
 import { useStaff } from '../context/StaffContext.jsx';
 import { useQueueState } from '../hooks/useQueueState.js';
 import { usePresence } from '../hooks/usePresence.js';
 import { useAppConfig } from '../hooks/useAppConfig.js';
 import { getServiceLabel } from '../utils/industry.js';
-import { apiStaffCallNext } from '../services/api.js';
+import { apiStaffCallNext, apiSkipToken, apiSetStaffTokenNote } from '../services/api.js';
 import StatusBadge from '../components/StatusBadge.jsx';
 
 export default function StaffDashboard() {
   const { staff, logout } = useStaff();
   const cfg = useAppConfig();
-  const { state, tokens } = useQueueState();
+  const { state, tokens, announcement } = useQueueState();
   const [busy, setBusy] = useState(false);
+  const [skipBusy, setSkipBusy] = useState(false);
   const [err, setErr] = useState(null);
-  const [lastCalled, setLastCalled] = useState(null);
+  const [note, setNote] = useState('');
+  const [noteSaving, setNoteSaving] = useState(false);
+  const [noteSaved, setNoteSaved] = useState(false);
 
-  // Register presence so admin can see this staff member is online.
   usePresence(staff?.username, staff?.service);
 
   if (!staff) return <Navigate to="/staff/login" replace />;
@@ -34,24 +36,77 @@ export default function StaffDashboard() {
       return a.number - b.number;
     });
 
+  const priorityWaiting = tokenList.filter(
+    t => t.status === 'waiting' && t.priority === 'priority' && t.service !== myService
+  );
+
   const isPaused = state?.status === 'paused';
 
   const handleCallNext = async () => {
     setBusy(true);
     setErr(null);
+    setNote('');
+    setNoteSaved(false);
     try {
-      const result = await apiStaffCallNext();
-      if (result.called) setLastCalled(result.called);
-      else setLastCalled(null);
+      await apiStaffCallNext();
     } catch (e) {
-      setErr(e.response?.data?.error || 'Action failed.');
+      const code = e.response?.data?.code;
+      if (code === 'PRIORITY_BLOCKING') {
+        setErr('Priority customers are waiting across other counters. Serve them first.');
+      } else {
+        setErr(e.response?.data?.error || 'Action failed.');
+      }
     } finally {
       setBusy(false);
     }
   };
 
+  const handleSkip = async () => {
+    if (!called) return;
+    if (!window.confirm('Mark this token as no-show?')) return;
+    setSkipBusy(true);
+    setErr(null);
+    try {
+      await apiSkipToken(called.id);
+      setNote('');
+    } catch (e) {
+      setErr(e.response?.data?.error || 'Could not skip.');
+    } finally {
+      setSkipBusy(false);
+    }
+  };
+
+  const handleSaveNote = async () => {
+    if (!called || !note.trim()) return;
+    setNoteSaving(true);
+    try {
+      await apiSetStaffTokenNote(called.id, note.trim());
+      setNoteSaved(true);
+      setTimeout(() => setNoteSaved(false), 2000);
+    } catch {
+      // silently fail — note is non-critical
+    } finally {
+      setNoteSaving(false);
+    }
+  };
+
   return (
     <div className="max-w-2xl mx-auto px-6 py-10">
+      {/* Announcement */}
+      {announcement?.message && (
+        <div className="mb-6 p-4 border border-warn bg-warn/5 text-warn text-sm font-medium">
+          {announcement.message}
+        </div>
+      )}
+
+      {/* Priority alert from other services */}
+      {priorityWaiting.length > 0 && (
+        <div className="mb-6 p-4 border border-warn bg-warn/5 text-warn text-sm flex items-center gap-2">
+          <span className="w-2 h-2 rounded-full bg-warn animate-pulse shrink-0" />
+          {priorityWaiting.length} priority customer{priorityWaiting.length > 1 ? 's' : ''} waiting at other counters.
+        </div>
+      )}
+
       {/* Header */}
       <div className="flex items-start justify-between mb-8 flex-wrap gap-4">
         <div>
@@ -67,6 +122,7 @@ export default function StaffDashboard() {
             Online
           </span>
           <StatusBadge status={state?.status || 'running'} />
+          <Link to="/staff/profile" className="btn-secondary text-xs">Profile</Link>
           <button onClick={logout} className="btn-secondary text-xs">Sign out</button>
         </div>
       </div>
@@ -78,20 +134,56 @@ export default function StaffDashboard() {
       )}
 
       {/* Now serving */}
-      <div className="border border-rule bg-cream p-6 mb-6">
-        <div className="label mb-4">Now serving</div>
+      <div className="border border-rule bg-cream p-6 mb-4">
+        <div className="flex items-center justify-between mb-4">
+          <div className="label">Now serving</div>
+          {called && (
+            <button
+              onClick={handleSkip}
+              disabled={skipBusy}
+              className="text-xs text-graphite hover:text-accent underline underline-offset-2 disabled:opacity-40"
+            >
+              {skipBusy ? 'Marking…' : 'No-show / skip'}
+            </button>
+          )}
+        </div>
         {called ? (
-          <div className="flex items-center gap-6">
-            <div className="font-display text-token leading-none tracking-tightest text-accent num">
-              {String(called.number).padStart(2, '0')}
+          <>
+            <div className="flex items-center gap-6">
+              <div className="font-display text-token leading-none tracking-tightest text-accent num">
+                {String(called.number).padStart(2, '0')}
+              </div>
+              <div className="text-sm text-graphite">
+                {called.priority === 'priority' && (
+                  <span className="block text-xs text-warn font-medium mb-1">Priority</span>
+                )}
+                Called at {new Date(called.calledAt).toLocaleTimeString()}
+                {called.note && (
+                  <div className="mt-1 text-xs text-graphite italic">Note: {called.note}</div>
+                )}
+              </div>
             </div>
-            <div className="text-sm text-graphite">
-              {called.priority === 'priority' && (
-                <span className="block text-xs text-warn font-medium mb-1">Priority</span>
-              )}
-              Called at {new Date(called.calledAt).toLocaleTimeString()}
+
+            {/* Note input */}
+            <div className="mt-4 flex gap-2">
+              <input
+                type="text"
+                value={note}
+                onChange={e => setNote(e.target.value)}
+                onKeyDown={e => e.key === 'Enter' && handleSaveNote()}
+                placeholder="Add a note for this customer…"
+                maxLength={120}
+                className="flex-1 border border-rule bg-paper px-3 py-2 text-sm focus:outline-none focus:border-ink"
+              />
+              <button
+                onClick={handleSaveNote}
+                disabled={noteSaving || !note.trim()}
+                className="btn-secondary text-xs px-3 disabled:opacity-40"
+              >
+                {noteSaved ? 'Saved!' : noteSaving ? '…' : 'Save'}
+              </button>
             </div>
-          </div>
+          </>
         ) : (
           <div className="text-graphite text-center py-6">
             <div className="font-display text-5xl text-ash">—</div>
@@ -123,6 +215,7 @@ export default function StaffDashboard() {
                 <div className="flex items-center gap-3">
                   <span className="font-display text-2xl num">{String(t.number).padStart(2, '0')}</span>
                   {t.priority === 'priority' && <span className="text-xs text-warn font-bold">P</span>}
+                  {t.note && <span className="text-xs text-graphite italic truncate max-w-[120px]">{t.note}</span>}
                 </div>
                 <span className="text-graphite font-mono text-xs">{new Date(t.issuedAt).toLocaleTimeString()}</span>
                 <span className="font-medium">#{i + 1}</span>

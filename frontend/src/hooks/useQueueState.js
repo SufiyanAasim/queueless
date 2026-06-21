@@ -9,11 +9,12 @@ import { useEffect, useState } from 'react';
 import { db, ref, onValue, off } from '../firebase.js';
 
 export function useQueueState() {
-  const [data, setData] = useState({ state: null, tokens: {}, loading: true, error: null });
+  const [data, setData] = useState({ state: null, tokens: {}, announcement: null, loading: true, error: null });
 
   useEffect(() => {
-    const stateRef  = ref(db, 'queue/state');
-    const tokensRef = ref(db, 'queue/tokens');
+    const stateRef        = ref(db, 'queue/state');
+    const tokensRef       = ref(db, 'queue/tokens');
+    const announcementRef = ref(db, 'queue/announcement');
 
     const stateUnsub = onValue(
       stateRef,
@@ -25,10 +26,16 @@ export function useQueueState() {
       (snap) => setData(d => ({ ...d, tokens: snap.val() || {}, loading: false })),
       (err)  => setData(d => ({ ...d, error: err.message, loading: false }))
     );
+    const announcementUnsub = onValue(
+      announcementRef,
+      (snap) => setData(d => ({ ...d, announcement: snap.val() })),
+      () => {}
+    );
 
     return () => {
       off(stateRef, 'value', stateUnsub);
       off(tokensRef, 'value', tokensUnsub);
+      off(announcementRef, 'value', announcementUnsub);
     };
   }, []);
 

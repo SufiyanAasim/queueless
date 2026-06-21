@@ -2,11 +2,21 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { apiTakeToken } from '../services/api.js';
 import { useAppConfig } from '../hooks/useAppConfig.js';
+import { useQueueState } from '../hooks/useQueueState.js';
 import { getServices } from '../utils/industry.js';
+
+function formatWait(seconds) {
+  if (!seconds || seconds <= 0) return null;
+  const m = Math.floor(seconds / 60);
+  if (m === 0) return `<1 min`;
+  if (m < 60) return `~${m} min`;
+  return `~${Math.floor(m / 60)}h ${m % 60}m`;
+}
 
 export default function TakeToken() {
   const cfg = useAppConfig();
   const services = getServices(cfg.industry);
+  const { state: queueState, tokens, announcement } = useQueueState();
 
   const [service, setService] = useState(services[0]?.id || 'general');
   const [email, setEmail] = useState('');
@@ -15,8 +25,18 @@ export default function TakeToken() {
   const [error, setError] = useState(null);
   const navigate = useNavigate();
 
-  // If emergency service is selected, auto-flag as priority (medical profile)
   const effectivePriority = priority || service === 'emergency' ? 'priority' : 'normal';
+
+  const tokenList = Object.values(tokens || {});
+  const isPaused = queueState?.status === 'paused';
+
+  // Per-service stats for wait preview
+  const waitingByService = {};
+  services.forEach(s => {
+    waitingByService[s.id] = tokenList.filter(t => t.status === 'waiting' && t.service === s.id).length;
+  });
+  // Rough estimate: 3 min per person
+  const AVG_SECS = 180;
 
   const handleTake = async () => {
     setSubmitting(true);
@@ -37,6 +57,12 @@ export default function TakeToken() {
 
   return (
     <div className="max-w-3xl mx-auto px-6 py-16">
+      {announcement?.message && (
+        <div className="mb-8 p-4 border border-warn bg-warn/10 text-warn text-sm font-medium">
+          {announcement.message}
+        </div>
+      )}
+
       <div className="label mb-4">Step 1 of 2</div>
       <h1 className="font-display text-5xl sm:text-6xl tracking-tightest leading-[0.95]">
         What brings you in today?
@@ -45,30 +71,49 @@ export default function TakeToken() {
         Pick a service so the staff can prepare. You'll get your token number on the next screen.
       </p>
 
+      {isPaused && (
+        <div className="mt-6 p-4 border border-warn bg-warn/5 text-warn text-sm">
+          The queue is currently paused. You can still select a service, but tokens cannot be issued until the queue resumes.
+        </div>
+      )}
+
       <div className={`mt-10 grid gap-4 ${services.length <= 3 ? 'sm:grid-cols-3' : services.length === 4 ? 'sm:grid-cols-2 lg:grid-cols-4' : 'sm:grid-cols-2 lg:grid-cols-3'}`}>
-        {services.map(s => (
-          <button
-            key={s.id}
-            onClick={() => setService(s.id)}
-            className={`text-left p-6 border transition-all ${
-              service === s.id
-                ? 'border-ink bg-ink text-paper'
-                : 'border-rule bg-cream hover:border-ink'
-            }`}
-          >
-            <div className="label" style={service === s.id ? { color: 'currentColor', opacity: 0.6 } : {}}>
-              {service === s.id ? 'Selected' : 'Service'}
-            </div>
-            <div className="mt-3 font-display text-xl leading-tight">{s.title}</div>
-            <div className={`mt-2 text-xs opacity-70 ${service === s.id ? '' : 'text-graphite'}`}>
-              {s.desc}
-            </div>
-          </button>
-        ))}
+        {services.map(s => {
+          const count = waitingByService[s.id] || 0;
+          const waitStr = formatWait(count * AVG_SECS);
+          const isSelected = service === s.id;
+          return (
+            <button
+              key={s.id}
+              onClick={() => setService(s.id)}
+              className={`text-left p-6 border transition-all ${
+                isSelected
+                  ? 'border-ink bg-ink text-paper'
+                  : 'border-rule bg-cream hover:border-ink'
+              }`}
+            >
+              <div className="label" style={isSelected ? { color: 'currentColor', opacity: 0.6 } : {}}>
+                {isSelected ? 'Selected' : 'Service'}
+              </div>
+              <div className="mt-3 font-display text-xl leading-tight">{s.title}</div>
+              <div className={`mt-2 text-xs opacity-70 ${isSelected ? '' : 'text-graphite'}`}>
+                {s.desc}
+              </div>
+              {/* Wait preview */}
+              <div className={`mt-3 pt-3 border-t flex items-center gap-2 text-xs ${isSelected ? 'border-paper/20' : 'border-rule'}`}>
+                <span className={count === 0 ? (isSelected ? 'text-paper/60' : 'text-success') : (isSelected ? 'text-paper/70' : 'text-graphite')}>
+                  {count === 0 ? 'No wait' : `${count} waiting`}
+                </span>
+                {waitStr && count > 0 && (
+                  <span className={isSelected ? 'text-paper/50' : 'text-graphite/60'}>· {waitStr}</span>
+                )}
+              </div>
+            </button>
+          );
+        })}
       </div>
 
       <div className="mt-10 pt-10 border-t border-rule space-y-6">
-        {/* Priority toggle — not shown for emergency (auto-priority) */}
         {service !== 'emergency' && (
           <label className="flex items-start gap-3 cursor-pointer group">
             <input

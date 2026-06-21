@@ -90,3 +90,18 @@ export const apiStaffProfile        = () => api.get('/staff/profile').then(r => 
 export const apiUpdateStaffProfile  = (data) => api.put('/staff/profile', data).then(r => r.data);
 export const apiStaffChangePassword = (currentPassword, newPassword) =>
   api.post('/staff/change-password', { currentPassword, newPassword }).then(r => r.data);
+
+// Announcements
+export const apiSetAnnouncement   = (message) => api.put('/admin/announcement', { message }).then(r => r.data);
+export const apiClearAnnouncement = () => api.delete('/admin/announcement').then(r => r.data);
+export const apiGetAnnouncement   = () => api.get('/announcement').then(r => r.data);
+
+// Token notes
+export const apiSetAdminTokenNote = (tokenId, note) => api.put(`/admin/queue/tokens/${tokenId}/note`, { note }).then(r => r.data);
+export const apiSetStaffTokenNote = (tokenId, note) => api.put(`/staff/queue/tokens/${tokenId}/note`, { note }).then(r => r.data);
+
+// Appointments
+export const apiBookAppointment       = (data) => api.post('/appointments', data).then(r => r.data);
+export const apiListAppointments      = () => api.get('/admin/appointments').then(r => r.data);
+export const apiConfirmAppointment    = (id) => api.put(`/admin/appointments/${id}/confirm`).then(r => r.data);
+export const apiCancelAppointment     = (id) => api.put(`/admin/appointments/${id}/cancel`).then(r => r.data);
