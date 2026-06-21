@@ -44,6 +44,14 @@ function buildApp() {
   });
   app.use('/api/v1/tokens', takeTokenLimiter);
 
+  app.get('/', (req, res) => {
+    res.json({
+      message: 'Welcome to the QueueLess API server.',
+      version: '1.3.0',
+      status: 'active',
+    });
+  });
+
   app.use('/api/v1', routes);
 
   app.use(notFound);
