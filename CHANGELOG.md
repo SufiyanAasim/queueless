@@ -4,7 +4,96 @@ All notable changes to the QueueLess project will be documented in this file.
 
 ---
 
-## QueueLess v1.3.0 — Crew 🧑‍💼 (Latest)
+## QueueLess v1.3.5 — Pulse (Latest)
+
+Codename **Pulse**. This release turns QueueLess into a proactive, self-managing queue system. Admins gain granular service-level control, staff actions are tracked and attributed, customers receive early push alerts, and the queue can now reset itself overnight — all without manual intervention.
+
+### 🔔 Proactive customer notifications
+
+- Push notification at **position 2** — "You're almost up, head to the counter soon"
+- Push notification at **position 1** — "You're next, make your way now"
+- Triggered via the Web Push API on the customer's `/token/:id` page; works in background tabs
+- Notifications fire only when the queue position actually crosses the threshold (position change detection via `prevPositionRef`)
+
+### ♻️ Token re-queue
+
+- Expired tokens can be re-queued within a **2-hour window** from issuance
+- Re-queue preserves the original `service`, `priority`, and `groupSize`
+- New token issued with a fresh number; customer is redirected to the new token page
+- Backend: `POST /tokens/:id/requeue` with Joi UUID validation
+
+### 👨‍👩‍👧 Group / family tokens
+
+- Customers can select a **group size of 1–5** when taking a token
+- Group badge displayed on the customer's token page and in the admin waiting list
+- Hidden for the Medical/Hospital industry profile (individual patient flow)
+- `groupSize` stored on the token record and logged to analytics
+
+### ⏸ Per-service pause
+
+- Admins can **pause and resume individual service queues** independently of the global pause
+- Paused service column shows a `PAUSED` badge; "Call Next" is blocked for that service
+- Customers on `/take` see paused services as dimmed cards and are automatically redirected to the first available service
+- Priority tokens always bypass per-service pause
+
+### 🚨 SLA wait alert
+
+- Admin dashboard shows a **red alert bar** when any service exceeds the configured SLA wait target (minutes)
+- SLA threshold is set in Settings → Queue Behaviour
+- Calculated client-side from `cfg.slaMinutes` and live waiting-token `estimatedWaitSeconds`
+
+### 📊 Staff performance metrics
+
+- New **Staff Performance table** in Admin Analytics — tokens served, average service time, tokens called per staff member
+- Attributed from `staff_username` stored on every `token_called` / `token_served` analytics event
+- Backend: `GET /admin/analytics/staff` — MongoDB aggregation grouped by `staff_username`
+- Both admin dashboard calls and staff portal calls now carry the authenticated username
+
+### 🗓 Scheduled auto-reset
+
+- Admins can set a **daily auto-reset time** (HH:MM) in Settings → Queue Behaviour
+- A `setInterval` scheduler (Asia/Karachi timezone via `Intl.DateTimeFormat`) checks once per minute and triggers `resetQueue()` when the time matches
+- A `lastAutoResetDate` flag prevents double-resets within the same day
+- Backend: `scheduler.service.js`
+
+### 👥 Multiple admin accounts
+
+- Admins can **create and delete secondary admin accounts** at `/admin/manage`
+- Maximum of 10 accounts; duplicate usernames rejected; passwords bcrypt-hashed (`BCRYPT_ROUNDS = 10`)
+- Admins cannot delete their own account (blocked on both frontend and backend)
+- "You" badge shown next to the currently signed-in admin in the accounts list
+- Backend: `GET/POST/DELETE /admin/admins`
+
+### 📺 Display board customisation
+
+- Admins can set a **permanent welcome message** shown as a banner on the display board (`/display`)
+- Configured in Settings → Display Board
+- Stored in Firebase config as `displayMessage`; cleared by saving an empty string
+
+### 🤝 Appointment → walk-in merge
+
+- Confirmed appointments are automatically **converted to priority tokens** within a ±5-minute window of their scheduled time
+- A `setInterval` service checks every minute for unmerged confirmed appointments
+- Prevents double-issue by writing the new `tokenId` back to the appointment record
+- Logs an `appointment_merged` analytics event
+- Backend: `appointmentMerge.service.js`
+
+### 🛠 Analytics — all historical tokens
+
+- Analytics (`GET /admin/analytics`) now cross-references **Firebase RTDB** for token counts
+- Every token ever issued (including any issued before event-logging was set up) is reflected in `totalIssued`, `totalExpired`, peak-hour distribution, and service distribution
+- Wait-time stats (`avgWaitSeconds`) still come from the event log where they are recorded
+- CSV parser refactored to use column-name-to-index map from the header row (no more hardcoded positional indices)
+
+### 🐛 Bug fixes
+
+- Staff portal `callNextToken()` was never passing `staffUsername` — all staff actions showed `null` in analytics; fixed by passing `req.user.sub`
+- Admin dashboard `apiCallNext` / `apiCallNextPriority` calls were missing `staffUsername`; fixed by passing `user.sub` from the frontend
+- `position` constant in `MyToken.jsx` was referenced in a `useEffect` dep array before being declared (Temporal Dead Zone); fixed by hoisting the calculation above all `useEffect` hooks
+
+---
+
+## QueueLess v1.3.0 — Crew
 
 Codename **Crew**. The biggest release yet — full account management for admins and staff, a smarter queue engine, eight new platform features, and a zero-vulnerability dependency baseline.
 

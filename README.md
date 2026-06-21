@@ -2,7 +2,7 @@
 
 **Live:** [queueless-beta.vercel.app](https://queueless-beta.vercel.app)  
 **Author:** Muhammad Sufiyan Aasim · [@msufiyanpk](https://github.com/msufiyanpk)  
-**Latest release:** [v1.3.0 — Crew](https://github.com/msufiyanpk/queueless/releases/tag/v1.3.0)
+**Latest release:** [v1.3.5 — Pulse](https://github.com/msufiyanpk/queueless/releases/tag/v1.3.5)
 
 QueueLess is a full-stack, cloud-native digital queue management system that replaces paper tokens with a real-time browser experience. Customers take tokens from any device, track their live position, and get notified the moment their number is called — no app download required.
 
@@ -14,11 +14,13 @@ Admins and staff manage the queue from a dedicated portal with a live dashboard,
 
 ### Customer-facing
 - **Take a token** — pick a service, request priority if needed (elderly, medical, VIP), and get a token number instantly
+- **Group / family token** — select a group size (1–5) when taking a token; hidden for medical industry
 - **Wait preview** — see live queue length and estimated wait per service *before* committing
 - **Live position tracking** — real-time queue position, ETA, and status powered by Firebase WebSocket
+- **Proactive push notifications** — alerted at position 2 ("almost up") and position 1 ("you're next") even in background tabs
+- **Token re-queue** — expired tokens can be re-issued within 2 hours without losing your place history
 - **Appointment booking** — pre-book a visit by date, time, and service at `/book`
 - **Confetti + sound alert** — browser celebration when your token is called
-- **Push notifications** — browser notification when called, even in a background tab
 - **Token history** — all tokens ever taken on this device at `/history`
 - **QR code on home page** — scan to join the queue without typing a URL
 - **Email tracking link** — optional email with token number and live-tracking link
@@ -26,18 +28,21 @@ Admins and staff manage the queue from a dedicated portal with a live dashboard,
 
 ### Admin portal (`/admin`)
 - **Live dashboard** — real-time queue state per service with priority section, waiting list, serving-now card
+- **Per-service pause** — pause and resume individual service queues independently; priority tokens always bypass
+- **SLA wait alert** — red banner when any service exceeds the configured wait-time target
 - **Live announcements** — broadcast a message to the display board and all customer screens instantly
 - **Token lookup** — search any token by number, ID, or note; add inline notes from results
 - **Call next / skip / no-show** — advance the queue or mark a token expired
 - **Priority queue** — priority tokens served first across all service counters; regular queues auto-blocked until cleared
-- **Pause / resume / reset** — full queue control
+- **Pause / resume / reset** — full queue control including scheduled daily auto-reset
 - **ML Auto Mode** — automatically calls next tokens on a dynamically calculated interval from historical traffic
-- **Analytics dashboard** — peak-hour heatmap, hourly bar chart, service distribution, CSV export
+- **Analytics dashboard** — peak-hour heatmap, hourly bar chart, service distribution, staff performance table, CSV export
 - **Detailed report** — full traffic heatmap, drop-off rate, staffing AI suggestions, print to PDF
-- **Appointment management** — list, confirm, and cancel customer bookings at `/admin/appointments`
+- **Appointment management** — list, confirm, and cancel customer bookings; confirmed appointments auto-merge into the queue ±5 min
 - **Staff management** — create/remove staff, assign services, set PIN for kiosk login, see who is online/offline
+- **Admin accounts** — manage up to 10 admin accounts at `/admin/manage`; bcrypt-hashed passwords
 - **Feedback viewer** — customer ratings and comments with average score; record verbal feedback manually
-- **Settings** — set organisation name, switch industry profile
+- **Settings** — organisation name, industry profile, display board message, SLA target, auto-reset time
 - **Admin profile** — edit display name, change password
 
 ### Staff portal (`/staff`)
@@ -50,7 +55,7 @@ Admins and staff manage the queue from a dedicated portal with a live dashboard,
 - **Staff kiosk** (`/kiosk`) — fullscreen PIN numpad for shared terminals
 
 ### Display board (`/display`)
-- Fullscreen TV-optimised view — now-serving token per service, priority section, announcement banner, flash animation on token change, live clock
+- Fullscreen TV-optimised view — now-serving token per service, priority section, welcome banner, announcement banner, flash animation on token change, live clock
 
 ### Industry profiles
 
@@ -87,7 +92,7 @@ Admins and staff manage the queue from a dedicated portal with a live dashboard,
 | Firebase Admin SDK | 14 | Realtime Database writes, atomic multi-path updates, presence management |
 | MongoDB Atlas | via `mongodb` driver | Analytics event store (dual-written with CSV) |
 | JSON Web Tokens | — | Admin and staff authentication, role + service claims |
-| bcryptjs | — | Password hashing |
+| bcryptjs | — | Password hashing for admin accounts |
 | Joi | — | Request validation and environment variable schema |
 | express-rate-limit | — | Brute-force protection on PIN and login routes |
 | nodemailer | — | Optional token email with tracking link |
@@ -97,8 +102,8 @@ Admins and staff manage the queue from a dedicated portal with a live dashboard,
 
 | Service | Purpose |
 |---|---|
-| Firebase Realtime Database | Live queue state, tokens, presence, announcements, appointments |
-| MongoDB Atlas | Persistent analytics event log (`queue_events`) |
+| Firebase Realtime Database | Live queue state, tokens, presence, announcements, appointments, admin accounts |
+| MongoDB Atlas | Persistent analytics event log (`queue_events`) with `staff_username` attribution |
 
 ### Analytics / Data Mining
 
@@ -132,22 +137,27 @@ queueless/
 │   │   │   ├── env.js              # Joi environment validation
 │   │   │   └── firebase.js         # Admin SDK init + database refs
 │   │   ├── services/
-│   │   │   ├── queue.service.js    # Token issuance, call next (regular + priority), skip, expiry
+│   │   │   ├── queue.service.js    # Token issuance, call next (regular + priority), skip, expiry,
+│   │   │   │                       # per-service pause, re-queue, groupSize, staffUsername attribution
 │   │   │   ├── auth.service.js     # Admin login, password change, profile
 │   │   │   ├── staff.service.js    # Staff CRUD, PIN login, profile
-│   │   │   ├── analytics.service.js# Dual-write (MongoDB + CSV), traffic stats
+│   │   │   ├── analytics.service.js# Dual-write (MongoDB + CSV), traffic stats, Firebase cross-ref,
+│   │   │   │                       # staff performance metrics aggregation
 │   │   │   ├── autoMode.service.js # ML-assisted auto-call with dynamic interval
 │   │   │   ├── expiry.service.js   # Token expiry sweeper (every 5 min)
+│   │   │   ├── scheduler.service.js# Daily auto-reset scheduler (Asia/Karachi TZ, setInterval)
+│   │   │   ├── appointmentMerge.service.js # Auto-merge confirmed appointments → priority tokens (±5 min)
 │   │   │   └── email.service.js    # Nodemailer (optional)
 │   │   ├── controllers/
-│   │   │   ├── admin.controller.js # Queue control, announcements, appointments, notes
+│   │   │   ├── admin.controller.js # Queue control, per-service pause, announcements, appointments,
+│   │   │   │                       # notes, admin CRUD, staff metrics, config management
 │   │   │   ├── staff.controller.js # Staff queue, notes, profile, password
-│   │   │   ├── token.controller.js
+│   │   │   ├── token.controller.js # Token issuance, status, re-queue
 │   │   │   └── feedback.controller.js
 │   │   ├── routes/
 │   │   │   ├── admin.routes.js     # /admin/* — JWT-protected, admin role
 │   │   │   ├── staff.routes.js     # /staff/* — JWT-protected, staff role
-│   │   │   ├── token.routes.js     # /tokens/* — public
+│   │   │   ├── token.routes.js     # /tokens/* — public (groupSize + requeue)
 │   │   │   └── index.js            # /announcement, /appointments — public reads/posts
 │   │   ├── middleware/
 │   │   │   ├── auth.js             # JWT verification, role + service claim extraction
@@ -155,7 +165,7 @@ queueless/
 │   │   │   └── errorHandler.js     # Centralised error responses
 │   │   ├── utils/asyncHandler.js
 │   │   ├── app.js                  # Express factory (CORS, rate-limit, routes)
-│   │   └── server.js               # Entry point, graceful shutdown, expiry sweep
+│   │   └── server.js               # Entry point, graceful shutdown, scheduler + merge service boot
 │   ├── tests/                      # Jest + Supertest
 │   ├── .env.example
 │   └── package.json
@@ -164,21 +174,25 @@ queueless/
 │   ├── src/
 │   │   ├── pages/
 │   │   │   ├── Home.jsx            # Landing page, QR code, announcement banner
-│   │   │   ├── TakeToken.jsx       # Service selection, wait preview, priority toggle
+│   │   │   ├── TakeToken.jsx       # Service selection, wait preview, priority toggle,
+│   │   │   │                       # group size selector, per-service pause awareness
 │   │   │   ├── BookAppointment.jsx # Appointment booking form (/book)
-│   │   │   ├── MyToken.jsx         # Live token tracking, confetti, push notifications
+│   │   │   ├── MyToken.jsx         # Live token tracking, proactive push at pos 2 & 1,
+│   │   │   │                       # re-queue button, group badge, confetti, QR code
 │   │   │   ├── Lookup.jsx          # Recover token by ID or device storage
 │   │   │   ├── Feedback.jsx        # Star rating + comment after served
 │   │   │   ├── TokenHistory.jsx    # All tokens taken on this device
-│   │   │   ├── Display.jsx         # TV display board — priority section, announcements
+│   │   │   ├── Display.jsx         # TV display board — welcome banner, priority section, announcements
 │   │   │   ├── AdminLogin.jsx
-│   │   │   ├── AdminDashboard.jsx  # Queue control, announcements panel, token lookup, notes
-│   │   │   ├── AdminAnalytics.jsx  # Heatmap, bar chart, CSV export
+│   │   │   ├── AdminDashboard.jsx  # Queue control, per-service pause, SLA alert, announcements,
+│   │   │   │                       # token lookup, notes, staffUsername attribution
+│   │   │   ├── AdminAnalytics.jsx  # Heatmap, bar chart, staff performance table, CSV export
 │   │   │   ├── AdminReport.jsx     # Traffic heatmap, hourly bar chart, AI suggestions
 │   │   │   ├── AdminAppointments.jsx # Appointment list with confirm/cancel
 │   │   │   ├── AdminStaff.jsx      # Create/remove staff, live presence, PIN
+│   │   │   ├── AdminManage.jsx     # Multi-admin account management (up to 10)
 │   │   │   ├── AdminFeedback.jsx   # Customer ratings, record verbal feedback
-│   │   │   ├── AdminSetup.jsx      # Org name, industry profile
+│   │   │   ├── AdminSetup.jsx      # Org name, industry, display message, SLA, auto-reset time
 │   │   │   ├── AdminProfile.jsx    # Admin display name, account info
 │   │   │   ├── AdminChangePassword.jsx
 │   │   │   ├── StaffLogin.jsx
@@ -187,7 +201,8 @@ queueless/
 │   │   │   ├── StaffChangePassword.jsx
 │   │   │   └── StaffKiosk.jsx      # Fullscreen PIN numpad (/kiosk)
 │   │   ├── components/
-│   │   │   ├── Layout.jsx          # Nav, ADMIN/Staff dropdown, dark mode toggle
+│   │   │   ├── Layout.jsx          # Nav (Dashboard, Analytics, Staff, Admins, Settings),
+│   │   │   │                       # ADMIN ▼ dropdown, dark mode toggle
 │   │   │   ├── StatusBadge.jsx
 │   │   │   └── Stat.jsx
 │   │   ├── context/
@@ -196,10 +211,11 @@ queueless/
 │   │   │   └── ThemeContext.jsx    # Dark mode toggle, persisted to localStorage
 │   │   ├── hooks/
 │   │   │   ├── useQueueState.js    # Firebase live — queue/state, tokens, announcements
-│   │   │   ├── useAppConfig.js     # Fetches org config (industry, orgName)
+│   │   │   ├── useAppConfig.js     # Fetches org config (industry, orgName, displayMessage, slaMinutes)
 │   │   │   ├── usePresence.js      # Firebase onDisconnect presence for staff
 │   │   │   └── usePushNotification.js
 │   │   ├── services/api.js         # Axios client, JWT interceptors, all API calls
+│   │   │                           # (apiCallNext/Priority carry staffUsername)
 │   │   ├── utils/industry.js       # 4 industry profiles, getServices(), getServiceLabel()
 │   │   └── firebase.js             # Firebase client SDK init
 │   ├── tailwind.config.js
@@ -252,13 +268,14 @@ queueless/
                     ┌──────────────────────────────────────────┐
                     │            React (Vercel)                │
                     │  /           → Home + QR + announcement  │
-                    │  /take       → Issue token + wait preview │
+                    │  /take       → Token + group size + pause │
                     │  /book       → Appointment booking        │
-                    │  /token/:id  → Live tracking              │
-                    │  /display    → TV display board           │
+                    │  /token/:id  → Live tracking + re-queue  │
+                    │  /display    → TV board + welcome banner  │
                     │  /staff      → Staff dashboard + notes    │
                     │  /kiosk      → PIN numpad                 │
                     │  /admin      → Admin portal               │
+                    │  /admin/manage → Multi-admin accounts     │
                     └────────┬──────────────────┬──────────────┘
                              │                  │
               REST /api/v1   │                  │  Firebase WebSocket
@@ -266,14 +283,17 @@ queueless/
                              ▼                  ▼
                     ┌──────────────────────────────────────────┐
                     │         Node.js / Express (Render)       │
-                    │   — token issuance + priority engine     │
+                    │   — token issuance, group size           │
+                    │   — priority + per-service pause engine  │
+                    │   — re-queue (2-hour window)             │
                     │   — queue control (call/skip/pause)      │
                     │   — announcement broadcast               │
-                    │   — appointment CRUD                     │
+                    │   — appointment CRUD + auto-merge        │
                     │   — token notes                          │
                     │   — ML auto mode                         │
-                    │   — admin + staff auth (JWT)             │
+                    │   — admin + staff auth (JWT + bcrypt)    │
                     │   — token expiry sweeper (5 min)         │
+                    │   — daily auto-reset scheduler           │
                     │   — dual-write: MongoDB + CSV            │
                     └────────┬──────────────────┬──────────────┘
                              │                  │
@@ -281,13 +301,16 @@ queueless/
         ┌───────────────────────────┐  ┌───────────────────────┐
         │  Firebase Realtime DB     │  │  MongoDB Atlas        │
         │  queue/state              │  │  queue_events         │
-        │  queue/tokens             │  │  (CSV fallback)       │
-        │  queue/announcement       │  └──────────┬────────────┘
-        │  appointments/            │             │
-        │  presence/{username}      │             ▼
-        │  config/                  │  ┌───────────────────────┐
-        │  admins/ (private)        │  │  Python DM pipeline   │
-        └───────────────────────────┘  │  pandas + sklearn     │
+        │  queue/tokens             │  │  (staff_username,     │
+        │  queue/announcement       │  │   wait durations,     │
+        │  appointments/            │  │   service metrics)    │
+        │  presence/{username}      │  │  (CSV fallback)       │
+        │  config/                  │  └──────────┬────────────┘
+        │  admins/ (bcrypt hashed)  │             │
+        └───────────────────────────┘             ▼
+                                       ┌───────────────────────┐
+                                       │  Python DM pipeline   │
+                                       │  pandas + sklearn     │
                                        │  R² 0.893 · MAE 2.21m │
                                        │  6 matplotlib charts  │
                                        └───────────────────────┘
@@ -366,12 +389,13 @@ firebase deploy --only database
 | Dual-write pattern | Every queue event written atomically to MongoDB + CSV for redundancy |
 | REST API design | Versioned at `/api/v1/`, role-segregated routes, Joi schema validation |
 | Stateless JWT auth | Admin + staff roles, service claim embedded in staff token |
-| Role-based access control | `requireAdmin` / `requireStaff` Express middleware |
+| Role-based access control | `requireAdmin` / `requireStaff` Express middleware; per-admin bcrypt accounts |
 | Firebase Security Rules | Schema-validated RTDB rules — clients read-only, server writes, presence client-writable |
 | Presence detection | Firebase `onDisconnect()` for real-time staff online/offline state |
 | CI/CD pipelines | GitHub Actions — automated tests, build verification, rules deploy on merge |
 | Atomic multi-path updates | Single Firebase `update()` call for consistent token status transitions |
 | Event-driven architecture | Queue state changes propagate to all connected clients via Firebase push |
+| Scheduled background tasks | `setInterval` auto-reset scheduler and appointment-merge service — no cron daemon required |
 
 ## Data Mining Concepts Applied
 
@@ -381,14 +405,14 @@ firebase deploy --only database
 | Data cleaning | `preprocess.py` — type coercion, missing-value handling, outlier flagging, derived feature columns |
 | Descriptive statistics | Wait-time mean, median, std, percentiles grouped by service and hour |
 | Frequency distribution | Hourly volume bar chart, queue-length histogram |
-| Aggregation & grouping | Peak-hour heatmap by service × weekday × hour |
+| Aggregation & grouping | Peak-hour heatmap by service × weekday × hour; staff performance by username |
 | Trend analysis | 7-day daily token count with rolling average |
 | Feature engineering | Cyclical encoding of hour-of-day (`sin`/`cos`) to preserve continuity across midnight |
 | Supervised learning | `sklearn.LinearRegression` for wait-time prediction — R² = 0.893, MAE = 2.21 min |
 | Moving-average baseline | Backtest predictor with no data leakage for comparison against regression |
 | Model serialisation | `joblib` saves trained model to `models/` for reuse without retraining |
 | Visualisation | 6 matplotlib charts rendered in QueueLess editorial style |
-| Live in-browser analytics | Admin Analytics — peak hours, service distribution, drop-off rate, auto-refresh every 30s |
+| Live in-browser analytics | Admin Analytics — peak hours, service distribution, staff metrics, drop-off rate, auto-refresh every 30s |
 | Interactive report | Admin Report — traffic heatmap, hourly bar chart, AI staffing recommendations, print to PDF |
 
 ---
@@ -399,7 +423,8 @@ For detailed release notes and changelogs, see [CHANGELOG.md](CHANGELOG.md).
 
 | Version | Codename | Highlights |
 |---|---|---|
-| [v1.3.0](CHANGELOG.md#queueless-v130--crew-latest) | Crew | Profile management, priority queue engine, 8 new features, 0 vulnerabilities |
+| [v1.3.5](CHANGELOG.md#queueless-v135--pulse-latest) | Pulse | Proactive push alerts, per-service pause, re-queue, group tokens, SLA alerts, staff metrics, multi-admin, auto-reset, appointment merge |
+| [v1.3.0](CHANGELOG.md#queueless-v130--crew) | Crew | Profile management, priority queue engine, 8 new features, 0 vulnerabilities |
 | [v1.2.2](CHANGELOG.md#queueless-v122--vision) | Vision | Analytics report, AI suggestions, dynamic heatmap, UI fixes |
 | [v1.2.0](CHANGELOG.md#queueless-v120--scope) | Scope | Initial release — core queue system, analytics dashboard, staff portal |
 
