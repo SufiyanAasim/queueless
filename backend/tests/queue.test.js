@@ -78,6 +78,13 @@ jest.mock('../src/config/firebase', () => {
       counter: () => makeRef('queue/counter'),
       admins: () => makeRef('admins'),
       admin: (u) => makeRef(`admins/${u}`),
+      staff: () => makeRef('staff'),
+      staffMember: (u) => makeRef(`staff/${u}`),
+      presence: () => makeRef('presence'),
+      presenceMember: (u) => makeRef(`presence/${u}`),
+      appConfig: () => makeRef('config'),
+      feedback: () => makeRef('feedback'),
+      feedbackEntry: (t) => makeRef(`feedback/${t}`),
     },
     __resetStore: () => Object.keys(store).forEach(k => delete store[k]),
   };
