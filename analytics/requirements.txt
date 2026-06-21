@@ -1,7 +1,5 @@
 # ============================================================================
 # QueueLess Analytics Pipeline - Python Dependencies
-# Course: CSL-460 Data Mining Lab
-# ----------------------------------------------------------------------------
 # Pinned major versions for reproducibility. To install:
 #   pip install -r requirements.txt
 # ============================================================================
