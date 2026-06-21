@@ -25,16 +25,17 @@ export default function AdminStaff() {
   const [formError, setFormError] = useState(null);
   const [deleting, setDeleting] = useState(null);
 
-  if (!user) return <Navigate to="/admin/login" replace />;
-
   useEffect(() => {
+    if (!user) return;
     apiListStaff().then(setMembers).finally(() => setLoading(false));
 
     // Live presence subscription via Firebase client SDK
     const presenceRef = ref(db, 'presence');
     const unsub = onValue(presenceRef, snap => setPresence(snap.val() || {}));
     return () => unsub();
-  }, []);
+  }, [user]);
+
+  if (!user) return <Navigate to="/admin/login" replace />;
 
   const handleCreate = async (e) => {
     e.preventDefault();
