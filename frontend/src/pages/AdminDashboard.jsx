@@ -421,7 +421,6 @@ export default function AdminDashboard() {
         </div>
         <div className="flex items-center gap-4 flex-wrap">
           <Link to="/admin/appointments" className="btn-secondary text-sm">Appointments</Link>
-          <Link to="/admin/setup" className="btn-secondary text-sm">Settings</Link>
           <Link to="/admin/feedback" className="btn-secondary text-sm">Feedback</Link>
           <Link to="/admin/report" className="btn-secondary text-sm">Report</Link>
           <StatusBadge status={state?.status || 'running'} />

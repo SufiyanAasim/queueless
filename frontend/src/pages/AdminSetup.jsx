@@ -31,8 +31,11 @@ export default function AdminSetup() {
     setSaving(true);
     setError(null);
     try {
-      await apiUpdateConfig(industry, orgName.trim(), location.trim() || null);
-      localStorage.removeItem('queueless.appConfig');
+      const trimmedLocation = location.trim() || null;
+      await apiUpdateConfig(industry, orgName.trim(), trimmedLocation);
+      // Write fresh config to cache immediately so the status bar updates on navigate
+      // even if the backend is cold-starting and the next fetch fails.
+      localStorage.setItem('queueless.appConfig', JSON.stringify({ industry, orgName: orgName.trim(), location: trimmedLocation }));
       navigate('/admin');
     } catch (e) {
       setError(e.response?.data?.error || 'Could not save. Please try again.');
