@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { apiTakeToken } from '../services/api.js';
 import { useAppConfig } from '../hooks/useAppConfig.js';
@@ -21,28 +21,36 @@ export default function TakeToken() {
   const [service, setService] = useState(services[0]?.id || 'general');
   const [email, setEmail] = useState('');
   const [priority, setPriority] = useState(false);
+  const [groupSize, setGroupSize] = useState(1);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState(null);
   const navigate = useNavigate();
+
+  // If the selected service becomes paused, auto-select the first available non-paused service
+  useEffect(() => {
+    const pausedServices = queueState?.pausedServices || [];
+    if (pausedServices.includes(service)) {
+      const fallback = services.find(s => !pausedServices.includes(s.id));
+      if (fallback) setService(fallback.id);
+    }
+  }, [queueState?.pausedServices, service]);
 
   const effectivePriority = (priority || service === 'emergency') ? 'priority' : 'normal';
 
   const tokenList = Object.values(tokens || {});
   const isPaused = queueState?.status === 'paused';
 
-  // Per-service stats for wait preview
   const waitingByService = {};
   services.forEach(s => {
     waitingByService[s.id] = tokenList.filter(t => t.status === 'waiting' && t.service === s.id).length;
   });
-  // Rough estimate: 3 min per person
   const AVG_SECS = 180;
 
   const handleTake = async () => {
     setSubmitting(true);
     setError(null);
     try {
-      const token = await apiTakeToken(service, email.trim() || null, effectivePriority);
+      const token = await apiTakeToken(service, email.trim() || null, effectivePriority, groupSize);
       localStorage.setItem('queueless.myToken', JSON.stringify(token));
       navigate(`/token/${token.id}`);
     } catch (e) {
@@ -82,32 +90,42 @@ export default function TakeToken() {
           const count = waitingByService[s.id] || 0;
           const waitStr = formatWait(count * AVG_SECS);
           const isSelected = service === s.id;
+          const isServicePaused = queueState?.pausedServices?.includes(s.id);
           return (
             <button
               key={s.id}
-              onClick={() => setService(s.id)}
+              onClick={() => !isServicePaused && setService(s.id)}
+              disabled={isServicePaused}
               className={`text-left p-6 border transition-all ${
-                isSelected
-                  ? 'border-ink bg-ink text-paper'
-                  : 'border-rule bg-cream hover:border-ink'
+                isServicePaused
+                  ? 'border-rule bg-cream opacity-50 cursor-not-allowed'
+                  : isSelected
+                    ? 'border-ink bg-ink text-paper'
+                    : 'border-rule bg-cream hover:border-ink'
               }`}
             >
-              <div className="label" style={isSelected ? { color: 'currentColor', opacity: 0.6 } : {}}>
-                {isSelected ? 'Selected' : 'Service'}
+              <div className="label" style={isSelected && !isServicePaused ? { color: 'currentColor', opacity: 0.6 } : {}}>
+                {isServicePaused ? 'Paused' : isSelected ? 'Selected' : 'Service'}
               </div>
               <div className="mt-3 font-display text-xl leading-tight">{s.title}</div>
-              <div className={`mt-2 text-xs opacity-70 ${isSelected ? '' : 'text-graphite'}`}>
+              <div className={`mt-2 text-xs opacity-70 ${isSelected && !isServicePaused ? '' : 'text-graphite'}`}>
                 {s.desc}
               </div>
-              {/* Wait preview */}
-              <div className={`mt-3 pt-3 border-t flex items-center gap-2 text-xs ${isSelected ? 'border-paper/20' : 'border-rule'}`}>
-                <span className={count === 0 ? (isSelected ? 'text-paper/60' : 'text-success') : (isSelected ? 'text-paper/70' : 'text-graphite')}>
-                  {count === 0 ? 'No wait' : `${count} waiting`}
-                </span>
-                {waitStr && count > 0 && (
-                  <span className={isSelected ? 'text-paper/50' : 'text-graphite/60'}>· {waitStr}</span>
-                )}
-              </div>
+              {isServicePaused && (
+                <div className="mt-2 inline-flex items-center px-2 py-0.5 border border-warn/40 bg-warn/5 text-warn text-xs">
+                  Temporarily paused
+                </div>
+              )}
+              {!isServicePaused && (
+                <div className={`mt-3 pt-3 border-t flex items-center gap-2 text-xs ${isSelected ? 'border-paper/20' : 'border-rule'}`}>
+                  <span className={count === 0 ? (isSelected ? 'text-paper/60' : 'text-success') : (isSelected ? 'text-paper/70' : 'text-graphite')}>
+                    {count === 0 ? 'No wait' : `${count} waiting`}
+                  </span>
+                  {waitStr && count > 0 && (
+                    <span className={isSelected ? 'text-paper/50' : 'text-graphite/60'}>· {waitStr}</span>
+                  )}
+                </div>
+              )}
             </button>
           );
         })}
@@ -133,6 +151,28 @@ export default function TakeToken() {
         {service === 'emergency' && (
           <div className="p-3 border border-accent bg-accent/5 text-accent-deep text-sm">
             Emergency is automatically flagged as priority and will be called before other tokens.
+          </div>
+        )}
+
+        {cfg.industry !== 'medical' && (
+          <div>
+            <span className="label">How many people are in your group?</span>
+            <div className="mt-3 flex gap-2">
+              {[1, 2, 3, 4, 5].map(n => (
+                <button
+                  key={n}
+                  type="button"
+                  onClick={() => setGroupSize(n)}
+                  className={`w-10 h-10 text-sm font-medium border transition-all ${
+                    groupSize === n
+                      ? 'bg-ink text-paper border-ink'
+                      : 'bg-cream text-ink border-rule hover:border-ink'
+                  }`}
+                >
+                  {n}
+                </button>
+              ))}
+            </div>
           </div>
         )}
 

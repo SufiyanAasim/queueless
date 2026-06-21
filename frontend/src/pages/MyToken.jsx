@@ -4,12 +4,11 @@ import QRCode from 'qrcode';
 import confetti from 'canvas-confetti';
 import { useQueueState, useTokenLive } from '../hooks/useQueueState.js';
 import { usePushNotification } from '../hooks/usePushNotification.js';
-import { apiTokenStatus } from '../services/api.js';
+import { apiTokenStatus, apiRequeueToken } from '../services/api.js';
 import { useAppConfig } from '../hooks/useAppConfig.js';
 import { getServiceLabel } from '../utils/industry.js';
 import StatusBadge from '../components/StatusBadge.jsx';
 
-// Save token to local history so the customer can review past tokens.
 function saveToHistory(token, serviceLabel) {
   try {
     const key = 'queueless.tokenHistory';
@@ -25,7 +24,7 @@ function saveToHistory(token, serviceLabel) {
 function playAlertSound() {
   try {
     const ctx = new (window.AudioContext || window.webkitAudioContext)();
-    const notes = [523.25, 659.25, 783.99, 1046.50]; // C5 E5 G5 C6
+    const notes = [523.25, 659.25, 783.99, 1046.50];
     notes.forEach((freq, i) => {
       const osc = ctx.createOscillator();
       const gain = ctx.createGain();
@@ -62,8 +61,6 @@ function PrintableToken({ token, serviceLabel, orgName, location }) {
     <div className="hidden print:flex print:items-center print:justify-center print:min-h-screen print:bg-white"
       style={{ fontFamily: '"Georgia", serif' }}>
       <div style={{ width: '340px', border: '1.5px solid #1A1714', display: 'flex', flexDirection: 'column' }}>
-
-        {/* Ticket header — org name + location */}
         <div style={{ background: '#1A1714', padding: '14px 24px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
           <div>
             <div style={{ color: '#F7F3EC', fontSize: '11px', letterSpacing: '0.18em', textTransform: 'uppercase', fontWeight: '600' }}>
@@ -77,20 +74,14 @@ function PrintableToken({ token, serviceLabel, orgName, location }) {
             <span style={{ color: '#F59E0B', fontSize: '9px', letterSpacing: '0.15em', textTransform: 'uppercase', fontWeight: 'bold', border: '1px solid #F59E0B', padding: '2px 6px', flexShrink: 0, marginLeft: '8px' }}>Priority</span>
           )}
         </div>
-
-        {/* Token number — hero */}
         <div style={{ padding: '32px 24px 20px', borderBottom: '1px dashed #D4CFC8', textAlign: 'center' }}>
           <div style={{ fontSize: '9px', letterSpacing: '0.2em', textTransform: 'uppercase', color: '#8A8278', marginBottom: '8px' }}>{serviceLabel}</div>
           <div style={{ fontSize: '96px', fontWeight: '700', lineHeight: 1, letterSpacing: '-0.04em', color: '#1A1714' }}>#{tokenNum}</div>
         </div>
-
-        {/* Issued time */}
         <div style={{ padding: '14px 24px', borderBottom: '1px dashed #D4CFC8' }}>
           <div style={{ fontSize: '8px', letterSpacing: '0.18em', textTransform: 'uppercase', color: '#8A8278', marginBottom: '3px' }}>Issued</div>
           <div style={{ fontSize: '11px', color: '#4A4542' }}>{issuedAt}</div>
         </div>
-
-        {/* Short tracking reference */}
         <div style={{ padding: '12px 24px', background: '#F7F3EC' }}>
           <div style={{ fontSize: '8px', letterSpacing: '0.15em', textTransform: 'uppercase', color: '#8A8278', marginBottom: '4px' }}>Track your position</div>
           <div style={{ fontSize: '9px', color: '#5C5854', fontFamily: 'monospace', wordBreak: 'break-all' }}>{shortUrl}</div>
@@ -112,7 +103,10 @@ export default function MyToken() {
   const [showQr, setShowQr] = useState(false);
   const [copied, setCopied] = useState(false);
   const [feedbackDismissed, setFeedbackDismissed] = useState(false);
+  const [requeueLoading, setRequeueLoading] = useState(false);
+  const [requeueError, setRequeueError] = useState(null);
   const prevStatusRef = useRef(null);
+  const prevPositionRef = useRef(null);
   const { permission: notifPermission, request: requestNotif, notify } = usePushNotification();
   const [notifBannerDismissed, setNotifBannerDismissed] = useState(
     () => localStorage.getItem('queueless.notifDismissed') === '1'
@@ -126,14 +120,22 @@ export default function MyToken() {
   }, [id]);
 
   const token = liveToken || bootstrap;
-
-  // Save to local history once we have the token.
   const serviceLabel = token ? getServiceLabel(token.service, cfg.industry) : '';
+
+  // position must be declared before the useEffect that depends on it
+  const position = (() => {
+    if (!token || token.status !== 'waiting') return 0;
+    return Object.values(tokens || {})
+      .filter(t => t.status === 'waiting' && t.service === token.service && t.number < token.number).length + 1;
+  })();
+  const peopleAhead = Math.max(0, position - 1);
+  const etaSeconds = token?.estimatedWaitSeconds || 0;
+
   useEffect(() => {
     if (token) saveToHistory(token, serviceLabel);
   }, [token?.id]);
 
-  // Confetti + sound + push notification when this token transitions to called.
+  // Confetti + sound + push notification when token is called
   useEffect(() => {
     if (!token) return;
     const prev = prevStatusRef.current;
@@ -148,6 +150,26 @@ export default function MyToken() {
     }
   }, [token?.status]);
 
+  // Proactive "almost your turn" push at position 2 and 1
+  useEffect(() => {
+    if (!token || token.status !== 'waiting') return;
+    const prev = prevPositionRef.current;
+    prevPositionRef.current = position;
+    if (prev === null) return; // skip initial mount
+    const tokenNum = String(token.number).padStart(2, '0');
+    if (prev > 2 && position === 2) {
+      notify(
+        `You're almost up — Token #${tokenNum} is 2nd in line.`,
+        'Head to the counter soon.'
+      );
+    } else if (position === 1 && prev > 1) {
+      notify(
+        `You're next! Token #${tokenNum}`,
+        'Please make your way to the counter now.'
+      );
+    }
+  }, [position]);
+
   useEffect(() => {
     if (token && showQr && !qrDataUrl) {
       QRCode.toDataURL(window.location.href, { width: 200, margin: 1 })
@@ -155,14 +177,6 @@ export default function MyToken() {
         .catch(() => {});
     }
   }, [token, showQr, qrDataUrl]);
-
-  const position = (() => {
-    if (!token || token.status !== 'waiting') return 0;
-    return Object.values(tokens || {})
-      .filter(t => t.status === 'waiting' && t.service === token.service && t.number < token.number).length + 1;
-  })();
-  const peopleAhead = Math.max(0, position - 1);
-  const etaSeconds = token?.estimatedWaitSeconds || 0;
 
   const copyLink = () => {
     navigator.clipboard.writeText(window.location.href).then(() => {
@@ -174,6 +188,19 @@ export default function MyToken() {
   const shareWhatsApp = () => {
     const text = `Track my queue token #${String(token?.number).padStart(2, '0')} (${serviceLabel}): ${window.location.href}`;
     window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
+  };
+
+  const handleRequeue = async () => {
+    setRequeueLoading(true);
+    setRequeueError(null);
+    try {
+      const result = await apiRequeueToken(token.id);
+      navigate('/token/' + result.token.id);
+    } catch (e) {
+      setRequeueError(e.response?.data?.error || 'Re-queue not available. The token has expired too long ago.');
+    } finally {
+      setRequeueLoading(false);
+    }
   };
 
   if (error) {
@@ -198,11 +225,9 @@ export default function MyToken() {
 
   return (
     <>
-    {/* PrintableToken MUST be outside print:hidden so it renders when printing */}
     <PrintableToken token={token} serviceLabel={serviceLabel} orgName={cfg.orgName} location={cfg.location} />
     <div className="max-w-3xl mx-auto px-6 py-12 lg:py-16 print:hidden">
 
-      {/* Header row */}
       <div className="flex items-center justify-between mb-8 flex-wrap gap-3">
         <span className="label">Your token</span>
         <div className="flex items-center gap-2 flex-wrap">
@@ -214,15 +239,18 @@ export default function MyToken() {
         </div>
       </div>
 
-      {/* Token number */}
       <div className="text-center">
         <div className="label mb-4">{serviceLabel}</div>
         <div className={`font-display num leading-none tracking-tightest text-token sm:text-token-lg ${isCalled ? 'text-accent animate-pulse-slow' : 'text-ink'}`}>
           {String(token.number).padStart(2, '0')}
         </div>
+        {token.groupSize > 1 && (
+          <div className="mt-3 inline-flex items-center gap-1.5 px-3 py-1 border border-rule bg-cream text-xs text-graphite">
+            Group of {token.groupSize}
+          </div>
+        )}
       </div>
 
-      {/* Share row */}
       <div className="mt-6 flex justify-center gap-3">
         <button onClick={copyLink} className="btn-secondary text-xs px-3 py-1.5">
           {copied ? 'Copied!' : 'Copy link'}
@@ -244,7 +272,6 @@ export default function MyToken() {
         </div>
       )}
 
-      {/* Push notification opt-in banner — only show while waiting and permission not yet granted */}
       {isWaiting && notifPermission === 'default' && !notifBannerDismissed && (
         <div className="mt-6 flex items-start gap-4 p-4 border border-rule bg-cream text-sm">
           <div className="flex-1">
@@ -252,18 +279,11 @@ export default function MyToken() {
             <p className="text-graphite text-xs mt-0.5">We'll send a browser alert even if this tab is in the background.</p>
           </div>
           <div className="flex gap-2 shrink-0">
-            <button
-              onClick={() => requestNotif()}
-              className="btn-primary text-xs px-3 py-1.5"
-            >
-              Enable
-            </button>
+            <button onClick={() => requestNotif()} className="btn-primary text-xs px-3 py-1.5">Enable</button>
             <button
               onClick={() => { setNotifBannerDismissed(true); localStorage.setItem('queueless.notifDismissed', '1'); }}
               className="text-graphite hover:text-ink text-xs px-2"
-            >
-              ✕
-            </button>
+            >✕</button>
           </div>
         </div>
       )}
@@ -271,7 +291,6 @@ export default function MyToken() {
         <p className="mt-4 text-center text-xs text-success">Notifications on — we'll alert you when called.</p>
       )}
 
-      {/* Status messaging */}
       {isCalled && (
         <div className="mt-10 text-center">
           <div className="font-display text-3xl text-accent">Please proceed to the counter.</div>
@@ -305,12 +324,8 @@ export default function MyToken() {
           <div className="mt-6 p-6 border border-rule bg-cream">
             <p className="text-sm font-medium mb-4">How was your experience?</p>
             <div className="flex justify-center gap-3 flex-wrap">
-              <button onClick={() => navigate(`/feedback/${id}`)} className="btn-primary">
-                Leave feedback
-              </button>
-              <button onClick={() => setFeedbackDismissed(true)} className="btn-secondary text-xs">
-                Skip
-              </button>
+              <button onClick={() => navigate(`/feedback/${id}`)} className="btn-primary">Leave feedback</button>
+              <button onClick={() => setFeedbackDismissed(true)} className="btn-secondary text-xs">Skip</button>
             </div>
           </div>
         </div>
@@ -326,8 +341,14 @@ export default function MyToken() {
       {isExpired && (
         <div className="mt-10 text-center text-graphite">
           <div className="font-display text-3xl">This token has expired.</div>
-          <p className="mt-3">It was not called within the time window. Please take a new one if you still need service.</p>
-          <Link to="/take" className="btn-primary mt-6 inline-flex">Take a new token</Link>
+          <p className="mt-3">It was not called within the time window.</p>
+          <div className="mt-6 flex flex-col sm:flex-row gap-3 justify-center items-center">
+            <button onClick={handleRequeue} disabled={requeueLoading} className="btn-primary">
+              {requeueLoading ? 'Requesting…' : 'Request re-queue'}
+            </button>
+            <Link to="/take" className="btn-secondary inline-flex">Take a new token</Link>
+          </div>
+          {requeueError && <p className="mt-4 text-sm text-accent">{requeueError}</p>}
         </div>
       )}
 
