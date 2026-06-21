@@ -27,6 +27,12 @@ router.post('/appointments', asyncHandler(async (req, res) => {
   if (!name?.trim() || !service || !date || !timeSlot) {
     return res.status(400).json({ error: 'name, service, date, and timeSlot are required.' });
   }
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+    return res.status(400).json({ error: 'date must be in YYYY-MM-DD format.' });
+  }
+  if (!/^\d{2}:\d{2}$/.test(timeSlot)) {
+    return res.status(400).json({ error: 'timeSlot must be in HH:MM format.' });
+  }
   const id = crypto.randomUUID();
   const record = {
     id, name: name.trim(), service, date, timeSlot,

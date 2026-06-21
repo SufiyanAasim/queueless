@@ -36,8 +36,8 @@ export default function BookAppointment() {
     try {
       const result = await apiBookAppointment(form);
       setBooked(result);
-    } catch (e) {
-      setError(e.response?.data?.error || 'Could not book appointment. Please try again.');
+    } catch (err) {
+      setError(err.response?.data?.error || 'Could not book appointment. Please try again.');
     } finally {
       setSubmitting(false);
     }

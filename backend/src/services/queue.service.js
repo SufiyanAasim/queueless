@@ -262,6 +262,17 @@ async function callNextPriorityToken() {
 
   await db.ref('queue').update(updates);
 
+  if (previouslyCalled) {
+    analytics.logEvent({
+      event_type: 'token_served',
+      token_id: previouslyCalled.id,
+      token_number: previouslyCalled.number,
+      service: previouslyCalled.service,
+      timestamp: servedAt,
+      service_duration_seconds: Math.round((servedAt - previouslyCalled.calledAt) / 1000),
+    }).catch(err => console.error('[analytics]', err.message));
+  }
+
   analytics.logEvent({
     event_type: 'token_called',
     token_id: next.id,
@@ -280,7 +291,7 @@ async function skipToken(tokenId) {
     throw Object.assign(new Error('Token not found.'), { statusCode: 404 });
   }
   const token = tokenSnap.val();
-  if (token.status !== 'called' && token.status !== 'waiting') {
+  if (token.status !== TOKEN_STATUS.CALLED && token.status !== TOKEN_STATUS.WAITING) {
     throw Object.assign(new Error('Only waiting or called tokens can be skipped.'), { statusCode: 400 });
   }
   const now = Date.now();
@@ -296,14 +307,16 @@ async function skipToken(tokenId) {
 }
 
 async function pauseQueue() {
-  await refs.queueState().update({ status: QUEUE_STATUS.PAUSED, pausedAt: Date.now() });
-  analytics.logEvent({ event_type: 'queue_paused', timestamp: Date.now() })
+  const now = Date.now();
+  await refs.queueState().update({ status: QUEUE_STATUS.PAUSED, pausedAt: now });
+  analytics.logEvent({ event_type: 'queue_paused', timestamp: now })
     .catch(err => console.error('[analytics]', err.message));
 }
 
 async function resumeQueue() {
+  const now = Date.now();
   await refs.queueState().update({ status: QUEUE_STATUS.RUNNING, pausedAt: null });
-  analytics.logEvent({ event_type: 'queue_resumed', timestamp: Date.now() })
+  analytics.logEvent({ event_type: 'queue_resumed', timestamp: now })
     .catch(err => console.error('[analytics]', err.message));
 }
 

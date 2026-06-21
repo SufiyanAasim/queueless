@@ -194,7 +194,7 @@ function QueueColumn({ service, called, waiting, onCallNext, onSkip, busy, skipB
 
 function AutoModePanel({ services, isPaused, queueState }) {
   const [autoOn, setAutoOn] = useState(false);
-  const [interval, setIntervalSecs] = useState(null);
+  const [intervalSecs, setIntervalSecs] = useState(null);
   const [countdown, setCountdown] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -210,20 +210,20 @@ function AutoModePanel({ services, isPaused, queueState }) {
       clearInterval(countdownRef.current);
       setCountdown(null);
     }
-  }, [queueState]);
+  }, [queueState, autoOn]);
 
   useEffect(() => {
-    if (autoOn && interval) {
-      setCountdown(interval);
+    if (autoOn && intervalSecs) {
+      setCountdown(intervalSecs);
       countdownRef.current = setInterval(() => {
         setCountdown(c => {
-          if (c <= 1) return interval;
+          if (c <= 1) return intervalSecs;
           return c - 1;
         });
       }, 1000);
     }
     return () => clearInterval(countdownRef.current);
-  }, [autoOn, interval]);
+  }, [autoOn, intervalSecs]);
 
   const toggle = async () => {
     setLoading(true);
@@ -255,7 +255,7 @@ function AutoModePanel({ services, isPaused, queueState }) {
           <div className="font-medium text-sm">AI Auto Mode</div>
           <p className="text-xs text-graphite mt-1 max-w-xs">
             {autoOn
-              ? `Automatically calling the next token every ${interval}s — optimised from your historical data.`
+              ? `Automatically calling the next token every ${intervalSecs}s — optimised from your historical data.`
               : 'Let the system call tokens automatically using ML-predicted intervals from your traffic history.'}
           </p>
           {autoOn && countdown !== null && (
@@ -263,7 +263,7 @@ function AutoModePanel({ services, isPaused, queueState }) {
               <div className="w-24 h-1.5 bg-rule rounded-full overflow-hidden">
                 <div
                   className="h-full bg-success transition-all duration-1000"
-                  style={{ width: `${((interval - countdown) / interval) * 100}%` }}
+                  style={{ width: `${((intervalSecs - countdown) / intervalSecs) * 100}%` }}
                 />
               </div>
               <span className="text-xs text-graphite font-mono">next call in {countdown}s</span>

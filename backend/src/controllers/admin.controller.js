@@ -70,8 +70,13 @@ async function getAppConfig(req, res) {
   res.json(snap.val() || { industry: 'general', orgName: 'QueueLess' });
 }
 
+const VALID_INDUSTRIES = ['general', 'bank', 'medical', 'restaurant'];
+
 async function updateAppConfig(req, res) {
   const { industry, orgName } = req.body;
+  if (industry && !VALID_INDUSTRIES.includes(industry)) {
+    throw Object.assign(new Error(`Invalid industry. Must be one of: ${VALID_INDUSTRIES.join(', ')}.`), { statusCode: 400 });
+  }
   await refs.appConfig().update({ industry, orgName });
   res.json({ message: 'Config updated.', industry, orgName });
 }
@@ -149,8 +154,8 @@ async function listAppointments(req, res) {
   const snap = await refs.appointments().once('value');
   const all = Object.values(snap.val() || {}).sort((a, b) => {
     const da = `${a.date}T${a.timeSlot}`;
-    const db_ = `${b.date}T${b.timeSlot}`;
-    return da < db_ ? -1 : da > db_ ? 1 : 0;
+    const db2 = `${b.date}T${b.timeSlot}`;
+    return da < db2 ? -1 : da > db2 ? 1 : 0;
   });
   res.json(all);
 }

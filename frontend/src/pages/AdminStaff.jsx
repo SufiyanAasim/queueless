@@ -4,7 +4,7 @@ import { useAuth } from '../context/AuthContext.jsx';
 import { useAppConfig } from '../hooks/useAppConfig.js';
 import { getServices, getServiceLabel } from '../utils/industry.js';
 import { apiListStaff, apiCreateStaff, apiDeleteStaff } from '../services/api.js';
-import { db, ref, onValue, off } from '../firebase.js';
+import { db, ref, onValue } from '../firebase.js';
 
 function OnlineDot({ online }) {
   return (
@@ -33,7 +33,7 @@ export default function AdminStaff() {
     // Live presence subscription via Firebase client SDK
     const presenceRef = ref(db, 'presence');
     const unsub = onValue(presenceRef, snap => setPresence(snap.val() || {}));
-    return () => off(presenceRef, 'value', unsub);
+    return () => unsub();
   }, []);
 
   const handleCreate = async (e) => {

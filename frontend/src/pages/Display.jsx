@@ -10,6 +10,7 @@ export default function Display() {
   const [time, setTime] = useState(new Date());
   const [flashId, setFlashId] = useState(null);
   const prevCalledRef = useRef({});
+  const flashTimerRef = useRef(null);
 
   useEffect(() => {
     const t = setInterval(() => setTime(new Date()), 1000);
@@ -24,8 +25,9 @@ export default function Display() {
     tokenList.forEach(t => {
       if (t.status === 'called' && prevCalledRef.current[t.service] !== t.id) {
         prevCalledRef.current[t.service] = t.id;
+        clearTimeout(flashTimerRef.current);
         setFlashId(t.id);
-        setTimeout(() => setFlashId(null), 2000);
+        flashTimerRef.current = setTimeout(() => setFlashId(null), 2000);
       }
     });
   }, [tokens]);

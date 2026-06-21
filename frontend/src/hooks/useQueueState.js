@@ -6,7 +6,7 @@
  * action - no polling, no manual refresh.
  */
 import { useEffect, useState } from 'react';
-import { db, ref, onValue, off } from '../firebase.js';
+import { db, ref, onValue } from '../firebase.js';
 
 export function useQueueState() {
   const [data, setData] = useState({ state: null, tokens: {}, announcement: null, loading: true, error: null });
@@ -33,9 +33,9 @@ export function useQueueState() {
     );
 
     return () => {
-      off(stateRef, 'value', stateUnsub);
-      off(tokensRef, 'value', tokensUnsub);
-      off(announcementRef, 'value', announcementUnsub);
+      stateUnsub();
+      tokensUnsub();
+      announcementUnsub();
     };
   }, []);
 
@@ -54,7 +54,7 @@ export function useTokenLive(tokenId) {
     if (!tokenId) return;
     const tokenRef = ref(db, `queue/tokens/${tokenId}`);
     const unsub = onValue(tokenRef, (snap) => setToken(snap.val()));
-    return () => off(tokenRef, 'value', unsub);
+    return () => unsub();
   }, [tokenId]);
 
   return token;

@@ -25,7 +25,7 @@ export default function TakeToken() {
   const [error, setError] = useState(null);
   const navigate = useNavigate();
 
-  const effectivePriority = priority || service === 'emergency' ? 'priority' : 'normal';
+  const effectivePriority = (priority || service === 'emergency') ? 'priority' : 'normal';
 
   const tokenList = Object.values(tokens || {});
   const isPaused = queueState?.status === 'paused';
