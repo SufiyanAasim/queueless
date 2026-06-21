@@ -6,7 +6,7 @@ import { useTheme } from '../context/ThemeContext.jsx';
 import StatusBadge from '../components/StatusBadge.jsx';
 
 export default function Home() {
-  const { state, tokens } = useQueueState();
+  const { state, tokens, loading } = useQueueState();
   const { dark } = useTheme();
   const tokenList = Object.values(tokens || {});
   const waiting = tokenList.filter(t => t.status === 'waiting').length;
