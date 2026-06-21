@@ -57,9 +57,9 @@ Codename **Crew**. The biggest release yet — full account management for admin
 
 ---
 
-## QueueLess v1.2.2 — Analytics & Stability
+## QueueLess v1.2.2 — Vision
 
-A focused patch release hardening the analytics pipeline, fixing UI regressions, and improving admin tooling.
+Codename **Vision**. A focused patch release hardening the analytics pipeline, fixing UI regressions, and improving admin tooling.
 
 ### 🛠 Fixes & improvements
 
@@ -89,9 +89,9 @@ A focused patch release hardening the analytics pipeline, fixing UI regressions,
 
 ---
 
-## QueueLess v1.2.0 — Initial Public Release
+## QueueLess v1.2.0 — Scope
 
-The first stable release of QueueLess — a cloud-native, token-based queue management system built for real organisations.
+Codename **Scope**. The first stable release of QueueLess — a cloud-native, token-based queue management system built for real organisations.
 
 ### ✨ What's included
 
