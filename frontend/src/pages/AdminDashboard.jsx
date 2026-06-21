@@ -603,7 +603,7 @@ export default function AdminDashboard() {
           tokens={priorityWaitingTokens}
           calledByService={calledByService}
           industry={cfg.industry}
-          onCallNextPriority={() => run(apiCallNextPriority)}
+          onCallNextPriority={() => run(() => apiCallNextPriority(user?.sub))}
           onSkip={handleSkip}
           busy={busy}
           skipBusy={skipBusy}
@@ -656,7 +656,7 @@ export default function AdminDashboard() {
             service={services[activeTab]}
             called={calledByService[services[activeTab].id]}
             waiting={waitingByService[services[activeTab].id]}
-            onCallNext={() => run(() => apiCallNext(services[activeTab].id))}
+            onCallNext={() => run(() => apiCallNext(services[activeTab].id, user?.sub))}
             onSkip={handleSkip}
             busy={busy}
             skipBusy={skipBusy}
@@ -679,7 +679,7 @@ export default function AdminDashboard() {
             service={s}
             called={calledByService[s.id]}
             waiting={waitingByService[s.id]}
-            onCallNext={() => run(() => apiCallNext(s.id))}
+            onCallNext={() => run(() => apiCallNext(s.id, user?.sub))}
             onSkip={handleSkip}
             busy={busy}
             skipBusy={skipBusy}

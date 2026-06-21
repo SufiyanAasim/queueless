@@ -24,7 +24,7 @@ async function callNext(req, res) {
   if (!service) {
     return res.status(400).json({ error: 'No service assigned to this account.' });
   }
-  const result = await queueService.callNextToken(service);
+  const result = await queueService.callNextToken(service, req.user.sub);
   res.json(result);
 }
 

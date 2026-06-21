@@ -2,6 +2,7 @@ const fs = require('fs');
 const fsp = require('fs/promises');
 const path = require('path');
 const config = require('../config/env');
+const { refs } = require('../config/firebase');
 
 let mongoClient = null;
 let mongoCollection = null;
@@ -99,82 +100,84 @@ async function getTrafficStats() {
   try {
     let events = [];
 
-    if (config.analytics.sink === 'mongo') {
-      const col = await getMongoCollection();
-      events = await col.find({}).toArray();
-    } else {
-      const filepath = path.resolve(__dirname, '..', '..', config.analytics.csvPath);
-      const content = await fsp.readFile(filepath, 'utf8');
-      const lines = content.trim().split('\n').slice(1);
-
-      events = lines.filter(line => line).map(line => {
-        const parts = line.split(',');
-        return {
-          event_type: parts[0],
-          service: parts[3],
-          timestamp: parseInt(parts[4]),
-          wait_duration_seconds: parseInt(parts[7]),
-        };
-      });
-    }
-
-    const peakHours = {};
-    const peakHoursByService = {};
-    let totalIssued = 0;
-    let totalExpired = 0;
+    // Collect wait-time stats from event log (only source for wait durations)
     let sumWait = 0;
     let waitCount = 0;
 
-    for (const ev of events) {
-      const { event_type: eventType, service, timestamp } = ev;
-
-      if (eventType === 'token_issued') {
-        totalIssued++;
-        const hour = new Date(timestamp).getHours();
-        peakHours[hour] = (peakHours[hour] || 0) + 1;
-        if (service) {
-          if (!peakHoursByService[service]) peakHoursByService[service] = {};
-          peakHoursByService[service][hour] = (peakHoursByService[service][hour] || 0) + 1;
-        }
-      } else if (eventType === 'token_expired') {
-        totalExpired++;
-      } else if (eventType === 'token_called') {
+    if (config.analytics.sink === 'mongo') {
+      const col = await getMongoCollection();
+      const callEvents = await col.find({ event_type: 'token_called' }).toArray();
+      for (const ev of callEvents) {
         const waitSecs = ev.wait_duration_seconds;
-        if (waitSecs !== null && !isNaN(waitSecs)) {
+        if (waitSecs !== null && waitSecs !== undefined && !isNaN(waitSecs)) {
           sumWait += waitSecs;
           waitCount++;
         }
       }
+    } else {
+      const filepath = path.resolve(__dirname, '..', '..', config.analytics.csvPath);
+      try {
+        const content = await fsp.readFile(filepath, 'utf8');
+        const lines = content.trim().split('\n');
+        // Build column-name → index map from the header row
+        const headerCols = lines[0].split(',').map(c => c.trim());
+        const colIdx = {};
+        headerCols.forEach((c, i) => { colIdx[c] = i; });
+        const dataLines = lines.slice(1);
+        dataLines.filter(l => l).forEach(line => {
+          const parts = line.split(',');
+          const eventType = parts[colIdx['event_type']] || '';
+          if (eventType === 'token_called') {
+            const waitSecs = parseInt(parts[colIdx['wait_duration_seconds']], 10);
+            if (!isNaN(waitSecs)) { sumWait += waitSecs; waitCount++; }
+          }
+        });
+      } catch { /* CSV not yet written */ }
     }
 
-    const dropOffRate = totalIssued > 0 ? (totalExpired / totalIssued) : 0;
-    const avgWaitSeconds = waitCount > 0 ? (sumWait / waitCount) : 0;
-
-    const staffingRecommendation = [];
-    for (let h = 0; h < 24; h++) {
-      if ((peakHours[h] || 0) > 10) staffingRecommendation.push(h);
-    }
-
-    // Service distribution — % breakdown of tokens per service
+    // Use Firebase RTDB as the authoritative source for token counts
+    // (covers all historical tokens, including any issued before event-log setup)
+    const peakHours = {};
+    const peakHoursByService = {};
     const serviceDistribution = {};
-    for (const ev of events) {
-      if (ev.event_type === 'token_issued' && ev.service) {
-        serviceDistribution[ev.service] = (serviceDistribution[ev.service] || 0) + 1;
-      }
-    }
+    let totalIssued = 0;
+    let totalExpired = 0;
 
-    // Daily trend — last 7 days token counts
     const now = Date.now();
     const dailyTrend = {};
     for (let i = 6; i >= 0; i--) {
       const key = new Date(now - i * 86400000).toISOString().slice(0, 10);
       dailyTrend[key] = 0;
     }
-    for (const ev of events) {
-      if (ev.event_type === 'token_issued') {
-        const key = new Date(ev.timestamp).toISOString().slice(0, 10);
-        if (key in dailyTrend) dailyTrend[key]++;
+
+    try {
+      const fbSnap = await refs.tokens().once('value');
+      const fbTokens = Object.values(fbSnap.val() || {});
+      totalIssued = fbTokens.length;
+
+      for (const token of fbTokens) {
+        if (token.status === 'expired') totalExpired++;
+        const ts = token.issuedAt;
+        if (!ts) continue;
+        const svc = token.service || 'general';
+        const hour = new Date(ts).getHours();
+        const dayKey = new Date(ts).toISOString().slice(0, 10);
+
+        peakHours[hour] = (peakHours[hour] || 0) + 1;
+        if (!peakHoursByService[svc]) peakHoursByService[svc] = {};
+        peakHoursByService[svc][hour] = (peakHoursByService[svc][hour] || 0) + 1;
+        serviceDistribution[svc] = (serviceDistribution[svc] || 0) + 1;
+        if (dayKey in dailyTrend) dailyTrend[dayKey]++;
       }
+    } catch (fbErr) {
+      console.error('[analytics] Firebase token read failed, falling back to event log:', fbErr.message);
+    }
+
+    const dropOffRate = totalIssued > 0 ? (totalExpired / totalIssued) : 0;
+    const avgWaitSeconds = waitCount > 0 ? (sumWait / waitCount) : 0;
+    const staffingRecommendation = [];
+    for (let h = 0; h < 24; h++) {
+      if ((peakHours[h] || 0) > 10) staffingRecommendation.push(h);
     }
 
     CSV_CACHE.data = {

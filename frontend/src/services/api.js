@@ -59,8 +59,8 @@ export const apiLogin = (u, p) => api.post('/auth/login', { username: u, passwor
 
 // Admin queue
 export const apiActiveQueue = () => api.get('/admin/queue').then(r => r.data);
-export const apiCallNext         = (service) => api.post('/admin/queue/call-next', { service }).then(r => r.data);
-export const apiCallNextPriority = () => api.post('/admin/queue/call-next-priority').then(r => r.data);
+export const apiCallNext         = (service, staffUsername) => api.post('/admin/queue/call-next', { service, staffUsername: staffUsername || undefined }).then(r => r.data);
+export const apiCallNextPriority = (staffUsername) => api.post('/admin/queue/call-next-priority', { staffUsername: staffUsername || undefined }).then(r => r.data);
 export const apiSkipToken        = (tokenId) => api.post(`/admin/queue/skip/${tokenId}`).then(r => r.data);
 export const apiPause       = () => api.post('/admin/queue/pause').then(r => r.data);
 export const apiResume      = () => api.post('/admin/queue/resume').then(r => r.data);
