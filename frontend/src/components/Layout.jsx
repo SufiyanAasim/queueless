@@ -3,6 +3,8 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext.jsx';
 import { useStaff } from '../context/StaffContext.jsx';
 import { useTheme } from '../context/ThemeContext.jsx';
+import { useAppConfig } from '../hooks/useAppConfig.js';
+import { INDUSTRY_PROFILES } from '../utils/industry.js';
 
 export default function Layout({ children }) {
   const { user, logout } = useAuth();
@@ -18,6 +20,9 @@ export default function Layout({ children }) {
   const [signedOutMsg, setSignedOutMsg] = useState(false);
   const [adminDropOpen, setAdminDropOpen] = useState(false);
   const dropRef = useRef(null);
+
+  const cfg = useAppConfig();
+  const industryName = INDUSTRY_PROFILES[cfg?.industry]?.name || null;
 
   if (onDisplay) return <>{children}</>;
 
@@ -75,13 +80,19 @@ export default function Layout({ children }) {
     <div className="min-h-screen flex flex-col">
       <header className="border-b border-rule sticky top-0 z-40 bg-paper">
         <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 xl:px-10 py-3 flex items-center justify-between gap-4">
-          {/* Logo */}
-          <Link to={logoTarget} className="flex items-center gap-2 shrink-0">
+          {/* Logo + org identity */}
+          <Link to={logoTarget} className="flex items-start gap-2 shrink-0 group">
             <img
               src={logoSrc}
               alt="QueueLess"
-              className="h-6 sm:h-7 w-auto transition-opacity duration-200"
+              className="h-6 sm:h-7 w-auto transition-opacity duration-200 mt-0.5"
             />
+            {cfg?.orgName && cfg.orgName !== 'QueueLess' && (
+              <div className="hidden sm:flex flex-col justify-center leading-none">
+                <span className="text-xs font-medium text-ink">{cfg.orgName}</span>
+                {industryName && <span className="text-[10px] text-graphite mt-0.5">({industryName})</span>}
+              </div>
+            )}
           </Link>
 
           {/* Desktop nav */}
@@ -372,7 +383,16 @@ export default function Layout({ children }) {
 
       <footer className="border-t border-rule mt-12">
         <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 xl:px-10 py-4 flex flex-col sm:flex-row gap-2 sm:gap-6 items-start sm:items-center justify-between text-xs text-graphite">
-          <span className="font-semibold tracking-wide">Karachi, Pakistan</span>
+          <div className="flex items-center gap-3">
+            <span className="font-semibold tracking-wide">Karachi, Pakistan</span>
+            {cfg?.orgName && cfg.orgName !== 'QueueLess' && (
+              <>
+                <span className="text-rule">·</span>
+                <span className="font-medium text-ink">{cfg.orgName}</span>
+                {industryName && <span className="text-graphite">({industryName})</span>}
+              </>
+            )}
+          </div>
           <span className="font-mono">v1.3.0 (latest) · cloud-native token qms</span>
         </div>
       </footer>

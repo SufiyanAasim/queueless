@@ -3,7 +3,7 @@ import { Navigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext.jsx';
 import { useAppConfig } from '../hooks/useAppConfig.js';
 import { getServiceLabel } from '../utils/industry.js';
-import { apiAnalytics } from '../services/api.js';
+import { apiAnalytics, ADMIN_TOKEN_KEY } from '../services/api.js';
 import Stat from '../components/Stat.jsx';
 
 const COLORS = ['#4B6FBF', '#3F6F4F', '#8B5CF6', '#C84B26', '#B8881C', '#0891B2'];
@@ -111,13 +111,24 @@ export default function AdminAnalytics() {
           <button onClick={() => fetchData(true)} disabled={refreshing} className="btn-secondary text-sm">
             {refreshing ? 'Refreshing…' : '↻ Refresh'}
           </button>
-          <a
-            href={`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:4000/api/v1'}/admin/analytics/export`}
-            download="queue_events.csv"
+          <button
+            onClick={async () => {
+              const base = import.meta.env.VITE_API_BASE_URL || 'http://localhost:4000/api/v1';
+              const token = localStorage.getItem(ADMIN_TOKEN_KEY);
+              const res = await fetch(`${base}/admin/analytics/export`, {
+                headers: { Authorization: `Bearer ${token}` },
+              });
+              if (!res.ok) return alert('Export failed. Please try again.');
+              const blob = await res.blob();
+              const url = URL.createObjectURL(blob);
+              const a = document.createElement('a');
+              a.href = url; a.download = 'queue_events.csv'; a.click();
+              URL.revokeObjectURL(url);
+            }}
             className="btn-secondary text-sm"
           >
             Export CSV
-          </a>
+          </button>
           <Link to="/admin" className="btn-secondary text-sm">← Dashboard</Link>
         </div>
       </div>

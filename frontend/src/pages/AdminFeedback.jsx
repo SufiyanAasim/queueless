@@ -1,9 +1,9 @@
 import { useEffect, useState } from 'react';
 import { Navigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext.jsx';
-import { apiFeedback } from '../services/api.js';
+import { apiFeedback, apiSubmitFeedback } from '../services/api.js';
 import { useAppConfig } from '../hooks/useAppConfig.js';
-import { getServiceLabel } from '../utils/industry.js';
+import { getServiceLabel, getServices } from '../utils/industry.js';
 
 function Stars({ rating }) {
   return (
@@ -13,16 +13,56 @@ function Stars({ rating }) {
   );
 }
 
+function StarPicker({ value, onChange }) {
+  const [hovered, setHovered] = useState(0);
+  return (
+    <div className="flex gap-1">
+      {[1,2,3,4,5].map(n => (
+        <button key={n} type="button"
+          onClick={() => onChange(n)}
+          onMouseEnter={() => setHovered(n)}
+          onMouseLeave={() => setHovered(0)}
+          className={`text-3xl transition-colors ${n <= (hovered || value) ? 'text-warn' : 'text-ash'}`}
+        >★</button>
+      ))}
+    </div>
+  );
+}
+
 export default function AdminFeedback() {
   const { user } = useAuth();
   const cfg = useAppConfig();
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [showRecord, setShowRecord] = useState(false);
+  const [form, setForm] = useState({ tokenId: '', rating: 0, comment: '' });
+  const [recording, setRecording] = useState(false);
+  const [recordError, setRecordError] = useState(null);
+  const [recordSuccess, setRecordSuccess] = useState(false);
+
+  const reload = () => apiFeedback().then(setData).finally(() => setLoading(false));
 
   useEffect(() => {
     if (!user) return;
-    apiFeedback().then(setData).finally(() => setLoading(false));
+    reload();
   }, [user]);
+
+  const handleRecord = async (e) => {
+    e.preventDefault();
+    if (!form.tokenId.trim()) { setRecordError('Token ID is required.'); return; }
+    if (!form.rating) { setRecordError('Please select a rating.'); return; }
+    setRecording(true); setRecordError(null);
+    try {
+      await apiSubmitFeedback(form.tokenId.trim(), form.rating, form.comment.trim() || null);
+      setRecordSuccess(true);
+      setForm({ tokenId: '', rating: 0, comment: '' });
+      setTimeout(() => { setRecordSuccess(false); setShowRecord(false); reload(); }, 1500);
+    } catch (e) {
+      setRecordError(e.response?.data?.error || 'Could not record feedback.');
+    } finally {
+      setRecording(false);
+    }
+  };
 
   if (!user) return <Navigate to="/admin/login" replace />;
 
@@ -47,8 +87,54 @@ export default function AdminFeedback() {
           <div className="label">Admin · Feedback</div>
           <h1 className="font-display text-5xl tracking-tightest leading-none mt-2">Customer feedback</h1>
         </div>
-        <Link to="/admin" className="btn-secondary text-sm">Back to dashboard</Link>
+        <div className="flex gap-3 flex-wrap">
+          <button onClick={() => { setShowRecord(v => !v); setRecordError(null); }} className="btn-primary text-sm">
+            {showRecord ? 'Cancel' : '+ Record feedback'}
+          </button>
+          <Link to="/admin" className="btn-secondary text-sm">Back to dashboard</Link>
+        </div>
       </div>
+
+      {/* Record feedback panel */}
+      {showRecord && (
+        <div className="mb-10 border border-rule bg-cream p-6">
+          <div className="label mb-4">Record verbal / in-person feedback</div>
+          <form onSubmit={handleRecord} className="space-y-4">
+            <div className="grid sm:grid-cols-2 gap-4">
+              <div>
+                <label className="label block mb-1.5">Token ID</label>
+                <input
+                  type="text"
+                  value={form.tokenId}
+                  onChange={e => setForm(f => ({ ...f, tokenId: e.target.value }))}
+                  placeholder="e.g. tok_abc123"
+                  className="w-full border border-rule bg-paper px-4 py-2.5 text-sm focus:outline-none focus:border-ink"
+                />
+              </div>
+              <div>
+                <label className="label block mb-1.5">Rating</label>
+                <StarPicker value={form.rating} onChange={r => setForm(f => ({ ...f, rating: r }))} />
+              </div>
+            </div>
+            <div>
+              <label className="label block mb-1.5">Comment (optional)</label>
+              <textarea
+                value={form.comment}
+                onChange={e => setForm(f => ({ ...f, comment: e.target.value }))}
+                rows={3}
+                maxLength={500}
+                placeholder="Customer's verbal feedback…"
+                className="w-full border border-rule bg-paper px-4 py-2.5 text-sm focus:outline-none focus:border-ink resize-none"
+              />
+            </div>
+            {recordError && <div className="p-3 border border-accent bg-accent/5 text-accent-deep text-sm">{recordError}</div>}
+            {recordSuccess && <div className="p-3 border border-success bg-success/5 text-success text-sm">Feedback recorded successfully.</div>}
+            <button type="submit" disabled={recording} className="btn-primary text-sm">
+              {recording ? 'Recording…' : 'Save feedback'}
+            </button>
+          </form>
+        </div>
+      )}
 
       {/* Summary */}
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-px bg-rule mb-10">

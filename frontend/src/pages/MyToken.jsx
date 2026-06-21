@@ -56,24 +56,46 @@ function formatWait(seconds) {
 
 function PrintableToken({ token, serviceLabel }) {
   const issuedAt = token.issuedAt ? new Date(token.issuedAt).toLocaleString() : '';
+  const tokenNum = String(token.number).padStart(2, '0');
+  const url = typeof window !== 'undefined' ? window.location.href : '';
   return (
-    <div id="print-token" className="hidden print:block" style={{ fontFamily: 'Georgia, serif', padding: '60px', maxWidth: '400px', margin: '0 auto' }}>
-      <div style={{ border: '2px solid #1A1714', padding: '40px' }}>
-        <p style={{ fontSize: '11px', letterSpacing: '0.12em', textTransform: 'uppercase', color: '#8A8278', margin: '0 0 24px' }}>
-          QueueLess · {serviceLabel}
-        </p>
-        <p style={{ fontSize: '80px', fontWeight: '700', lineHeight: 1, letterSpacing: '-0.04em', color: '#1A1714', margin: 0 }}>
-          #{String(token.number).padStart(2, '0')}
-        </p>
-        {token.priority === 'priority' && (
-          <p style={{ fontSize: '11px', fontWeight: 'bold', color: '#B45309', margin: '8px 0 0', letterSpacing: '0.1em', textTransform: 'uppercase' }}>
-            Priority
-          </p>
-        )}
-        <p style={{ fontSize: '12px', color: '#6B6560', margin: '16px 0 0' }}>Issued {issuedAt}</p>
-        <p style={{ fontSize: '11px', color: '#A09890', margin: '32px 0 0', borderTop: '1px solid #E0D9CE', paddingTop: '16px' }}>
-          Track at: {typeof window !== 'undefined' ? window.location.href : ''}
-        </p>
+    <div className="hidden print:flex print:items-center print:justify-center print:min-h-screen print:bg-white"
+      style={{ fontFamily: '"Georgia", serif' }}>
+      <div style={{
+        width: '340px', border: '1.5px solid #1A1714',
+        display: 'flex', flexDirection: 'column',
+      }}>
+        {/* Ticket header stripe */}
+        <div style={{ background: '#1A1714', padding: '14px 24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <span style={{ color: '#F7F3EC', fontSize: '11px', letterSpacing: '0.18em', textTransform: 'uppercase' }}>QueueLess</span>
+          {token.priority === 'priority' && (
+            <span style={{ color: '#F59E0B', fontSize: '9px', letterSpacing: '0.15em', textTransform: 'uppercase', fontWeight: 'bold', border: '1px solid #F59E0B', padding: '2px 6px' }}>Priority</span>
+          )}
+        </div>
+
+        {/* Token number — hero */}
+        <div style={{ padding: '32px 24px 20px', borderBottom: '1px dashed #D4CFC8', textAlign: 'center' }}>
+          <div style={{ fontSize: '9px', letterSpacing: '0.2em', textTransform: 'uppercase', color: '#8A8278', marginBottom: '8px' }}>{serviceLabel}</div>
+          <div style={{ fontSize: '96px', fontWeight: '700', lineHeight: 1, letterSpacing: '-0.04em', color: '#1A1714' }}>#{tokenNum}</div>
+        </div>
+
+        {/* Details */}
+        <div style={{ padding: '16px 24px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', borderBottom: '1px dashed #D4CFC8' }}>
+          <div>
+            <div style={{ fontSize: '8px', letterSpacing: '0.18em', textTransform: 'uppercase', color: '#8A8278', marginBottom: '3px' }}>Status</div>
+            <div style={{ fontSize: '12px', color: '#1A1714', fontWeight: '600', textTransform: 'capitalize' }}>{token.status}</div>
+          </div>
+          <div>
+            <div style={{ fontSize: '8px', letterSpacing: '0.18em', textTransform: 'uppercase', color: '#8A8278', marginBottom: '3px' }}>Issued</div>
+            <div style={{ fontSize: '11px', color: '#4A4542' }}>{issuedAt}</div>
+          </div>
+        </div>
+
+        {/* Track URL footer */}
+        <div style={{ padding: '12px 24px', background: '#F7F3EC' }}>
+          <div style={{ fontSize: '8px', letterSpacing: '0.15em', textTransform: 'uppercase', color: '#8A8278', marginBottom: '4px' }}>Track your position</div>
+          <div style={{ fontSize: '9px', color: '#5C5854', wordBreak: 'break-all' }}>{url}</div>
+        </div>
       </div>
     </div>
   );
