@@ -11,13 +11,14 @@ export default function AdminProfile() {
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(false);
 
-  if (!user) return <Navigate to="/admin/login" replace />;
-
   useEffect(() => {
+    if (!user) return;
     apiAdminProfile()
       .then(p => { setDisplayName(p.displayName || ''); setLoading(false); })
       .catch(() => { setDisplayName(user.username || ''); setLoading(false); });
-  }, []);
+  }, [user]);
+
+  if (!user) return <Navigate to="/admin/login" replace />;
 
   const handleSubmit = async (e) => {
     e.preventDefault();

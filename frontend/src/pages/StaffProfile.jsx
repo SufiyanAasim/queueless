@@ -11,13 +11,14 @@ export default function StaffProfile() {
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(false);
 
-  if (!staff) return <Navigate to="/staff/login" replace />;
-
   useEffect(() => {
+    if (!staff) return;
     apiStaffProfile()
       .then(p => { setDisplayName(p.displayName || ''); setLoading(false); })
       .catch(() => { setDisplayName(staff.displayName || staff.username || ''); setLoading(false); });
-  }, []);
+  }, [staff]);
+
+  if (!staff) return <Navigate to="/staff/login" replace />;
 
   const handleSubmit = async (e) => {
     e.preventDefault();
