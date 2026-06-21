@@ -4,7 +4,7 @@ import { useAuth } from '../context/AuthContext.jsx';
 import { useQueueState } from '../hooks/useQueueState.js';
 import { useAppConfig } from '../hooks/useAppConfig.js';
 import { getServices, getServiceLabel } from '../utils/industry.js';
-import { apiCallNext, apiSkipToken, apiPause, apiResume, apiReset, apiStartAutoMode, apiStopAutoMode, apiActiveQueue } from '../services/api.js';
+import { apiCallNext, apiCallNextPriority, apiSkipToken, apiPause, apiResume, apiReset, apiStartAutoMode, apiStopAutoMode, apiActiveQueue } from '../services/api.js';
 import StatusBadge from '../components/StatusBadge.jsx';
 import Stat from '../components/Stat.jsx';
 
@@ -92,22 +92,101 @@ function WaitingList({ tokens, industry }) {
   );
 }
 
-function QueueColumn({ service, called, waiting, onCallNext, onSkip, busy, skipBusy, isPaused, industry }) {
+function PriorityQueueSection({ tokens, calledByService, industry, onCallNextPriority, onSkip, busy, skipBusy, isPaused }) {
+  const priorityCalled = Object.values(calledByService).find(t => t?.priority === 'priority') || null;
+  return (
+    <div className="mb-8 border-2 border-warn bg-warn/5 p-5">
+      <div className="flex items-center justify-between mb-4 flex-wrap gap-3">
+        <div className="flex items-center gap-3">
+          <span className="inline-flex items-center gap-1.5 text-warn font-medium text-sm tracking-wide uppercase">
+            <span className="w-2 h-2 rounded-full bg-warn animate-pulse" />
+            Priority Queue
+          </span>
+          <span className="text-xs text-warn/70 border border-warn/30 px-2 py-0.5">
+            {tokens.length} waiting · General queues paused
+          </span>
+        </div>
+        <button
+          onClick={onCallNextPriority}
+          disabled={busy || isPaused || tokens.length === 0}
+          className="px-5 py-2 text-sm font-medium bg-warn text-paper border border-warn hover:bg-warn/90 disabled:opacity-40 transition-colors"
+        >
+          {busy ? 'Working…' : 'Call Next Priority'}
+        </button>
+      </div>
+
+      {priorityCalled && (
+        <div className="mb-4 p-4 bg-warn/10 border border-warn/30 flex items-center gap-4">
+          <div>
+            <span className="label text-xs text-warn/70">Now serving (priority)</span>
+            <div className="flex items-center gap-3 mt-1">
+              <span className="font-display text-4xl num text-warn">{String(priorityCalled.number).padStart(2, '0')}</span>
+              <div className="text-sm">
+                <div className="font-medium">{getServiceLabel(priorityCalled.service, industry)}</div>
+                <div className="text-xs text-graphite">Called {new Date(priorityCalled.calledAt).toLocaleTimeString()}</div>
+              </div>
+            </div>
+          </div>
+          <button
+            onClick={() => onSkip(priorityCalled.id)}
+            disabled={skipBusy}
+            className="ml-auto text-xs text-graphite hover:text-accent underline underline-offset-2 disabled:opacity-40"
+          >
+            {skipBusy ? 'Marking…' : 'No-show / skip'}
+          </button>
+        </div>
+      )}
+
+      {tokens.length > 0 ? (
+        <div className="border border-warn/30">
+          <div className="px-4 py-2.5 bg-warn/10 text-warn text-xs tracking-[0.18em] uppercase font-medium grid grid-cols-12 gap-3">
+            <div className="col-span-2">#</div>
+            <div className="col-span-5">Service</div>
+            <div className="col-span-3">Issued</div>
+            <div className="col-span-2 text-right">Pos</div>
+          </div>
+          <div className="divide-y divide-warn/20 max-h-[240px] overflow-y-auto">
+            {tokens.map((t, i) => (
+              <div key={t.id} className="px-4 py-3 grid grid-cols-12 gap-3 items-center text-sm bg-paper hover:bg-warn/5 transition-colors">
+                <div className="col-span-2 font-display text-2xl num text-warn">{String(t.number).padStart(2, '0')}</div>
+                <div className="col-span-5 font-medium">{getServiceLabel(t.service, industry)}</div>
+                <div className="col-span-3 font-mono text-xs text-graphite">{new Date(t.issuedAt).toLocaleTimeString()}</div>
+                <div className="col-span-2 text-right font-medium text-warn">{i + 1}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      ) : (
+        <div className="py-6 text-center text-warn/60 text-sm border border-warn/20">
+          No priority tokens in queue.
+        </div>
+      )}
+    </div>
+  );
+}
+
+function QueueColumn({ service, called, waiting, onCallNext, onSkip, busy, skipBusy, isPaused, industry, priorityBlocked }) {
   const title = getServiceLabel(service.id, industry);
   return (
-    <div className="flex flex-col gap-4">
+    <div className={`flex flex-col gap-4 ${priorityBlocked ? 'opacity-60' : ''}`}>
       <div className="flex items-center justify-between border-b border-rule pb-2">
         <h2 className="font-display text-xl">{title}</h2>
         <span className="text-xs text-graphite">{waiting.length} waiting</span>
       </div>
       <ServingNowCard token={called} industry={industry} onSkip={onSkip} skipBusy={skipBusy} />
-      <button
-        onClick={onCallNext}
-        disabled={busy || isPaused || waiting.length === 0}
-        className="btn-primary w-full"
-      >
-        {busy ? 'Working…' : `Call Next`}
-      </button>
+      {priorityBlocked ? (
+        <div className="w-full text-center py-2.5 text-xs text-warn border border-warn/40 bg-warn/5">
+          Paused — serve priority customers first
+        </div>
+      ) : (
+        <button
+          onClick={onCallNext}
+          disabled={busy || isPaused || waiting.length === 0}
+          className="btn-primary w-full"
+        >
+          {busy ? 'Working…' : `Call Next`}
+        </button>
+      )}
       <WaitingList tokens={waiting} industry={industry} />
     </div>
   );
@@ -252,7 +331,12 @@ export default function AdminDashboard() {
   const isPaused = state?.status === 'paused';
   const servedCount = tokenList.filter(t => t.status === 'served').length;
   const expiredCount = tokenList.filter(t => t.status === 'expired').length;
-  const priorityWaiting = tokenList.filter(t => t.status === 'waiting' && t.priority === 'priority').length;
+  const priorityWaitingTokens = tokenList
+    .filter(t => t.status === 'waiting' && t.priority === 'priority')
+    .sort((a, b) => a.number - b.number);
+  const priorityWaiting = priorityWaitingTokens.length;
+  // When any priority token is waiting, general (non-priority) queues are blocked.
+  const priorityBlocked = priorityWaiting > 0;
 
   const waitingByService = {};
   const calledByService = {};
@@ -331,6 +415,20 @@ export default function AdminDashboard() {
         </button>
       </div>
 
+      {/* Priority Queue Section — shown whenever any priority token is waiting */}
+      {priorityWaiting > 0 && (
+        <PriorityQueueSection
+          tokens={priorityWaitingTokens}
+          calledByService={calledByService}
+          industry={cfg.industry}
+          onCallNextPriority={() => run(apiCallNextPriority)}
+          onSkip={handleSkip}
+          busy={busy}
+          skipBusy={skipBusy}
+          isPaused={isPaused}
+        />
+      )}
+
       {!firebaseWorking && (
         <div className="mb-6 p-4 border border-warn bg-warn/5 text-warn text-sm">
           Live updates are limited — Firebase security rules have not been deployed yet.
@@ -382,6 +480,7 @@ export default function AdminDashboard() {
             skipBusy={skipBusy}
             isPaused={isPaused}
             industry={cfg.industry}
+            priorityBlocked={priorityBlocked && !waitingByService[services[activeTab].id]?.some(t => t.priority === 'priority')}
           />
         )}
       </div>
@@ -400,6 +499,7 @@ export default function AdminDashboard() {
             skipBusy={skipBusy}
             isPaused={isPaused}
             industry={cfg.industry}
+            priorityBlocked={priorityBlocked && !waitingByService[s.id]?.some(t => t.priority === 'priority')}
           />
         ))}
       </div>

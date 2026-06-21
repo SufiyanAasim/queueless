@@ -46,7 +46,9 @@ async function ensureInitialized() {
 async function issueToken({ service = 'general', email = null, priority = 'normal' } = {}) {
   const stateSnap = await refs.queueState().once('value');
   const state = stateSnap.val();
-  if (state.status === QUEUE_STATUS.PAUSED) {
+  const isPriorityToken = priority === 'priority';
+  // Priority tokens bypass the paused state — they must always be admitted.
+  if (state.status === QUEUE_STATUS.PAUSED && !isPriorityToken) {
     const err = new Error('Queue is currently paused. Please try again later.');
     err.statusCode = 423;
     throw err;
@@ -145,10 +147,27 @@ async function callNextToken(service = 'general') {
   const all = tokensSnap.val() || {};
   const tokenList = Object.values(all);
 
+  // Global priority enforcement: if ANY priority token is waiting across ANY service,
+  // block calling a regular token. Regular queues must wait until all priority tokens
+  // have been served.
+  const anyPriorityWaiting = tokenList.some(
+    t => t.status === TOKEN_STATUS.WAITING && t.priority === TOKEN_PRIORITY.PRIORITY
+  );
+
   const previouslyCalled = tokenList.find(t => t.status === TOKEN_STATUS.CALLED && t.service === service);
-  const next = tokenList
+  const waitingForService = tokenList
     .filter(t => t.status === TOKEN_STATUS.WAITING && t.service === service)
-    .sort(sortByPriorityThenNumber)[0];
+    .sort(sortByPriorityThenNumber);
+
+  const next = waitingForService[0];
+
+  // If priority tokens exist globally and the next token for this service is NOT priority, block it.
+  if (anyPriorityWaiting && next && next.priority !== TOKEN_PRIORITY.PRIORITY) {
+    const err = new Error('Priority customers are waiting. Please serve all priority tokens first before calling regular queue.');
+    err.statusCode = 409;
+    err.code = 'PRIORITY_BLOCKING';
+    throw err;
+  }
 
   const updates = {};
   let servedAt = null;
@@ -192,6 +211,56 @@ async function callNextToken(service = 'general') {
       service_duration_seconds: Math.round((servedAt - previouslyCalled.calledAt) / 1000),
     }).catch(err => console.error('[analytics]', err.message));
   }
+
+  analytics.logEvent({
+    event_type: 'token_called',
+    token_id: next.id,
+    token_number: next.number,
+    service: next.service,
+    timestamp: calledAt,
+    wait_duration_seconds: Math.round((calledAt - next.issuedAt) / 1000),
+  }).catch(err => console.error('[analytics]', err.message));
+
+  return { called: { ...next, status: TOKEN_STATUS.CALLED, calledAt } };
+}
+
+async function callNextPriorityToken() {
+  const stateSnap = await refs.queueState().once('value');
+  const state = stateSnap.val();
+  if (state.status === QUEUE_STATUS.PAUSED) {
+    const err = new Error('Cannot advance queue while paused. Resume first.');
+    err.statusCode = 423;
+    throw err;
+  }
+
+  const tokensSnap = await refs.tokens().once('value');
+  const all = tokensSnap.val() || {};
+  const tokenList = Object.values(all);
+
+  const next = tokenList
+    .filter(t => t.status === TOKEN_STATUS.WAITING && t.priority === TOKEN_PRIORITY.PRIORITY)
+    .sort((a, b) => a.number - b.number)[0];
+
+  if (!next) return { called: null, message: 'No priority tokens waiting.' };
+
+  // Mark previously called token for this service as served
+  const previouslyCalled = tokenList.find(t => t.status === TOKEN_STATUS.CALLED && t.service === next.service);
+  const updates = {};
+  let servedAt = null;
+
+  if (previouslyCalled) {
+    servedAt = Date.now();
+    updates[`tokens/${previouslyCalled.id}/status`] = TOKEN_STATUS.SERVED;
+    updates[`tokens/${previouslyCalled.id}/servedAt`] = servedAt;
+  }
+
+  const calledAt = Date.now();
+  updates[`tokens/${next.id}/status`] = TOKEN_STATUS.CALLED;
+  updates[`tokens/${next.id}/calledAt`] = calledAt;
+  updates[`state/currentTokenNumber`] = next.number;
+  updates[`state/lastCalledAt`] = calledAt;
+
+  await db.ref('queue').update(updates);
 
   analytics.logEvent({
     event_type: 'token_called',
@@ -292,7 +361,7 @@ module.exports = {
   TOKEN_STATUS, QUEUE_STATUS, TOKEN_PRIORITY,
   ensureInitialized,
   issueToken, getTokenStatus,
-  callNextToken, skipToken,
+  callNextToken, callNextPriorityToken, skipToken,
   pauseQueue, resumeQueue,
   getActiveQueue, resetQueue,
 };

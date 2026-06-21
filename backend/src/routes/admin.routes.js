@@ -6,7 +6,8 @@ const controller = require('../controllers/admin.controller');
 router.use(requireAdmin);
 
 router.get('/queue',                    asyncHandler(controller.activeQueue));
-router.post('/queue/call-next',         asyncHandler(controller.callNext));
+router.post('/queue/call-next',          asyncHandler(controller.callNext));
+router.post('/queue/call-next-priority', asyncHandler(controller.callNextPriority));
 router.post('/queue/pause',             asyncHandler(controller.pause));
 router.post('/queue/resume',            asyncHandler(controller.resume));
 router.post('/queue/reset',             asyncHandler(controller.reset));

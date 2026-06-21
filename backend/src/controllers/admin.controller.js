@@ -12,6 +12,11 @@ async function callNext(req, res) {
   res.json(result);
 }
 
+async function callNextPriority(req, res) {
+  const result = await queueService.callNextPriorityToken();
+  res.json(result);
+}
+
 async function pause(req, res) {
   await queueService.pauseQueue();
   res.json({ message: 'Queue paused.' });
@@ -120,7 +125,7 @@ async function updateProfile(req, res) {
 }
 
 module.exports = {
-  callNext, pause, resume, activeQueue, reset,
+  callNext, callNextPriority, pause, resume, activeQueue, reset,
   getAnalytics, exportAnalyticsCsv,
   startAutoMode, stopAutoMode, getAutoModeStatus,
   getAppConfig, updateAppConfig,
