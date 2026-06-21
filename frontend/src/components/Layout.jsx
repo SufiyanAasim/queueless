@@ -70,6 +70,7 @@ export default function Layout({ children }) {
     { to: '/admin', label: 'Dashboard' },
     { to: '/admin/analytics', label: 'Analytics' },
     { to: '/admin/staff', label: 'Staff' },
+    { to: '/admin/manage', label: 'Admins' },
     { to: '/admin/setup', label: 'Settings' },
   ];
 

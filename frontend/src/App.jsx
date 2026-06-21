@@ -12,6 +12,7 @@ import AdminAnalytics from './pages/AdminAnalytics.jsx';
 import AdminReport from './pages/AdminReport.jsx';
 import AdminFeedback from './pages/AdminFeedback.jsx';
 import AdminStaff from './pages/AdminStaff.jsx';
+import AdminManage from './pages/AdminManage.jsx';
 import AdminChangePassword from './pages/AdminChangePassword.jsx';
 import AdminProfile from './pages/AdminProfile.jsx';
 import StaffLogin from './pages/StaffLogin.jsx';
@@ -49,6 +50,7 @@ export default function App() {
             <Route path="report"    element={<AdminReport />} />
             <Route path="feedback"         element={<AdminFeedback />} />
             <Route path="staff"            element={<AdminStaff />} />
+            <Route path="manage"           element={<AdminManage />} />
             <Route path="appointments"     element={<AdminAppointments />} />
             <Route path="change-password"  element={<AdminChangePassword />} />
             <Route path="profile"          element={<AdminProfile />} />

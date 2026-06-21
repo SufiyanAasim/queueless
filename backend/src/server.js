@@ -4,6 +4,8 @@ const queueService = require('./services/queue.service');
 const authService = require('./services/auth.service');
 const analyticsService = require('./services/analytics.service');
 const expiryService = require('./services/expiry.service');
+const schedulerService = require('./services/scheduler.service');
+const appointmentMergeService = require('./services/appointmentMerge.service');
 
 async function main() {
   console.log(`[boot] Starting QueueLess backend in ${config.nodeEnv} mode...`);
@@ -11,6 +13,8 @@ async function main() {
   await authService.bootstrapAdmin();
   await queueService.ensureInitialized();
   expiryService.startExpirySweep();
+  schedulerService.startScheduler();
+  appointmentMergeService.startAppointmentMerge();
   console.log('[boot] Firebase state initialized.');
 
   const app = buildApp();
@@ -20,11 +24,12 @@ async function main() {
     console.log(`[boot] Analytics sink: ${config.analytics.sink}`);
   });
 
-  // Render sends SIGTERM on redeploy — drain in-flight requests before exiting.
   const shutdown = async (signal) => {
     console.log(`[shutdown] ${signal} received - closing server...`);
     server.close(async () => {
       expiryService.stopExpirySweep();
+      schedulerService.stopScheduler();
+      appointmentMergeService.stopAppointmentMerge();
       try {
         await analyticsService.close();
       } catch (e) {

@@ -44,6 +44,13 @@ export default function Display() {
         </div>
       )}
 
+      {/* Display message (permanent welcome message from admin settings) */}
+      {cfg.displayMessage && (
+        <div className="px-8 py-2.5 border-b border-teal-500/30 bg-teal-900/20 text-teal-200 text-sm text-center tracking-wide">
+          {cfg.displayMessage}
+        </div>
+      )}
+
       {/* Top bar */}
       <div className="flex items-center justify-between px-8 py-5 border-b border-paper/10">
         <div>

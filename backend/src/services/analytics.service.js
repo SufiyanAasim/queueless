@@ -73,6 +73,7 @@ async function logEvent(event) {
     queue_length: event.queue_length ?? null,
     wait_duration_seconds: event.wait_duration_seconds ?? null,
     service_duration_seconds: event.service_duration_seconds ?? null,
+    staff_username: event.staff_username || null,
   };
 
   const writes = [];
@@ -205,8 +206,62 @@ async function getTrafficStats() {
   }
 }
 
+async function getStaffMetrics() {
+  try {
+    if (!config.analytics.mongo.uri) return [];
+    const col = await getMongoCollection();
+
+    const pipeline = [
+      {
+        $match: {
+          event_type: { $in: ['token_called', 'token_served'] },
+          staff_username: { $ne: null, $exists: true },
+        },
+      },
+      {
+        $group: {
+          _id: { username: '$staff_username', event_type: '$event_type' },
+          count: { $sum: 1 },
+          totalSeconds: { $sum: { $ifNull: ['$service_duration_seconds', 0] } },
+        },
+      },
+      {
+        $group: {
+          _id: '$_id.username',
+          events: {
+            $push: {
+              event_type: '$_id.event_type',
+              count: '$count',
+              totalSeconds: '$totalSeconds',
+            },
+          },
+        },
+      },
+    ];
+
+    const results = await col.aggregate(pipeline).toArray();
+
+    return results.map(doc => {
+      const servedEvent = doc.events.find(e => e.event_type === 'token_served');
+      const calledEvent = doc.events.find(e => e.event_type === 'token_called');
+      const tokensServed = servedEvent ? servedEvent.count : 0;
+      const totalServiceSeconds = servedEvent ? servedEvent.totalSeconds : 0;
+      const avgServiceSeconds = tokensServed > 0 ? Math.round(totalServiceSeconds / tokensServed) : 0;
+      return {
+        username: doc._id,
+        tokensServed,
+        avgServiceSeconds,
+        tokensCalled: calledEvent ? calledEvent.count : 0,
+      };
+    }).sort((a, b) => b.tokensServed - a.tokensServed);
+  } catch (err) {
+    console.error('[analytics] getStaffMetrics failed (non-fatal):', err.message);
+    return [];
+  }
+}
+
 async function close() {
   if (mongoClient) await mongoClient.close();
 }
 
-module.exports = { logEvent, close, CSV_COLUMNS, getTrafficStats };
+module.exports = { logEvent, close, CSV_COLUMNS, getTrafficStats, getStaffMetrics };

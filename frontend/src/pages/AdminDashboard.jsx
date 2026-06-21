@@ -4,7 +4,7 @@ import { useAuth } from '../context/AuthContext.jsx';
 import { useQueueState } from '../hooks/useQueueState.js';
 import { useAppConfig } from '../hooks/useAppConfig.js';
 import { getServices, getServiceLabel } from '../utils/industry.js';
-import { apiCallNext, apiCallNextPriority, apiSkipToken, apiPause, apiResume, apiReset, apiStartAutoMode, apiStopAutoMode, apiActiveQueue, apiSetAnnouncement, apiClearAnnouncement, apiSetAdminTokenNote } from '../services/api.js';
+import { apiCallNext, apiCallNextPriority, apiSkipToken, apiPause, apiResume, apiReset, apiStartAutoMode, apiStopAutoMode, apiActiveQueue, apiSetAnnouncement, apiClearAnnouncement, apiSetAdminTokenNote, apiPauseService, apiResumeService } from '../services/api.js';
 import StatusBadge from '../components/StatusBadge.jsx';
 import Stat from '../components/Stat.jsx';
 
@@ -165,16 +165,35 @@ function PriorityQueueSection({ tokens, calledByService, industry, onCallNextPri
   );
 }
 
-function QueueColumn({ service, called, waiting, onCallNext, onSkip, busy, skipBusy, isPaused, industry, priorityBlocked }) {
+function QueueColumn({ service, called, waiting, onCallNext, onSkip, busy, skipBusy, isPaused, industry, priorityBlocked, isServicePaused, onPauseService, onResumeService, pausingService }) {
   const title = getServiceLabel(service.id, industry);
+  const toggling = pausingService === service.id;
   return (
     <div className={`flex flex-col gap-4 ${priorityBlocked ? 'opacity-60' : ''}`}>
-      <div className="flex items-center justify-between border-b border-rule pb-2">
-        <h2 className="font-display text-xl">{title}</h2>
-        <span className="text-xs text-graphite">{waiting.length} waiting</span>
+      <div className={`flex items-center justify-between border-b pb-2 ${isServicePaused ? 'border-warn/40' : 'border-rule'}`}>
+        <div className="flex items-center gap-2 min-w-0">
+          <h2 className={`font-display text-xl ${isServicePaused ? 'text-graphite' : ''}`}>{title}</h2>
+          {isServicePaused && (
+            <span className="text-xs px-1.5 py-0.5 border border-warn/50 text-warn bg-warn/5 shrink-0">PAUSED</span>
+          )}
+        </div>
+        <div className="flex items-center gap-2 shrink-0">
+          <span className="text-xs text-graphite">{waiting.length} waiting</span>
+          <button
+            onClick={isServicePaused ? onResumeService : onPauseService}
+            disabled={toggling}
+            className="text-xs px-2 py-0.5 border border-rule text-graphite hover:border-ink hover:text-ink transition-colors disabled:opacity-40"
+          >
+            {toggling ? '…' : isServicePaused ? 'Resume' : 'Pause'}
+          </button>
+        </div>
       </div>
       <ServingNowCard token={called} industry={industry} onSkip={onSkip} skipBusy={skipBusy} />
-      {priorityBlocked ? (
+      {isServicePaused ? (
+        <div className="w-full text-center py-2.5 text-xs text-warn border border-warn/40 bg-warn/5">
+          This service is paused
+        </div>
+      ) : priorityBlocked ? (
         <div className="w-full text-center py-2.5 text-xs text-warn border border-warn/40 bg-warn/5">
           Paused — serve priority customers first
         </div>
@@ -296,6 +315,7 @@ export default function AdminDashboard() {
   const [skipBusy, setSkipBusy] = useState(false);
   const [err, setErr] = useState(null);
   const [activeTab, setActiveTab] = useState(0);
+  const [pausingService, setPausingService] = useState(null);
   const [announcementText, setAnnouncementText] = useState('');
   const [announcementBusy, setAnnouncementBusy] = useState(false);
   const [lookupQuery, setLookupQuery] = useState('');
@@ -404,6 +424,26 @@ export default function AdminDashboard() {
     finally { setNoteBusy(false); }
   };
 
+  const handlePauseService = async (serviceId) => {
+    setPausingService(serviceId);
+    try { await apiPauseService(serviceId); }
+    catch (e) { setErr(e.response?.data?.error || 'Could not pause service.'); }
+    finally { setPausingService(null); }
+  };
+
+  const handleResumeService = async (serviceId) => {
+    setPausingService(serviceId);
+    try { await apiResumeService(serviceId); }
+    catch (e) { setErr(e.response?.data?.error || 'Could not resume service.'); }
+    finally { setPausingService(null); }
+  };
+
+  // SLA alert: tokens waiting longer than cfg.slaMinutes
+  const pausedServices = state?.pausedServices || [];
+  const slaOverdueTokens = cfg.slaMinutes
+    ? tokenList.filter(t => t.status === 'waiting' && (Date.now() - t.issuedAt) / 60000 > cfg.slaMinutes)
+    : [];
+
   // Token lookup — filter all tokens by number or partial ID
   const lookupResults = lookupQuery.trim()
     ? tokenList.filter(t => {
@@ -434,6 +474,14 @@ export default function AdminDashboard() {
         <div className="bg-paper p-5"><Stat label="Served today" value={servedCount} /></div>
         <div className="bg-paper p-5"><Stat label="Priority waiting" value={priorityWaiting} /></div>
       </div>
+
+      {/* SLA alert bar */}
+      {slaOverdueTokens.length > 0 && (
+        <div className="mb-6 px-4 py-3 border border-warn/60 bg-warn/10 text-warn text-sm flex items-center gap-2">
+          <span>&#9888;</span>
+          <span>{slaOverdueTokens.length} token{slaOverdueTokens.length !== 1 ? 's' : ''} have exceeded the {cfg.slaMinutes}-minute wait target</span>
+        </div>
+      )}
 
       {/* Auto Mode */}
       <div className="mb-6">
@@ -615,6 +663,10 @@ export default function AdminDashboard() {
             isPaused={isPaused}
             industry={cfg.industry}
             priorityBlocked={priorityBlocked && !waitingByService[services[activeTab].id]?.some(t => t.priority === 'priority')}
+            isServicePaused={pausedServices.includes(services[activeTab].id)}
+            onPauseService={() => handlePauseService(services[activeTab].id)}
+            onResumeService={() => handleResumeService(services[activeTab].id)}
+            pausingService={pausingService}
           />
         )}
       </div>
@@ -634,6 +686,10 @@ export default function AdminDashboard() {
             isPaused={isPaused}
             industry={cfg.industry}
             priorityBlocked={priorityBlocked && !waitingByService[s.id]?.some(t => t.priority === 'priority')}
+            isServicePaused={pausedServices.includes(s.id)}
+            onPauseService={() => handlePauseService(s.id)}
+            onResumeService={() => handleResumeService(s.id)}
+            pausingService={pausingService}
           />
         ))}
       </div>

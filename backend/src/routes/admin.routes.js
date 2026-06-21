@@ -11,9 +11,12 @@ router.post('/queue/call-next-priority', asyncHandler(controller.callNextPriorit
 router.post('/queue/pause',             asyncHandler(controller.pause));
 router.post('/queue/resume',            asyncHandler(controller.resume));
 router.post('/queue/reset',             asyncHandler(controller.reset));
+router.post('/queue/pause-service',     asyncHandler(controller.pauseService));
+router.post('/queue/resume-service',    asyncHandler(controller.resumeService));
 
 router.get('/analytics',                asyncHandler(controller.getAnalytics));
 router.get('/analytics/export',         asyncHandler(controller.exportAnalyticsCsv));
+router.get('/analytics/staff',          asyncHandler(controller.getStaffMetrics));
 
 router.get('/auto-mode',                asyncHandler(controller.getAutoModeStatus));
 router.post('/auto-mode/start',         asyncHandler(controller.startAutoMode));
@@ -38,5 +41,9 @@ router.delete('/announcement',               asyncHandler(controller.clearAnnoun
 router.get('/appointments',                  asyncHandler(controller.listAppointments));
 router.put('/appointments/:id/confirm',      asyncHandler(controller.confirmAppointment));
 router.put('/appointments/:id/cancel',       asyncHandler(controller.cancelAppointment));
+
+router.get('/admins',                   asyncHandler(controller.listAdmins));
+router.post('/admins',                  asyncHandler(controller.createAdmin));
+router.delete('/admins/:username',      asyncHandler(controller.deleteAdmin));
 
 module.exports = router;

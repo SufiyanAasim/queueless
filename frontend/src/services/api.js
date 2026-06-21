@@ -73,11 +73,24 @@ export const apiStopAutoMode  = () => api.post('/admin/auto-mode/stop').then(r =
 // Admin analytics + config + feedback + staff
 export const apiAnalytics    = () => api.get('/admin/analytics').then(r => r.data);
 export const apiAdminConfig  = () => api.get('/admin/config').then(r => r.data);
-export const apiUpdateConfig = (industry, orgName, location) => api.put('/admin/config', { industry, orgName, location }).then(r => r.data);
+export const apiUpdateConfig = (industry, orgName, location, displayMessage, slaMinutes, autoResetTime) =>
+  api.put('/admin/config', { industry, orgName, location, displayMessage: displayMessage || null, slaMinutes: slaMinutes || null, autoResetTime: autoResetTime || null }).then(r => r.data);
 export const apiFeedback     = () => api.get('/admin/feedback').then(r => r.data);
 export const apiListStaff    = () => api.get('/admin/staff').then(r => r.data);
 export const apiCreateStaff  = (data) => api.post('/admin/staff', data).then(r => r.data);
 export const apiDeleteStaff  = (username) => api.delete(`/admin/staff/${username}`).then(r => r.data);
+
+// Admin per-service pause / resume
+export const apiPauseService  = (service) => api.post('/admin/queue/pause-service', { service }).then(r => r.data);
+export const apiResumeService = (service) => api.post('/admin/queue/resume-service', { service }).then(r => r.data);
+
+// Admin staff performance metrics
+export const apiStaffMetrics = () => api.get('/admin/analytics/staff').then(r => r.data);
+
+// Admin accounts management
+export const apiListAdmins   = () => api.get('/admin/admins').then(r => r.data);
+export const apiCreateAdmin  = (data) => api.post('/admin/admins', data).then(r => r.data);
+export const apiDeleteAdmin  = (username) => api.delete(`/admin/admins/${username}`).then(r => r.data);
 
 // Admin profile
 export const apiAdminProfile       = () => api.get('/admin/profile').then(r => r.data);

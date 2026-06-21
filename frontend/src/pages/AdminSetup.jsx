@@ -13,6 +13,9 @@ export default function AdminSetup() {
   const [industry, setIndustry] = useState('general');
   const [orgName, setOrgName] = useState('');
   const [location, setLocation] = useState('');
+  const [displayMessage, setDisplayMessage] = useState('');
+  const [slaMinutes, setSlaMinutes] = useState('');
+  const [autoResetTime, setAutoResetTime] = useState('');
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
 
@@ -22,7 +25,10 @@ export default function AdminSetup() {
     if (cfg.industry) setIndustry(cfg.industry);
     if (cfg.orgName && cfg.orgName !== 'QueueLess') setOrgName(cfg.orgName);
     if (cfg.location) setLocation(cfg.location);
-  }, [cfg?.orgName, cfg?.industry, cfg?.location]);
+    if (cfg.displayMessage) setDisplayMessage(cfg.displayMessage);
+    if (cfg.slaMinutes) setSlaMinutes(String(cfg.slaMinutes));
+    if (cfg.autoResetTime) setAutoResetTime(cfg.autoResetTime);
+  }, [cfg?.orgName, cfg?.industry, cfg?.location, cfg?.displayMessage, cfg?.slaMinutes, cfg?.autoResetTime]);
 
   if (!user) return <Navigate to="/admin/login" replace />;
 
@@ -32,10 +38,18 @@ export default function AdminSetup() {
     setError(null);
     try {
       const trimmedLocation = location.trim() || null;
-      await apiUpdateConfig(industry, orgName.trim(), trimmedLocation);
-      // Write fresh config to cache immediately so the status bar updates on navigate
-      // even if the backend is cold-starting and the next fetch fails.
-      localStorage.setItem('queueless.appConfig', JSON.stringify({ industry, orgName: orgName.trim(), location: trimmedLocation }));
+      const trimmedMessage = displayMessage.trim() || null;
+      const parsedSla = slaMinutes ? Number(slaMinutes) : null;
+      const trimmedReset = autoResetTime || null;
+      await apiUpdateConfig(industry, orgName.trim(), trimmedLocation, trimmedMessage, parsedSla, trimmedReset);
+      localStorage.setItem('queueless.appConfig', JSON.stringify({
+        industry,
+        orgName: orgName.trim(),
+        location: trimmedLocation,
+        displayMessage: trimmedMessage,
+        slaMinutes: parsedSla,
+        autoResetTime: trimmedReset,
+      }));
       navigate('/admin');
     } catch (e) {
       setError(e.response?.data?.error || 'Could not save. Please try again.');
@@ -102,6 +116,53 @@ export default function AdminSetup() {
         </div>
       </div>
 
+      {/* Display board section */}
+      <div className="mt-12 pt-8 border-t border-rule">
+        <span className="label block mb-1">Display board</span>
+        <div className="mt-6">
+          <span className="label block mb-1">Welcome message <span className="normal-case font-normal text-graphite">(optional)</span></span>
+          <p className="text-xs text-graphite mb-3">Shown permanently on the display board — e.g. "Welcome to Shifa Hospital. Please take a seat."</p>
+          <textarea
+            value={displayMessage}
+            onChange={e => setDisplayMessage(e.target.value)}
+            placeholder="e.g. Welcome to Shifa Hospital. Please take a seat."
+            rows={3}
+            maxLength={300}
+            className="w-full sm:max-w-lg border border-rule bg-cream px-4 py-3 text-sm focus:outline-none focus:border-ink resize-none"
+          />
+        </div>
+      </div>
+
+      {/* Queue behaviour section */}
+      <div className="mt-10 pt-8 border-t border-rule">
+        <span className="label block mb-6">Queue behaviour</span>
+        <div className="grid sm:grid-cols-2 gap-6">
+          <div>
+            <span className="label block mb-1">SLA wait target <span className="normal-case font-normal text-graphite">(minutes)</span></span>
+            <p className="text-xs text-graphite mb-3">Alert threshold for overdue tokens on the dashboard.</p>
+            <input
+              type="number"
+              min="1"
+              max="999"
+              value={slaMinutes}
+              onChange={e => setSlaMinutes(e.target.value)}
+              placeholder="e.g. 20"
+              className="w-full border border-rule bg-cream px-4 py-3 text-sm focus:outline-none focus:border-ink"
+            />
+          </div>
+          <div>
+            <span className="label block mb-1">Daily auto-reset time</span>
+            <p className="text-xs text-graphite mb-3">Queue resets automatically at this time each day (server time).</p>
+            <input
+              type="time"
+              value={autoResetTime}
+              onChange={e => setAutoResetTime(e.target.value)}
+              className="w-full border border-rule bg-cream px-4 py-3 text-sm focus:outline-none focus:border-ink"
+            />
+          </div>
+        </div>
+      </div>
+
       {error && (
         <div className="mt-6 p-4 border border-accent bg-accent/5 text-accent-deep text-sm">{error}</div>
       )}
@@ -112,6 +173,9 @@ export default function AdminSetup() {
         </button>
         <Link to="/admin/change-password" className="btn-secondary text-sm">
           Change password
+        </Link>
+        <Link to="/admin/manage" className="btn-secondary text-sm">
+          Manage admins
         </Link>
       </div>
     </div>

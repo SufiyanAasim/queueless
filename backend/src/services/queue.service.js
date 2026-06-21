@@ -29,6 +29,7 @@ async function ensureInitialized() {
       currentTokenNumber: 0,
       lastCalledAt: null,
       pausedAt: null,
+      pausedServices: [],
       autoMode: { enabled: false, intervalSeconds: 0 },
     });
   }
@@ -36,25 +37,60 @@ async function ensureInitialized() {
   if (!counterSnap.exists()) {
     await refs.counter().set({ value: 0 });
   }
-  // Ensure app config exists
   const cfgSnap = await refs.appConfig().once('value');
   if (!cfgSnap.exists()) {
     await refs.appConfig().set({ industry: 'general', orgName: 'QueueLess' });
   }
 }
 
-async function issueToken({ service = 'general', email = null, priority = 'normal' } = {}) {
+async function pauseService(service) {
+  const stateSnap = await refs.queueState().once('value');
+  const state = stateSnap.val() || {};
+  const paused = Array.isArray(state.pausedServices) ? state.pausedServices : [];
+  if (!paused.includes(service)) {
+    paused.push(service);
+    await refs.queueState().update({ pausedServices: paused });
+  }
+  analytics.logEvent({ event_type: 'service_paused', service, timestamp: Date.now() })
+    .catch(err => console.error('[analytics]', err.message));
+}
+
+async function resumeService(service) {
+  const stateSnap = await refs.queueState().once('value');
+  const state = stateSnap.val() || {};
+  const paused = Array.isArray(state.pausedServices) ? state.pausedServices : [];
+  const updated = paused.filter(s => s !== service);
+  await refs.queueState().update({ pausedServices: updated });
+  analytics.logEvent({ event_type: 'service_resumed', service, timestamp: Date.now() })
+    .catch(err => console.error('[analytics]', err.message));
+}
+
+async function issueToken({ service = 'general', email = null, priority = 'normal', groupSize = 1 } = {}) {
   const stateSnap = await refs.queueState().once('value');
   const state = stateSnap.val();
   const isPriorityToken = priority === 'priority';
-  // Priority tokens bypass the paused state — they must always be admitted.
+
   if (state.status === QUEUE_STATUS.PAUSED && !isPriorityToken) {
     const err = new Error('Queue is currently paused. Please try again later.');
     err.statusCode = 423;
     throw err;
   }
 
-  // Atomic counter increment — guarantees distinct token numbers under concurrent load.
+  if (!isPriorityToken) {
+    const pausedServices = Array.isArray(state.pausedServices) ? state.pausedServices : [];
+    if (pausedServices.includes(service)) {
+      throw Object.assign(
+        new Error(`Service "${service}" is currently paused. Please try again later.`),
+        { statusCode: 423 }
+      );
+    }
+  }
+
+  const parsedGroupSize = parseInt(groupSize, 10);
+  const safeGroupSize = (!isNaN(parsedGroupSize) && parsedGroupSize >= 1 && parsedGroupSize <= 10)
+    ? parsedGroupSize
+    : 1;
+
   const txResult = await refs.counter().transaction((current) => {
     if (current === null) return { value: 1 };
     return { value: (current.value || 0) + 1 };
@@ -74,6 +110,7 @@ async function issueToken({ service = 'general', email = null, priority = 'norma
     calledAt: null,
     servedAt: null,
     expiresAt: issuedAt + (config.queue.tokenExpirySeconds * 1000),
+    groupSize: safeGroupSize,
   };
   await refs.token(id).set(tokenRecord);
 
@@ -104,7 +141,6 @@ async function getTokenStatus(tokenId) {
   }
   const token = tokenSnap.val();
 
-  // Firebase RTDB cannot filter by two fields simultaneously, so we filter in JS.
   const tokensSnap = await refs.tokens().once('value');
   const all = tokensSnap.val() || {};
   const ahead = Object.values(all).filter(
@@ -128,13 +164,12 @@ async function getTokenStatus(tokenId) {
 }
 
 function sortByPriorityThenNumber(a, b) {
-  // Priority tokens go before normal; within same priority level, FIFO by number.
   if (a.priority === 'priority' && b.priority !== 'priority') return -1;
   if (a.priority !== 'priority' && b.priority === 'priority') return 1;
   return a.number - b.number;
 }
 
-async function callNextToken(service = 'general') {
+async function callNextToken(service = 'general', staffUsername = null) {
   const stateSnap = await refs.queueState().once('value');
   const state = stateSnap.val();
   if (state.status === QUEUE_STATUS.PAUSED) {
@@ -143,13 +178,18 @@ async function callNextToken(service = 'general') {
     throw err;
   }
 
+  const pausedServices = Array.isArray(state.pausedServices) ? state.pausedServices : [];
+  if (pausedServices.includes(service)) {
+    throw Object.assign(
+      new Error(`Service "${service}" is currently paused. Resume it before calling tokens.`),
+      { statusCode: 423 }
+    );
+  }
+
   const tokensSnap = await refs.tokens().once('value');
   const all = tokensSnap.val() || {};
   const tokenList = Object.values(all);
 
-  // Global priority enforcement: if ANY priority token is waiting across ANY service,
-  // block calling a regular token. Regular queues must wait until all priority tokens
-  // have been served.
   const anyPriorityWaiting = tokenList.some(
     t => t.status === TOKEN_STATUS.WAITING && t.priority === TOKEN_PRIORITY.PRIORITY
   );
@@ -161,7 +201,6 @@ async function callNextToken(service = 'general') {
 
   const next = waitingForService[0];
 
-  // If priority tokens exist globally and the next token for this service is NOT priority, block it.
   if (anyPriorityWaiting && next && next.priority !== TOKEN_PRIORITY.PRIORITY) {
     const err = new Error('Priority customers are waiting. Please serve all priority tokens first before calling regular queue.');
     err.statusCode = 409;
@@ -188,6 +227,7 @@ async function callNextToken(service = 'general') {
         service: previouslyCalled.service,
         timestamp: servedAt,
         service_duration_seconds: Math.round((servedAt - previouslyCalled.calledAt) / 1000),
+        staff_username: staffUsername || null,
       }).catch(err => console.error('[analytics]', err.message));
     }
     return { called: null, message: `No tokens waiting for ${service}.` };
@@ -209,6 +249,7 @@ async function callNextToken(service = 'general') {
       service: previouslyCalled.service,
       timestamp: servedAt,
       service_duration_seconds: Math.round((servedAt - previouslyCalled.calledAt) / 1000),
+      staff_username: staffUsername || null,
     }).catch(err => console.error('[analytics]', err.message));
   }
 
@@ -219,12 +260,13 @@ async function callNextToken(service = 'general') {
     service: next.service,
     timestamp: calledAt,
     wait_duration_seconds: Math.round((calledAt - next.issuedAt) / 1000),
+    staff_username: staffUsername || null,
   }).catch(err => console.error('[analytics]', err.message));
 
   return { called: { ...next, status: TOKEN_STATUS.CALLED, calledAt } };
 }
 
-async function callNextPriorityToken() {
+async function callNextPriorityToken(staffUsername = null) {
   const stateSnap = await refs.queueState().once('value');
   const state = stateSnap.val();
   if (state.status === QUEUE_STATUS.PAUSED) {
@@ -243,7 +285,6 @@ async function callNextPriorityToken() {
 
   if (!next) return { called: null, message: 'No priority tokens waiting.' };
 
-  // Mark previously called token for this service as served
   const previouslyCalled = tokenList.find(t => t.status === TOKEN_STATUS.CALLED && t.service === next.service);
   const updates = {};
   let servedAt = null;
@@ -270,6 +311,7 @@ async function callNextPriorityToken() {
       service: previouslyCalled.service,
       timestamp: servedAt,
       service_duration_seconds: Math.round((servedAt - previouslyCalled.calledAt) / 1000),
+      staff_username: staffUsername || null,
     }).catch(err => console.error('[analytics]', err.message));
   }
 
@@ -280,6 +322,7 @@ async function callNextPriorityToken() {
     service: next.service,
     timestamp: calledAt,
     wait_duration_seconds: Math.round((calledAt - next.issuedAt) / 1000),
+    staff_username: staffUsername || null,
   }).catch(err => console.error('[analytics]', err.message));
 
   return { called: { ...next, status: TOKEN_STATUS.CALLED, calledAt } };
@@ -329,12 +372,16 @@ async function getActiveQueue() {
   const waiting = all.filter(t => t.status === TOKEN_STATUS.WAITING).sort(sortByPriorityThenNumber);
   const calledTokens = all.filter(t => t.status === TOKEN_STATUS.CALLED);
 
-  // Build dynamic nowServing map keyed by service
   const nowServing = {};
   calledTokens.forEach(t => { nowServing[t.service] = t; });
 
+  const state = stateSnap.val();
+
   return {
-    state: stateSnap.val(),
+    state: {
+      ...state,
+      pausedServices: Array.isArray(state.pausedServices) ? state.pausedServices : [],
+    },
     nowServing,
     waiting,
     metrics: {
@@ -363,11 +410,52 @@ async function resetQueue() {
       currentTokenNumber: 0,
       lastCalledAt: null,
       pausedAt: null,
+      pausedServices: [],
       autoMode: { enabled: false, intervalSeconds: 0 },
     }),
   ]);
   analytics.logEvent({ event_type: 'queue_reset', timestamp: Date.now() })
     .catch(err => console.error('[analytics]', err.message));
+}
+
+async function requeueToken(tokenId) {
+  const tokenSnap = await refs.token(tokenId).once('value');
+  if (!tokenSnap.exists()) {
+    throw Object.assign(new Error('Token not found.'), { statusCode: 404 });
+  }
+  const token = tokenSnap.val();
+
+  if (token.status !== TOKEN_STATUS.EXPIRED) {
+    throw Object.assign(
+      new Error('Only expired tokens can be re-queued.'),
+      { statusCode: 400 }
+    );
+  }
+
+  const twoHoursMs = 2 * 60 * 60 * 1000;
+  if (Date.now() - token.issuedAt > twoHoursMs) {
+    throw Object.assign(
+      new Error('Token was issued more than 2 hours ago and cannot be re-queued.'),
+      { statusCode: 400 }
+    );
+  }
+
+  const newToken = await issueToken({
+    service: token.service,
+    priority: token.priority || 'normal',
+    groupSize: token.groupSize || 1,
+  });
+
+  analytics.logEvent({
+    event_type: 'token_requeued',
+    token_id: newToken.id,
+    token_number: newToken.number,
+    service: newToken.service,
+    timestamp: Date.now(),
+    original_token_id: tokenId,
+  }).catch(err => console.error('[analytics]', err.message));
+
+  return newToken;
 }
 
 module.exports = {
@@ -376,5 +464,7 @@ module.exports = {
   issueToken, getTokenStatus,
   callNextToken, callNextPriorityToken, skipToken,
   pauseQueue, resumeQueue,
+  pauseService, resumeService,
+  requeueToken,
   getActiveQueue, resetQueue,
 };

@@ -3,7 +3,7 @@ import { Navigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext.jsx';
 import { useAppConfig } from '../hooks/useAppConfig.js';
 import { getServiceLabel } from '../utils/industry.js';
-import { apiAnalytics, ADMIN_TOKEN_KEY } from '../services/api.js';
+import { apiAnalytics, apiStaffMetrics, ADMIN_TOKEN_KEY } from '../services/api.js';
 import Stat from '../components/Stat.jsx';
 
 const COLORS = ['#4B6FBF', '#3F6F4F', '#8B5CF6', '#C84B26', '#B8881C', '#0891B2'];
@@ -35,6 +35,9 @@ export default function AdminAnalytics() {
   const [error, setError] = useState(null);
   const [lastUpdated, setLastUpdated] = useState(null);
   const [refreshing, setRefreshing] = useState(false);
+  const [staffData, setStaffData] = useState(null);
+  const [staffLoading, setStaffLoading] = useState(true);
+  const [staffError, setStaffError] = useState(null);
 
   const fetchData = (isManual = false) => {
     if (isManual) setRefreshing(true);
@@ -48,6 +51,13 @@ export default function AdminAnalytics() {
     fetchData();
     const interval = setInterval(() => fetchData(), 30_000);
     return () => clearInterval(interval);
+  }, [user]);
+
+  useEffect(() => {
+    if (!user) return;
+    apiStaffMetrics()
+      .then(res => { setStaffData(res); setStaffLoading(false); })
+      .catch(() => { setStaffError('Could not load staff metrics.'); setStaffLoading(false); });
   }, [user]);
 
   if (!user) return <Navigate to="/admin/login" replace />;
@@ -139,6 +149,50 @@ export default function AdminAnalytics() {
         <div className="bg-paper p-5"><Stat label="Expired / Abandoned" value={totalExpired} /></div>
         <div className="bg-paper p-5"><Stat label="Drop-off Rate" value={`${(dropOffRate * 100).toFixed(1)}%`} accent /></div>
         <div className="bg-paper p-5"><Stat label="Avg Wait" value={waitDisplay} /></div>
+      </div>
+
+      {/* Staff Performance */}
+      <div className="mt-6 mb-6 card">
+        <h2 className="font-display text-2xl mb-5">Staff Performance</h2>
+        {staffLoading ? (
+          <div className="py-8 text-center text-graphite animate-pulse">Loading staff metrics…</div>
+        ) : staffError ? (
+          <div className="py-8 text-center text-warn text-sm">{staffError}</div>
+        ) : !staffData || staffData.length === 0 ? (
+          <div className="py-8 text-center text-graphite text-sm">
+            No service-time data yet. Data appears after staff members call and serve tokens.
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="bg-ink text-paper text-xs tracking-[0.18em] uppercase">
+                  <th className="px-4 py-3 text-left font-medium">Staff Member</th>
+                  <th className="px-4 py-3 text-right font-medium">Tokens Served</th>
+                  <th className="px-4 py-3 text-right font-medium">Avg Service Time</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-rule bg-cream">
+                {staffData.map((row, i) => {
+                  const avg = row.avgServiceSeconds;
+                  let avgDisplay = '—';
+                  if (avg != null && avg > 0) {
+                    const mins = Math.floor(avg / 60);
+                    const secs = Math.round(avg % 60);
+                    avgDisplay = mins > 0 ? `${mins} min ${secs} sec` : `${secs} sec`;
+                  }
+                  return (
+                    <tr key={row.username || i} className="hover:bg-paper transition-colors">
+                      <td className="px-4 py-3 font-medium">{row.displayName || row.username || '—'}</td>
+                      <td className="px-4 py-3 text-right">{row.tokensServed ?? 0}</td>
+                      <td className="px-4 py-3 text-right font-mono text-xs text-graphite">{avgDisplay}</td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
 
       <div className="grid lg:grid-cols-2 gap-6 mb-6">

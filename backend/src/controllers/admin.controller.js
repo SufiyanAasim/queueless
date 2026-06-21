@@ -1,3 +1,4 @@
+const bcrypt = require('bcryptjs');
 const queueService = require('../services/queue.service');
 const autoModeService = require('../services/autoMode.service');
 const staffService = require('../services/staff.service');
@@ -7,13 +8,15 @@ const { refs } = require('../config/firebase');
 const path = require('path');
 const config = require('../config/env');
 
+const BCRYPT_ROUNDS = 10;
+
 async function callNext(req, res) {
-  const result = await queueService.callNextToken(req.body.service);
+  const result = await queueService.callNextToken(req.body.service, req.body.staffUsername || null);
   res.json(result);
 }
 
 async function callNextPriority(req, res) {
-  const result = await queueService.callNextPriorityToken();
+  const result = await queueService.callNextPriorityToken(req.body.staffUsername || null);
   res.json(result);
 }
 
@@ -25,6 +28,24 @@ async function pause(req, res) {
 async function resume(req, res) {
   await queueService.resumeQueue();
   res.json({ message: 'Queue resumed.' });
+}
+
+async function pauseService(req, res) {
+  const { service } = req.body;
+  if (!service || typeof service !== 'string' || !service.trim()) {
+    throw Object.assign(new Error('service is required.'), { statusCode: 400 });
+  }
+  await queueService.pauseService(service.trim());
+  res.json({ message: `Service "${service.trim()}" paused.` });
+}
+
+async function resumeService(req, res) {
+  const { service } = req.body;
+  if (!service || typeof service !== 'string' || !service.trim()) {
+    throw Object.assign(new Error('service is required.'), { statusCode: 400 });
+  }
+  await queueService.resumeService(service.trim());
+  res.json({ message: `Service "${service.trim()}" resumed.` });
 }
 
 async function activeQueue(req, res) {
@@ -50,6 +71,11 @@ async function exportAnalyticsCsv(req, res) {
   });
 }
 
+async function getStaffMetrics(req, res) {
+  const data = await analyticsService.getStaffMetrics();
+  res.json(data);
+}
+
 async function startAutoMode(req, res) {
   const { services } = req.body;
   const result = await autoModeService.startAutoMode(services);
@@ -71,14 +97,38 @@ async function getAppConfig(req, res) {
 }
 
 const VALID_INDUSTRIES = ['general', 'bank', 'medical', 'restaurant'];
+const HH_MM_REGEX = /^\d{2}:\d{2}$/;
 
 async function updateAppConfig(req, res) {
-  const { industry, orgName, location } = req.body;
+  const { industry, orgName, location, slaMinutes, displayMessage, autoResetTime } = req.body;
   if (industry && !VALID_INDUSTRIES.includes(industry)) {
     throw Object.assign(new Error(`Invalid industry. Must be one of: ${VALID_INDUSTRIES.join(', ')}.`), { statusCode: 400 });
   }
-  await refs.appConfig().update({ industry, orgName, location: location ?? null });
-  res.json({ message: 'Config updated.', industry, orgName, location });
+  if (slaMinutes !== undefined && slaMinutes !== null) {
+    const parsed = parseInt(slaMinutes, 10);
+    if (isNaN(parsed) || parsed < 1) {
+      throw Object.assign(new Error('slaMinutes must be a positive integer.'), { statusCode: 400 });
+    }
+  }
+  if (autoResetTime !== undefined && autoResetTime !== null) {
+    if (!HH_MM_REGEX.test(autoResetTime)) {
+      throw Object.assign(new Error('autoResetTime must be in HH:MM format.'), { statusCode: 400 });
+    }
+  }
+
+  const updates = {
+    industry: industry ?? undefined,
+    orgName: orgName ?? undefined,
+    location: location ?? null,
+    slaMinutes: slaMinutes !== undefined ? (slaMinutes === null ? null : parseInt(slaMinutes, 10)) : undefined,
+    displayMessage: displayMessage !== undefined ? (displayMessage?.trim() || null) : undefined,
+    autoResetTime: autoResetTime !== undefined ? (autoResetTime ?? null) : undefined,
+  };
+
+  Object.keys(updates).forEach(k => updates[k] === undefined && delete updates[k]);
+
+  await refs.appConfig().update(updates);
+  res.json({ message: 'Config updated.', ...updates });
 }
 
 async function getFeedback(req, res) {
@@ -90,7 +140,6 @@ async function getFeedback(req, res) {
   res.json({ entries: all.sort((a, b) => b.submittedAt - a.submittedAt), avgRating, total: all.length });
 }
 
-// Staff management
 async function listStaff(req, res) {
   const members = await staffService.listStaff();
   res.json(members);
@@ -176,9 +225,71 @@ async function confirmAppointment(req, res) {
   res.json({ message: 'Appointment confirmed.' });
 }
 
+async function listAdmins(req, res) {
+  const snap = await refs.admins().once('value');
+  const all = snap.val() || {};
+  const admins = Object.values(all).map(({ username, displayName, role }) => ({
+    username,
+    displayName: displayName || username,
+    role: role || 'admin',
+  }));
+  res.json(admins);
+}
+
+async function createAdmin(req, res) {
+  const { username, password, displayName } = req.body;
+  if (!username?.trim() || !password) {
+    throw Object.assign(new Error('username and password are required.'), { statusCode: 400 });
+  }
+  if (password.length < 8) {
+    throw Object.assign(new Error('Password must be at least 8 characters.'), { statusCode: 400 });
+  }
+
+  const allSnap = await refs.admins().once('value');
+  const existing = allSnap.val() || {};
+  if (Object.keys(existing).length >= 10) {
+    throw Object.assign(new Error('Maximum of 10 admin accounts allowed.'), { statusCode: 400 });
+  }
+
+  const uname = username.trim();
+  if (existing[uname]) {
+    throw Object.assign(new Error(`Admin "${uname}" already exists.`), { statusCode: 409 });
+  }
+
+  const passwordHash = await bcrypt.hash(password, BCRYPT_ROUNDS);
+  const record = {
+    username: uname,
+    passwordHash,
+    displayName: displayName?.trim() || uname,
+    role: 'admin',
+    createdAt: Date.now(),
+  };
+  await refs.admin(uname).set(record);
+
+  res.status(201).json({
+    username: record.username,
+    displayName: record.displayName,
+    role: record.role,
+    createdAt: record.createdAt,
+  });
+}
+
+async function deleteAdmin(req, res) {
+  const { username } = req.params;
+  if (username === req.user.sub) {
+    throw Object.assign(new Error('Cannot delete your own admin account.'), { statusCode: 400 });
+  }
+  const snap = await refs.admin(username).once('value');
+  if (!snap.exists()) {
+    throw Object.assign(new Error(`Admin "${username}" not found.`), { statusCode: 404 });
+  }
+  await refs.admin(username).remove();
+  res.json({ message: `Admin "${username}" deleted.` });
+}
+
 module.exports = {
   callNext, callNextPriority, pause, resume, activeQueue, reset,
-  getAnalytics, exportAnalyticsCsv,
+  getAnalytics, exportAnalyticsCsv, getStaffMetrics,
   startAutoMode, stopAutoMode, getAutoModeStatus,
   getAppConfig, updateAppConfig,
   getFeedback,
@@ -189,4 +300,6 @@ module.exports = {
   setAnnouncement, clearAnnouncement,
   setTokenNote,
   listAppointments, cancelAppointment, confirmAppointment,
+  pauseService, resumeService,
+  listAdmins, createAdmin, deleteAdmin,
 };
