@@ -35,6 +35,11 @@ export default function AdminStaff() {
     return () => unsub();
   }, [user]);
 
+  // Keep form default service in sync when the org's industry profile loads/changes
+  useEffect(() => {
+    setForm(f => ({ ...f, service: services[0]?.id || 'general' }));
+  }, [cfg.industry]);
+
   if (!user) return <Navigate to="/admin/login" replace />;
 
   const handleCreate = async (e) => {

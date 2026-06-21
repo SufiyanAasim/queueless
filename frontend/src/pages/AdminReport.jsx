@@ -187,9 +187,9 @@ export default function AdminReport() {
                     if (count > 0) {
                       const ratio = count / serviceMax;
                       if (ratio > 0.75) { intensityClass = 'bg-accent'; textClass = 'text-white'; }
-                      else if (ratio > 0.4) { intensityClass = 'bg-[#C0532A] opacity-70'; textClass = 'text-white'; }
-                      else if (ratio > 0.1) { intensityClass = 'bg-[#C0532A] opacity-40'; textClass = 'text-ink'; }
-                      else { intensityClass = 'bg-[#C0532A] opacity-15'; textClass = 'text-ink'; }
+                      else if (ratio > 0.4) { intensityClass = 'bg-[rgba(192,83,42,0.7)]'; textClass = 'text-white'; }
+                      else if (ratio > 0.1) { intensityClass = 'bg-[rgba(192,83,42,0.4)]'; textClass = 'text-ink'; }
+                      else { intensityClass = 'bg-[rgba(192,83,42,0.15)]'; textClass = 'text-ink'; }
                     }
                     return (
                       <td key={h} className="p-1 border-b border-rule border-dashed">
@@ -262,7 +262,7 @@ export default function AdminReport() {
                       className="fill-graphite"
                       style={{ fontSize: 9 }}
                     >
-                      {fmt12h(d.hour).replace(' ', '\n')}
+                      {(() => { const [n, p] = fmt12h(d.hour).split(' '); return <><tspan x={x + BAR_W / 2} dy="0">{n}</tspan><tspan x={x + BAR_W / 2} dy="9">{p}</tspan></>; })()}
                     </text>
                   </g>
                 );
