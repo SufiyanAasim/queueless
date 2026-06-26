@@ -41,13 +41,25 @@ export default function Credits() {
         : { y: 0.6 },
       colors: ['#E2603F', '#1A1A1A', '#F7F3EC'],
     });
+    setTimeout(() => {
+      window.location.href = 'mailto:sufiyanaasim@outlook.com?subject=Thank%20you%20for%20QueueLess!';
+    }, 400);
   };
 
   return (
     <div className="max-w-4xl mx-auto px-6 py-16">
       <div className="label mb-3">QueueLess · Credits</div>
       <h1 className="font-display text-5xl sm:text-7xl tracking-tightest leading-[0.92]">
-        Built by<br /><span className="text-accent">Mohammad Sufiyan Aasim</span>
+        Built by<br />
+        <span className="text-accent">Mohammad Sufiyan Aasim </span>
+        <a
+          href="https://github.com/msufiyanpk"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-block text-2xl sm:text-3xl font-sans font-normal text-graphite hover:text-ink underline ml-3 align-baseline"
+        >
+          (msufiyanpk)
+        </a>
       </h1>
       <p className="mt-5 text-graphite max-w-xl">
         QueueLess — a cloud-native smart token & queue management system. Designed,
@@ -61,32 +73,42 @@ export default function Credits() {
         onMouseEnter={() => {}}
       >
         <div className="flex flex-col sm:flex-row sm:items-center gap-6">
-          <div className="w-20 h-20 shrink-0 bg-ink text-paper font-display text-4xl flex items-center justify-center tracking-tightest">
+          <img
+            src="https://github.com/msufiyanpk.png"
+            alt="Mohammad Sufiyan Aasim"
+            className="w-20 h-20 shrink-0 object-cover border border-rule bg-ink"
+            onError={(e) => {
+              // Fallback to text initials if image fails to load
+              e.target.style.display = 'none';
+              e.target.nextSibling.style.display = 'flex';
+            }}
+          />
+          <div className="hidden w-20 h-20 shrink-0 bg-ink text-paper font-display text-4xl flex items-center justify-center tracking-tightest">
             MS
           </div>
           <div className="min-w-0 flex-1">
             <div className="font-display text-3xl">Mohammad Sufiyan Aasim</div>
-            <div className="text-sm text-graphite mt-1">Creator · Lead Engineer · Data Sciences, AI/MLOps & SQA</div>
+            <div className="text-sm text-graphite mt-1">Software Engineer, Data Science & AIMLOps</div>
             <div className="mt-3 flex flex-wrap gap-2 text-xs">
               <span className="px-2 py-1 border border-rule bg-paper">Data Sciences</span>
               <span className="px-2 py-1 border border-rule bg-paper">AI/MLOps Engineering</span>
               <span className="px-2 py-1 border border-rule bg-paper">Software Quality Assurance (SQA)</span>
               <span className="px-2 py-1 border border-rule bg-paper">Full-Stack & Cloud</span>
             </div>
-            <div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-2 text-xs text-graphite">
+            <div className="mt-4 flex flex-wrap items-center gap-3">
               <a
                 href="https://github.com/msufiyanpk"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-1 hover:text-ink transition-colors underline"
+                className="btn-secondary text-xs flex items-center gap-2 px-3 py-1.5 border border-rule hover:border-ink hover:text-ink transition-colors bg-paper"
               >
-                <span>🐈‍⬛</span> github.com/msufiyanpk
+                <span>🐈‍⬛</span> GitHub Profile
               </a>
               <a
                 href="mailto:sufiyanaasim@outlook.com"
-                className="inline-flex items-center gap-1 hover:text-ink transition-colors underline"
+                className="btn-secondary text-xs flex items-center gap-2 px-3 py-1.5 border border-rule hover:border-ink hover:text-ink transition-colors bg-paper"
               >
-                <span>✉️</span> sufiyanaasim@outlook.com
+                <span>✉️</span> Contact Email
               </a>
             </div>
           </div>
@@ -125,16 +147,24 @@ export default function Credits() {
         ))}
       </div>
 
-      {/* Tech */}
-      <h2 className="mt-12 font-display text-2xl tracking-tightest">Stack</h2>
+      {/* Languages */}
+      <h2 className="mt-12 font-display text-2xl tracking-tightest">Languages</h2>
       <div className="mt-4 flex flex-wrap gap-2 text-xs">
-        {['React', 'Vite', 'Tailwind CSS', 'Node.js', 'Express', 'Firebase RTDB', 'Cloud Functions', 'MongoDB', 'Python', 'scikit-learn', 'Vercel', 'Render', 'GitHub Actions'].map(t => (
+        {['JavaScript', 'Python', 'HTML5', 'CSS3'].map(t => (
+          <span key={t} className="px-3 py-1.5 border border-rule bg-cream hover:border-ink transition-colors">{t}</span>
+        ))}
+      </div>
+
+      {/* Core Concepts */}
+      <h2 className="mt-10 font-display text-2xl tracking-tightest">Core Concepts</h2>
+      <div className="mt-4 flex flex-wrap gap-2 text-xs">
+        {['Analytics & Data Mining', 'Machine Learning & Predictive Modeling', 'Cloud-Native Architecture', 'Real-Time Data Synchronization', 'Role-Based Access Control (RBAC)', 'Continuous Integration & Delivery (CI/CD)', 'REST API Design'].map(t => (
           <span key={t} className="px-3 py-1.5 border border-rule bg-cream hover:border-ink transition-colors">{t}</span>
         ))}
       </div>
 
       <div className="mt-14 pt-8 border-t border-rule flex items-center justify-between text-sm">
-        <span className="text-graphite font-mono">QueueLess v1.4.0 “Relay”</span>
+        <span className="text-graphite font-mono">QueueLess v1.4.5 “Intelligent Collaboration”</span>
         <Link to="/" className="btn-secondary text-sm">← Back to home</Link>
       </div>
     </div>
