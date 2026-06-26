@@ -4,7 +4,7 @@ All notable changes to the QueueLess project will be documented in this file.
 
 ---
 
-## QueueLess v1.4.5 — Intelligent Collaboration (In progress)
+## QueueLess v1.4.5 — Intelligent Collaboration
 
 Codename **Intelligent Collaboration**. A multi-phase release turning QueueLess
 into an intelligent operational workspace. **Phase 1 ships the AI Assistant**,
@@ -73,7 +73,7 @@ workspace follow in later phases.
 
 ---
 
-## QueueLess v1.4.0 — Relay (Unreleased)
+## QueueLess v1.4.0 — Relay
 
 Codename **Relay**. This release makes the queue *flow*: tokens can be handed
 between counters without being lost, administrators can shape their own queues,

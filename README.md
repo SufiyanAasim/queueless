@@ -480,8 +480,8 @@ For detailed release notes and changelogs, see [CHANGELOG.md](CHANGELOG.md).
 
 | Version | Codename | Highlights |
 |---|---|---|
-| v1.4.5 | Intelligent Collaboration | AI assistant (RAG) + workspace, internal messaging (1:1/group, reactions, receipts, attachments), event bus + notification center, secure sharing + QR, shared files (Spark-free), RBAC + audit log |
-| v1.4.0 | Relay | Token referral between counters, custom queue management, live "serving for" timer + next-in-queue, Industry Type rename, trained ML predictions, credits page |
+| [v1.4.5](CHANGELOG.md#queueless-v145--intelligent-collaboration) | Intelligent Collaboration | AI assistant (RAG) + workspace, internal messaging (1:1/group, reactions, receipts, attachments), event bus + notification center, secure sharing + QR, shared files (Spark-free), RBAC + audit log |
+| [v1.4.0](CHANGELOG.md#queueless-v140--relay) | Relay | Token referral between counters, custom queue management, live "serving for" timer + next-in-queue, Industry Type rename, trained ML predictions, credits page |
 | [v1.3.5](CHANGELOG.md#queueless-v135--pulse-latest) | Pulse | Proactive push alerts, per-service pause, re-queue, group tokens, SLA alerts, staff metrics, multi-admin, auto-reset, appointment merge |
 | [v1.3.0](CHANGELOG.md#queueless-v130--crew) | Crew | Profile management, priority queue engine, 8 new features, 0 vulnerabilities |
 | [v1.2.2](CHANGELOG.md#queueless-v122--vision) | Vision | Analytics report, AI suggestions, dynamic heatmap, UI fixes |

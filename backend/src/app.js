@@ -52,7 +52,7 @@ function buildApp() {
   app.get('/', (req, res) => {
     res.json({
       message: 'Welcome to the QueueLess API server.',
-      version: '1.3.0',
+      version: '1.4.5',
       status: 'active',
     });
   });
