@@ -47,7 +47,7 @@ export default function Credits() {
     <div className="max-w-4xl mx-auto px-6 py-16">
       <div className="label mb-3">QueueLess · Credits</div>
       <h1 className="font-display text-5xl sm:text-7xl tracking-tightest leading-[0.92]">
-        Built by<br /><span className="text-accent">M Sufiyan</span>
+        Built by<br /><span className="text-accent">Mohammad Sufiyan Aasim</span>
       </h1>
       <p className="mt-5 text-graphite max-w-xl">
         QueueLess — a cloud-native smart token & queue management system. Designed,
@@ -64,33 +64,54 @@ export default function Credits() {
           <div className="w-20 h-20 shrink-0 bg-ink text-paper font-display text-4xl flex items-center justify-center tracking-tightest">
             MS
           </div>
-          <div className="min-w-0">
-            <div className="font-display text-3xl">M Sufiyan</div>
-            <div className="text-sm text-graphite mt-1">Creator · Lead Engineer · Full-Stack & Cloud</div>
+          <div className="min-w-0 flex-1">
+            <div className="font-display text-3xl">Mohammad Sufiyan Aasim</div>
+            <div className="text-sm text-graphite mt-1">Creator · Lead Engineer · Data Sciences, AI/MLOps & SQA</div>
             <div className="mt-3 flex flex-wrap gap-2 text-xs">
-              <span className="px-2 py-1 border border-rule bg-paper">Software Architecture</span>
-              <span className="px-2 py-1 border border-rule bg-paper">Full-Stack Engineering</span>
-              <span className="px-2 py-1 border border-rule bg-paper">DevOps / CI-CD</span>
-              <span className="px-2 py-1 border border-rule bg-paper">Cloud & Realtime</span>
+              <span className="px-2 py-1 border border-rule bg-paper">Data Sciences</span>
+              <span className="px-2 py-1 border border-rule bg-paper">AI/MLOps Engineering</span>
+              <span className="px-2 py-1 border border-rule bg-paper">Software Quality Assurance (SQA)</span>
+              <span className="px-2 py-1 border border-rule bg-paper">Full-Stack & Cloud</span>
+            </div>
+            <div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-2 text-xs text-graphite">
+              <a
+                href="https://github.com/msufiyanpk"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1 hover:text-ink transition-colors underline"
+              >
+                <span>🐈‍⬛</span> github.com/msufiyanpk
+              </a>
+              <a
+                href="mailto:sufiyanaasim@outlook.com"
+                className="inline-flex items-center gap-1 hover:text-ink transition-colors underline"
+              >
+                <span>✉️</span> sufiyanaasim@outlook.com
+              </a>
             </div>
           </div>
         </div>
       </div>
 
       {/* Interactive thanks */}
-      <div className="mt-8 flex flex-col sm:flex-row items-start sm:items-center gap-4">
-        <button
-          ref={burstRef}
-          onClick={handleThanks}
-          className="btn-primary"
-        >
-          🎉 Send a thank-you
-        </button>
-        {count > 0 && (
-          <span className="text-sm text-graphite">
-            {count === 1 ? 'Thanks sent!' : `${count} thank-yous and counting`} — much appreciated.
-          </span>
-        )}
+      <div className="mt-8 flex flex-col sm:flex-row sm:items-center gap-4 sm:gap-6">
+        <div className="flex items-center gap-4">
+          <button
+            ref={burstRef}
+            onClick={handleThanks}
+            className="btn-primary"
+          >
+            🎉 Send a thank-you
+          </button>
+          {count > 0 && (
+            <span className="text-sm text-graphite">
+              {count === 1 ? 'Thanks sent!' : `${count} thank-yous and counting`} — much appreciated.
+            </span>
+          )}
+        </div>
+        <div className="text-xs text-graphite sm:border-l sm:border-rule sm:pl-6 py-1">
+          Say hello at <a href="mailto:sufiyanaasim@outlook.com" className="text-accent font-medium hover:underline">sufiyanaasim@outlook.com</a>
+        </div>
       </div>
 
       {/* Modules */}

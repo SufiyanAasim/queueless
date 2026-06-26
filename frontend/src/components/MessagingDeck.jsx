@@ -136,7 +136,7 @@ export default function MessagingDeck() {
   return (
     <>
       <button onClick={() => setOpen(o => !o)}
-        className="fixed bottom-5 left-5 z-[60] w-14 h-14 rounded-full bg-paper border border-ink text-ink shadow-lg flex items-center justify-center hover:bg-ink hover:text-paper transition-colors print:hidden"
+        className="fixed bottom-5 right-[88px] z-[60] w-14 h-14 rounded-full bg-paper border border-ink text-ink shadow-lg flex items-center justify-center hover:bg-ink hover:text-paper transition-colors print:hidden"
         aria-label={open ? 'Close messages' : 'Open team messages'} title="Team messages">
         <span className="text-xl leading-none">💬</span>
         {!open && conversations.reduce((s, c) => s + (c.unread || 0), 0) > 0 && (
@@ -147,7 +147,7 @@ export default function MessagingDeck() {
       </button>
 
       {open && (
-        <div className="fixed bottom-24 left-5 z-[60] w-[min(calc(100vw-2.5rem),24rem)] h-[min(calc(100vh-9rem),32rem)] bg-paper border border-rule shadow-2xl flex flex-col print:hidden">
+        <div className="fixed bottom-24 right-5 sm:right-[88px] z-[60] w-[min(calc(100vw-2.5rem),24rem)] h-[min(calc(100vh-9rem),32rem)] bg-paper border border-rule shadow-2xl flex flex-col print:hidden">
           <div className="px-4 py-3 border-b border-rule flex items-center justify-between bg-ink text-paper">
             <div className="flex items-center gap-2">
               {view !== 'list' && <button onClick={() => { setView('list'); setActiveId(null); }} className="opacity-80 hover:opacity-100" aria-label="Back">←</button>}
