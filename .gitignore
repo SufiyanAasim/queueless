@@ -49,6 +49,7 @@ analytics/data/queue_events.csv
 analytics/data/tokens_processed.csv
 analytics/data/charts/
 analytics/models/*.joblib
+analytics/models/predictions.json
 
 # OS / Editor
 .DS_Store

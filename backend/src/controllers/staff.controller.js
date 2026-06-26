@@ -44,6 +44,17 @@ async function changePassword(req, res) {
   res.json({ message: 'Password updated successfully.' });
 }
 
+async function referToken(req, res) {
+  const { tokenId } = req.params;
+  const { toService, reason } = req.body || {};
+  const result = await queueService.referToken(tokenId, {
+    toService,
+    reason: reason || null,
+    byStaff: req.user.sub,
+  });
+  res.json({ message: `Token #${result.referred.number} referred to "${result.to}".`, ...result });
+}
+
 async function setTokenNote(req, res) {
   const { tokenId } = req.params;
   const { note } = req.body;
@@ -53,4 +64,4 @@ async function setTokenNote(req, res) {
   res.json({ message: 'Note saved.' });
 }
 
-module.exports = { login, loginPin, getQueue, callNext, getProfile, updateProfile, changePassword, setTokenNote };
+module.exports = { login, loginPin, getQueue, callNext, getProfile, updateProfile, changePassword, setTokenNote, referToken };

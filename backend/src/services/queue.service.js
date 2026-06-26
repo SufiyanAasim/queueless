@@ -3,6 +3,7 @@ const { refs, db } = require('../config/firebase');
 const config = require('../config/env');
 const analytics = require('./analytics.service');
 const emailService = require('./email.service');
+const { emit, EVENTS } = require('../events/bus');
 
 const TOKEN_STATUS = Object.freeze({
   WAITING: 'waiting',
@@ -65,7 +66,7 @@ async function resumeService(service) {
     .catch(err => console.error('[analytics]', err.message));
 }
 
-async function issueToken({ service = 'general', email = null, priority = 'normal', groupSize = 1 } = {}) {
+async function issueToken({ service = 'general', email = null, priority = 'normal', groupSize = 1, patientName = null, note = null } = {}) {
   const stateSnap = await refs.queueState().once('value');
   const state = stateSnap.val();
   const isPriorityToken = priority === 'priority';
@@ -111,6 +112,9 @@ async function issueToken({ service = 'general', email = null, priority = 'norma
     servedAt: null,
     expiresAt: issuedAt + (config.queue.tokenExpirySeconds * 1000),
     groupSize: safeGroupSize,
+    patientName: patientName ? String(patientName).trim().slice(0, 100) : null,
+    note: note ? String(note).trim().slice(0, 500) : null,
+    referred: false,
   };
   await refs.token(id).set(tokenRecord);
 
@@ -122,6 +126,7 @@ async function issueToken({ service = 'general', email = null, priority = 'norma
     timestamp: issuedAt,
     queue_length: await getWaitingCount(),
   }).catch(err => console.error('[analytics] log failure (non-fatal):', err.message));
+  analytics.upsertTokenRecord(tokenRecord).catch(() => {});
 
   if (email) {
     const trackingUrl = `${config.frontendUrl}/token/${id}`;
@@ -145,7 +150,7 @@ async function getTokenStatus(tokenId) {
   const all = tokensSnap.val() || {};
   const ahead = Object.values(all).filter(
     t => t.status === TOKEN_STATUS.WAITING && t.service === token.service &&
-         (t.number < token.number || (t.priority === 'priority' && token.priority !== 'priority'))
+         (t.number < token.number || (isPriorityTier(t) && !isPriorityTier(token)))
   ).length;
 
   const stateSnap = await refs.queueState().once('value');
@@ -163,9 +168,18 @@ async function getTokenStatus(tokenId) {
   };
 }
 
+// A token is "priority tier" if it was issued as priority OR it was referred in
+// from another counter. Referred patients have already waited once, so they slot
+// in ahead of fresh walk-ins at the destination counter.
+function isPriorityTier(t) {
+  return t.priority === TOKEN_PRIORITY.PRIORITY || t.referred === true;
+}
+
 function sortByPriorityThenNumber(a, b) {
-  if (a.priority === 'priority' && b.priority !== 'priority') return -1;
-  if (a.priority !== 'priority' && b.priority === 'priority') return 1;
+  const ap = isPriorityTier(a);
+  const bp = isPriorityTier(b);
+  if (ap && !bp) return -1;
+  if (!ap && bp) return 1;
   return a.number - b.number;
 }
 
@@ -191,7 +205,7 @@ async function callNextToken(service = 'general', staffUsername = null) {
   const tokenList = Object.values(all);
 
   const anyPriorityWaiting = tokenList.some(
-    t => t.status === TOKEN_STATUS.WAITING && t.priority === TOKEN_PRIORITY.PRIORITY
+    t => t.status === TOKEN_STATUS.WAITING && isPriorityTier(t)
   );
 
   const previouslyCalled = tokenList.find(t => t.status === TOKEN_STATUS.CALLED && t.service === service);
@@ -201,7 +215,7 @@ async function callNextToken(service = 'general', staffUsername = null) {
 
   const next = waitingForService[0];
 
-  if (anyPriorityWaiting && next && next.priority !== TOKEN_PRIORITY.PRIORITY) {
+  if (anyPriorityWaiting && next && !isPriorityTier(next)) {
     const err = new Error('Priority customers are waiting. Please serve all priority tokens first before calling regular queue.');
     err.statusCode = 409;
     err.code = 'PRIORITY_BLOCKING';
@@ -229,6 +243,7 @@ async function callNextToken(service = 'general', staffUsername = null) {
         service_duration_seconds: Math.round((servedAt - previouslyCalled.calledAt) / 1000),
         staff_username: staffUsername || null,
       }).catch(err => console.error('[analytics]', err.message));
+      analytics.upsertTokenRecord({ ...previouslyCalled, status: TOKEN_STATUS.SERVED, servedAt }).catch(() => {});
     }
     return { called: null, message: `No tokens waiting for ${service}.` };
   }
@@ -251,6 +266,7 @@ async function callNextToken(service = 'general', staffUsername = null) {
       service_duration_seconds: Math.round((servedAt - previouslyCalled.calledAt) / 1000),
       staff_username: staffUsername || null,
     }).catch(err => console.error('[analytics]', err.message));
+    analytics.upsertTokenRecord({ ...previouslyCalled, status: TOKEN_STATUS.SERVED, servedAt }).catch(() => {});
   }
 
   analytics.logEvent({
@@ -262,6 +278,7 @@ async function callNextToken(service = 'general', staffUsername = null) {
     wait_duration_seconds: Math.round((calledAt - next.issuedAt) / 1000),
     staff_username: staffUsername || null,
   }).catch(err => console.error('[analytics]', err.message));
+  analytics.upsertTokenRecord({ ...next, status: TOKEN_STATUS.CALLED, calledAt }).catch(() => {});
 
   return { called: { ...next, status: TOKEN_STATUS.CALLED, calledAt } };
 }
@@ -280,7 +297,7 @@ async function callNextPriorityToken(staffUsername = null) {
   const tokenList = Object.values(all);
 
   const next = tokenList
-    .filter(t => t.status === TOKEN_STATUS.WAITING && t.priority === TOKEN_PRIORITY.PRIORITY)
+    .filter(t => t.status === TOKEN_STATUS.WAITING && isPriorityTier(t))
     .sort((a, b) => a.number - b.number)[0];
 
   if (!next) return { called: null, message: 'No priority tokens waiting.' };
@@ -313,6 +330,7 @@ async function callNextPriorityToken(staffUsername = null) {
       service_duration_seconds: Math.round((servedAt - previouslyCalled.calledAt) / 1000),
       staff_username: staffUsername || null,
     }).catch(err => console.error('[analytics]', err.message));
+    analytics.upsertTokenRecord({ ...previouslyCalled, status: TOKEN_STATUS.SERVED, servedAt }).catch(() => {});
   }
 
   analytics.logEvent({
@@ -324,6 +342,7 @@ async function callNextPriorityToken(staffUsername = null) {
     wait_duration_seconds: Math.round((calledAt - next.issuedAt) / 1000),
     staff_username: staffUsername || null,
   }).catch(err => console.error('[analytics]', err.message));
+  analytics.upsertTokenRecord({ ...next, status: TOKEN_STATUS.CALLED, calledAt }).catch(() => {});
 
   return { called: { ...next, status: TOKEN_STATUS.CALLED, calledAt } };
 }
@@ -346,7 +365,82 @@ async function skipToken(tokenId) {
     service: token.service,
     timestamp: now,
   }).catch(() => {});
+  analytics.upsertTokenRecord({ ...token, status: TOKEN_STATUS.EXPIRED, expiredAt: now, skippedAt: now }).catch(() => {});
   return { skipped: token };
+}
+
+/**
+ * Refer (transfer) an active token to a different counter/service.
+ *
+ * Use case: a hospital patient takes a token at the OPD counter; the OPD doctor
+ * decides they need the eye specialist. Referring the token moves it into the eye
+ * specialist's queue (merged with that counter's waiting list), keeping the SAME
+ * token number so the patient is traceable end-to-end. The token is flagged
+ * `referred` so it is served ahead of fresh walk-ins, and its expiry clock is
+ * reset so an in-facility patient is never auto-expired mid-transfer.
+ */
+async function referToken(tokenId, { toService, reason = null, byStaff = null } = {}) {
+  const target = (toService || '').toString().trim();
+  if (!target) {
+    throw Object.assign(new Error('Destination service is required.'), { statusCode: 400 });
+  }
+
+  const tokenSnap = await refs.token(tokenId).once('value');
+  if (!tokenSnap.exists()) {
+    throw Object.assign(new Error('Token not found.'), { statusCode: 404 });
+  }
+  const token = tokenSnap.val();
+
+  if (token.status !== TOKEN_STATUS.CALLED && token.status !== TOKEN_STATUS.WAITING) {
+    throw Object.assign(
+      new Error('Only an active (waiting or being-served) token can be referred.'),
+      { statusCode: 400 }
+    );
+  }
+  if (token.service === target) {
+    throw Object.assign(new Error('Token is already at that counter.'), { statusCode: 400 });
+  }
+
+  const now = Date.now();
+  const entry = {
+    fromService: token.service,
+    toService: target,
+    reason: reason ? String(reason).trim().slice(0, 300) : null,
+    byStaff: byStaff || null,
+    at: now,
+  };
+  const history = Array.isArray(token.referralHistory) ? token.referralHistory : [];
+  history.push(entry);
+
+  const patch = {
+    service: target,
+    status: TOKEN_STATUS.WAITING,
+    referred: true,
+    referralReason: entry.reason,
+    referralHistory: history,
+    referredAt: now,
+    calledAt: null,
+    servedAt: null,
+    // Fresh expiry window so a referred (physically present) patient is never swept.
+    expiresAt: now + (config.queue.tokenExpirySeconds * 1000),
+  };
+  await refs.token(tokenId).update(patch);
+
+  const merged = { ...token, ...patch };
+
+  analytics.logEvent({
+    event_type: 'token_referred',
+    token_id: tokenId,
+    token_number: token.number,
+    service: target,
+    from_service: entry.fromService,
+    timestamp: now,
+    staff_username: byStaff || null,
+  }).catch(err => console.error('[analytics]', err.message));
+  analytics.upsertTokenRecord(merged).catch(() => {});
+  emit(EVENTS.TOKEN_REFERRED, { number: token.number, from: entry.fromService, to: target });
+
+  return { referred: merged, from: entry.fromService, to: target };
 }
 
 async function pauseQueue() {
@@ -444,6 +538,7 @@ async function requeueToken(tokenId) {
     service: token.service,
     priority: token.priority || 'normal',
     groupSize: token.groupSize || 1,
+    patientName: token.patientName || null,
   });
 
   analytics.logEvent({
@@ -463,6 +558,7 @@ module.exports = {
   ensureInitialized,
   issueToken, getTokenStatus,
   callNextToken, callNextPriorityToken, skipToken,
+  referToken,
   pauseQueue, resumeQueue,
   pauseService, resumeService,
   requeueToken,

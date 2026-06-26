@@ -35,6 +35,11 @@
           "skippedAt": { ".validate": "newData.isNumber() || newData.val() == null" },
           "groupSize": { ".validate": "newData.isNumber() && newData.val() >= 1 && newData.val() <= 10" },
           "note":      { ".validate": "newData.isString() && newData.val().length <= 500 || newData.val() == null" },
+          "patientName":     { ".validate": "newData.isString() && newData.val().length <= 100 || newData.val() == null" },
+          "referred":        { ".validate": "newData.isBoolean() || newData.val() == null" },
+          "referredAt":      { ".validate": "newData.isNumber() || newData.val() == null" },
+          "referralReason":  { ".validate": "newData.isString() && newData.val().length <= 300 || newData.val() == null" },
+          "referralHistory": { ".validate": true },
           "$other":    { ".validate": false }
         }
       },
@@ -56,6 +61,49 @@
         ".write": true,
         ".validate": "newData.hasChildren(['online', 'lastSeen', 'service', 'username']) && newData.child('username').val() === $username"
       }
+    },
+
+    "messageSignals": {
+      /* Content-free real-time triggers for messaging. Clients READ these to know when to refetch messages via the JWT API. No message content is ever stored here; writes are backend-only (Admin SDK). */
+      ".read": true,
+      ".write": false,
+      "$conversationId": {
+        "updatedAt": { ".validate": "newData.isNumber()" }
+      }
+    },
+
+    "conversations": {
+      /* Message content — backend-only via Admin SDK. NOT client-readable: served exclusively through the authorized REST API after a membership check. */
+      ".read": false,
+      ".write": false
+    },
+
+    "notificationSignals": {
+      /* Content-free real-time triggers for the notification center. Clients READ these to know when to refetch notifications via the JWT API. */
+      ".read": true,
+      ".write": false,
+      "$username": {
+        "updatedAt": { ".validate": "newData.isNumber()" }
+      }
+    },
+
+    "notifications": {
+      /* Notification content — backend-only via Admin SDK; served via the JWT API. */
+      ".read": false,
+      ".write": false
+    },
+
+    "uploads": {
+      /* Shared file blobs (RTDB-backed, Spark-plan friendly) — backend-only via Admin SDK; served via the JWT API. */
+      ".read": false,
+      ".write": false
+    },
+
+    "uploadIndex": {
+      /* Per-owner file metadata index — backend-only; served via the JWT API. */
+      ".read": false,
+      ".write": false
     }
   }
 }
+

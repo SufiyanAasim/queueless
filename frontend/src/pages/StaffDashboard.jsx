@@ -4,9 +4,10 @@ import { useStaff } from '../context/StaffContext.jsx';
 import { useQueueState } from '../hooks/useQueueState.js';
 import { usePresence } from '../hooks/usePresence.js';
 import { useAppConfig } from '../hooks/useAppConfig.js';
-import { getServiceLabel } from '../utils/industry.js';
-import { apiStaffCallNext, apiSkipToken, apiSetStaffTokenNote } from '../services/api.js';
+import { getServiceLabel, getServices } from '../utils/industry.js';
+import { apiStaffCallNext, apiSkipToken, apiSetStaffTokenNote, apiStaffReferToken } from '../services/api.js';
 import StatusBadge from '../components/StatusBadge.jsx';
+import LiveTimer from '../components/LiveTimer.jsx';
 
 export default function StaffDashboard() {
   const { staff, logout } = useStaff();
@@ -18,6 +19,10 @@ export default function StaffDashboard() {
   const [note, setNote] = useState('');
   const [noteSaving, setNoteSaving] = useState(false);
   const [noteSaved, setNoteSaved] = useState(false);
+  const [showRefer, setShowRefer] = useState(false);
+  const [referTo, setReferTo] = useState('');
+  const [referReason, setReferReason] = useState('');
+  const [referBusy, setReferBusy] = useState(false);
 
   usePresence(staff?.username, staff?.service);
 
@@ -26,18 +31,23 @@ export default function StaffDashboard() {
   const myService = staff.service;
   const serviceLabel = getServiceLabel(myService, cfg.industry);
   const tokenList = Object.values(tokens || {});
+  const isPriorityTier = (t) => t.priority === 'priority' || t.referred === true;
+
+  // Counters this staff member can refer a patient to (everything except their own).
+  const referOptions = getServices(cfg.industry).filter(s => s.id !== myService);
 
   const called = tokenList.find(t => t.status === 'called' && t.service === myService) || null;
   const waiting = tokenList
     .filter(t => t.status === 'waiting' && t.service === myService)
     .sort((a, b) => {
-      if (a.priority === 'priority' && b.priority !== 'priority') return -1;
-      if (a.priority !== 'priority' && b.priority === 'priority') return 1;
+      const ap = isPriorityTier(a), bp = isPriorityTier(b);
+      if (ap && !bp) return -1;
+      if (!ap && bp) return 1;
       return a.number - b.number;
     });
 
   const priorityWaiting = tokenList.filter(
-    t => t.status === 'waiting' && t.priority === 'priority' && t.service !== myService
+    t => t.status === 'waiting' && isPriorityTier(t) && t.service !== myService
   );
 
   const isPaused = state?.status === 'paused';
@@ -73,6 +83,23 @@ export default function StaffDashboard() {
       setErr(e.response?.data?.error || 'Could not skip.');
     } finally {
       setSkipBusy(false);
+    }
+  };
+
+  const handleRefer = async () => {
+    if (!called || !referTo) return;
+    setReferBusy(true);
+    setErr(null);
+    try {
+      await apiStaffReferToken(called.id, referTo, referReason.trim() || null);
+      setShowRefer(false);
+      setReferTo('');
+      setReferReason('');
+      setNote('');
+    } catch (e) {
+      setErr(e.response?.data?.error || 'Could not refer this patient.');
+    } finally {
+      setReferBusy(false);
     }
   };
 
@@ -154,10 +181,25 @@ export default function StaffDashboard() {
                 {String(called.number).padStart(2, '0')}
               </div>
               <div className="text-sm text-graphite">
-                {called.priority === 'priority' && (
-                  <span className="block text-xs text-warn font-medium mb-1">Priority</span>
+                <span className="flex gap-1.5 mb-1">
+                  {called.priority === 'priority' && (
+                    <span className="text-xs text-warn font-medium">Priority</span>
+                  )}
+                  {called.referred && (
+                    <span className="text-xs text-accent font-medium">Referred</span>
+                  )}
+                </span>
+                {called.patientName && (
+                  <span className="block text-ink font-medium mb-1">{called.patientName}</span>
                 )}
                 Called at {new Date(called.calledAt).toLocaleTimeString()}
+                <div className="mt-1">
+                  <span className="label block text-[10px]">Serving for</span>
+                  <LiveTimer since={called.calledAt} className="text-ink font-medium" />
+                </div>
+                {called.referralReason && (
+                  <div className="mt-1 text-xs text-graphite italic">Referral note: {called.referralReason}</div>
+                )}
                 {called.note && (
                   <div className="mt-1 text-xs text-graphite italic">Note: {called.note}</div>
                 )}
@@ -183,6 +225,57 @@ export default function StaffDashboard() {
                 {noteSaved ? 'Saved!' : noteSaving ? '…' : 'Save'}
               </button>
             </div>
+
+            {/* Refer / transfer this patient to another counter */}
+            {referOptions.length > 0 && (
+              <div className="mt-3">
+                {!showRefer ? (
+                  <button
+                    onClick={() => setShowRefer(true)}
+                    className="text-xs px-3 py-1.5 border border-accent/40 text-accent hover:bg-accent hover:text-paper transition-colors"
+                  >
+                    Refer to another counter →
+                  </button>
+                ) : (
+                  <div className="border border-accent/30 bg-accent/5 p-3 space-y-2">
+                    <span className="label block">Refer this patient to</span>
+                    <select
+                      value={referTo}
+                      onChange={e => setReferTo(e.target.value)}
+                      className="w-full border border-rule bg-paper px-2 py-1.5 text-sm focus:outline-none focus:border-ink"
+                    >
+                      <option value="">Select counter…</option>
+                      {referOptions.map(s => (
+                        <option key={s.id} value={s.id}>{getServiceLabel(s.id, cfg.industry)}</option>
+                      ))}
+                    </select>
+                    <input
+                      type="text"
+                      value={referReason}
+                      onChange={e => setReferReason(e.target.value)}
+                      placeholder="Reason (optional) — e.g. needs eye exam"
+                      maxLength={300}
+                      className="w-full border border-rule bg-paper px-2 py-1.5 text-sm focus:outline-none focus:border-ink"
+                    />
+                    <div className="flex gap-2">
+                      <button
+                        onClick={handleRefer}
+                        disabled={referBusy || !referTo}
+                        className="btn-primary text-xs px-3 py-1.5 disabled:opacity-40"
+                      >
+                        {referBusy ? 'Referring…' : 'Refer'}
+                      </button>
+                      <button
+                        onClick={() => { setShowRefer(false); setReferTo(''); setReferReason(''); }}
+                        className="btn-secondary text-xs px-3 py-1.5"
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
           </>
         ) : (
           <div className="text-graphite text-center py-6">
@@ -191,6 +284,24 @@ export default function StaffDashboard() {
           </div>
         )}
       </div>
+
+      {/* Next in queue */}
+      {waiting.length > 0 && (
+        <div className="mb-3 flex items-center justify-between px-4 py-3 border border-accent/30 bg-accent/5">
+          <div>
+            <span className="label block text-[10px] text-accent">Next in Queue</span>
+            <span className="font-display text-2xl num">
+              {getServiceLabel(myService, cfg.industry).slice(0, 1).toUpperCase()}-{String(waiting[0].number).padStart(3, '0')}
+            </span>
+          </div>
+          <div className="text-right text-xs text-graphite">
+            {waiting[0].patientName && <div className="text-ink font-medium">{waiting[0].patientName}</div>}
+            {(waiting[0].priority === 'priority' || waiting[0].referred) && (
+              <span className="text-accent font-medium">{waiting[0].referred ? 'Referred' : 'Priority'}</span>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Call Next */}
       <button
@@ -211,10 +322,12 @@ export default function StaffDashboard() {
         ) : (
           <div className="border border-rule divide-y divide-rule bg-cream">
             {waiting.map((t, i) => (
-              <div key={t.id} className={`px-4 py-3 flex items-center justify-between text-sm ${t.priority === 'priority' ? 'bg-warn/5' : ''}`}>
+              <div key={t.id} className={`px-4 py-3 flex items-center justify-between text-sm ${t.referred ? 'bg-accent/5' : t.priority === 'priority' ? 'bg-warn/5' : ''}`}>
                 <div className="flex items-center gap-3">
                   <span className="font-display text-2xl num">{String(t.number).padStart(2, '0')}</span>
                   {t.priority === 'priority' && <span className="text-xs text-warn font-bold">P</span>}
+                  {t.referred && <span className="text-xs text-accent font-bold" title="Referred">R</span>}
+                  {t.patientName && <span className="text-xs text-ink truncate max-w-[120px]">{t.patientName}</span>}
                   {t.note && <span className="text-xs text-graphite italic truncate max-w-[120px]">{t.note}</span>}
                 </div>
                 <span className="text-graphite font-mono text-xs">{new Date(t.issuedAt).toLocaleTimeString()}</span>

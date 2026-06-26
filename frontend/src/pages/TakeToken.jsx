@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { apiTakeToken } from '../services/api.js';
 import { useAppConfig } from '../hooks/useAppConfig.js';
 import { useQueueState } from '../hooks/useQueueState.js';
-import { getServices } from '../utils/industry.js';
+import { useQueues } from '../hooks/useQueues.js';
 
 function formatWait(seconds) {
   if (!seconds || seconds <= 0) return null;
@@ -15,10 +15,11 @@ function formatWait(seconds) {
 
 export default function TakeToken() {
   const cfg = useAppConfig();
-  const services = getServices(cfg.industry);
+  const { services } = useQueues();
   const { state: queueState, tokens, announcement } = useQueueState();
 
   const [service, setService] = useState(services[0]?.id || 'general');
+  const [patientName, setPatientName] = useState('');
   const [email, setEmail] = useState('');
   const [priority, setPriority] = useState(false);
   const [groupSize, setGroupSize] = useState(1);
@@ -50,7 +51,7 @@ export default function TakeToken() {
     setSubmitting(true);
     setError(null);
     try {
-      const token = await apiTakeToken(service, email.trim() || null, effectivePriority, groupSize);
+      const token = await apiTakeToken(service, email.trim() || null, effectivePriority, groupSize, patientName);
       localStorage.setItem('queueless.myToken', JSON.stringify(token));
       navigate(`/token/${token.id}`);
     } catch (e) {
@@ -175,6 +176,23 @@ export default function TakeToken() {
             </div>
           </div>
         )}
+
+        <label className="block">
+          <span className="label">{cfg.industry === 'medical' ? 'Patient name' : 'Name'} (optional)</span>
+          <p className="mt-1 text-xs text-graphite mb-3">
+            {cfg.industry === 'medical'
+              ? 'Helps staff identify you and follows your token if you are referred to another counter.'
+              : 'Shown to staff alongside your token number.'}
+          </p>
+          <input
+            type="text"
+            value={patientName}
+            onChange={e => setPatientName(e.target.value)}
+            placeholder="Full name"
+            maxLength={100}
+            className="w-full sm:max-w-sm border border-rule bg-cream px-4 py-3 text-sm text-ink placeholder:text-graphite/60 focus:outline-none focus:border-ink"
+          />
+        </label>
 
         <label className="block">
           <span className="label">Email (optional)</span>

@@ -4,6 +4,10 @@ import { useAuth } from '../context/AuthContext.jsx';
 import { useStaff } from '../context/StaffContext.jsx';
 import { useTheme } from '../context/ThemeContext.jsx';
 import { useAppConfig } from '../hooks/useAppConfig.js';
+import AssistantDock from './AssistantDock.jsx';
+import MessagingDeck from './MessagingDeck.jsx';
+import NotificationBell from './NotificationBell.jsx';
+import ErrorBoundary from './ErrorBoundary.jsx';
 
 export default function Layout({ children }) {
   const { user, logout } = useAuth();
@@ -22,7 +26,7 @@ export default function Layout({ children }) {
 
   const cfg = useAppConfig();
 
-  if (onDisplay) return <>{children}</>;
+  if (onDisplay) return <ErrorBoundary key={loc.pathname}>{children}</ErrorBoundary>;
 
   const logoTarget = user ? '/admin' : staff ? '/staff' : '/';
   const logoSrc = dark
@@ -68,9 +72,12 @@ export default function Layout({ children }) {
 
   const adminNavLinks = [
     { to: '/admin', label: 'Dashboard' },
+    { to: '/admin/queues', label: 'Queues' },
     { to: '/admin/analytics', label: 'Analytics' },
     { to: '/admin/staff', label: 'Staff' },
+    { to: '/files', label: 'Files' },
     { to: '/admin/manage', label: 'Admins' },
+    { to: '/admin/audit', label: 'Activity' },
     { to: '/admin/setup', label: 'Settings' },
   ];
 
@@ -116,6 +123,9 @@ export default function Layout({ children }) {
 
           {/* Right side controls */}
           <div className="flex items-center gap-2 shrink-0">
+            {/* Notification center (self-hides unless an admin/staff is signed in) */}
+            {(user || staff) && <NotificationBell />}
+
             {/* Public theme toggle (when not admin) */}
             {!user && (
               <button
@@ -374,7 +384,7 @@ export default function Layout({ children }) {
         </div>
       )}
 
-      <main className="flex-1">{children}</main>
+      <main className="flex-1"><ErrorBoundary key={loc.pathname}>{children}</ErrorBoundary></main>
 
       <footer className="border-t border-rule mt-12 print:hidden">
         <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 xl:px-10 py-4 flex flex-col sm:flex-row gap-2 sm:gap-6 items-start sm:items-center justify-between text-xs text-graphite">
@@ -397,9 +407,16 @@ export default function Layout({ children }) {
               <span className="font-medium text-ink">QueueLess</span>
             )}
           </div>
-          <span className="font-mono">v1.3.0 (latest) · cloud-native token qms</span>
+          <span className="flex items-center gap-3">
+            <Link to="/credits" className="hover:text-ink transition-colors underline underline-offset-2">Credits</Link>
+            <span className="font-mono">v1.4.5 “Intelligent Collaboration” · cloud-native token qms</span>
+          </span>
         </div>
       </footer>
+
+      {/* Global floating docks (self-hide unless an admin/staff is signed in) */}
+      <AssistantDock />
+      <MessagingDeck />
     </div>
   );
 }

@@ -1,17 +1,29 @@
 import { useEffect, useState } from 'react';
 import { Navigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext.jsx';
-import { apiListAdmins, apiCreateAdmin, apiDeleteAdmin } from '../services/api.js';
+import { apiListAdmins, apiCreateAdmin, apiDeleteAdmin, apiSetAdminRole } from '../services/api.js';
+
+const ROLE_LABEL = { superadmin: 'Super Admin', admin: 'Admin', manager: 'Manager' };
 
 export default function AdminManage() {
   const { user } = useAuth();
+  const isSuperadmin = user?.role === 'superadmin';
 
   const [admins, setAdmins] = useState([]);
   const [loading, setLoading] = useState(true);
   const [creating, setCreating] = useState(false);
-  const [form, setForm] = useState({ username: '', password: '', displayName: '' });
+  const [form, setForm] = useState({ username: '', password: '', displayName: '', role: 'admin' });
   const [formError, setFormError] = useState(null);
   const [deleting, setDeleting] = useState(null);
+
+  const changeRole = async (username, role) => {
+    try {
+      await apiSetAdminRole(username, role);
+      setAdmins(a => a.map(adm => adm.username === username ? { ...adm, role } : adm));
+    } catch (e) {
+      alert(e.response?.data?.error || 'Could not change role.');
+    }
+  };
 
   useEffect(() => {
     if (!user) return;
@@ -28,7 +40,7 @@ export default function AdminManage() {
     try {
       const newAdmin = await apiCreateAdmin(form);
       setAdmins(a => [...a, newAdmin]);
-      setForm({ username: '', password: '', displayName: '' });
+      setForm({ username: '', password: '', displayName: '', role: 'admin' });
     } catch (e) {
       setFormError(e.response?.data?.error || 'Could not create admin account.');
     } finally {
@@ -96,7 +108,21 @@ export default function AdminManage() {
                   )}
                 </div>
                 <div className="col-span-4 text-graphite font-mono text-xs">{adm.username}</div>
-                <div className="col-span-2 text-graphite text-xs">{adm.role || 'admin'}</div>
+                <div className="col-span-2 text-xs">
+                  {isSuperadmin && adm.username !== user.username ? (
+                    <select
+                      value={adm.role || 'admin'}
+                      onChange={e => changeRole(adm.username, e.target.value)}
+                      className="border border-rule bg-paper px-1.5 py-1 text-xs focus:outline-none focus:border-ink"
+                    >
+                      <option value="superadmin">Super Admin</option>
+                      <option value="admin">Admin</option>
+                      <option value="manager">Manager</option>
+                    </select>
+                  ) : (
+                    <span className="text-graphite">{ROLE_LABEL[adm.role] || adm.role || 'Admin'}</span>
+                  )}
+                </div>
                 <div className="col-span-2 text-right">
                   {adm.username === user.username ? (
                     <span className="text-xs text-ash">—</span>
@@ -146,6 +172,17 @@ export default function AdminManage() {
               placeholder="Min 8 characters"
               className="w-full border border-rule bg-paper px-3 py-2.5 text-sm focus:outline-none focus:border-ink"
             />
+          </div>
+          <div>
+            <label className="label block mb-1">Role</label>
+            <select
+              value={form.role}
+              onChange={e => setForm(f => ({ ...f, role: e.target.value }))}
+              className="w-full border border-rule bg-paper px-3 py-2.5 text-sm focus:outline-none focus:border-ink"
+            >
+              <option value="admin">Admin — full operations + account management</option>
+              <option value="manager">Manager — operations only (no account management)</option>
+            </select>
           </div>
 
           {formError && (

@@ -3,12 +3,29 @@ import { Navigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext.jsx';
 import { useQueueState } from '../hooks/useQueueState.js';
 import { useAppConfig } from '../hooks/useAppConfig.js';
-import { getServices, getServiceLabel } from '../utils/industry.js';
-import { apiCallNext, apiCallNextPriority, apiSkipToken, apiPause, apiResume, apiReset, apiStartAutoMode, apiStopAutoMode, apiActiveQueue, apiSetAnnouncement, apiClearAnnouncement, apiSetAdminTokenNote, apiPauseService, apiResumeService } from '../services/api.js';
+import { useQueues } from '../hooks/useQueues.js';
+import { getServiceLabel } from '../utils/industry.js';
+import { apiCallNext, apiCallNextPriority, apiSkipToken, apiPause, apiResume, apiReset, apiStartAutoMode, apiStopAutoMode, apiActiveQueue, apiSetAnnouncement, apiClearAnnouncement, apiSetAdminTokenNote, apiPauseService, apiResumeService, apiReferToken } from '../services/api.js';
 import StatusBadge from '../components/StatusBadge.jsx';
 import Stat from '../components/Stat.jsx';
+import LiveTimer from '../components/LiveTimer.jsx';
 
-function ServingNowCard({ token, industry, onSkip, skipBusy }) {
+function ServingNowCard({ token, industry, services, onSkip, skipBusy, onRefer, referBusy }) {
+  const [showRefer, setShowRefer] = useState(false);
+  const [referTo, setReferTo] = useState('');
+  const [referReason, setReferReason] = useState('');
+
+  // Destination options = every other counter except the one the token is at now.
+  const referOptions = (services || []).filter(s => s.id !== token?.service);
+
+  const submitRefer = async () => {
+    if (!referTo) return;
+    await onRefer(token.id, referTo, referReason);
+    setShowRefer(false);
+    setReferTo('');
+    setReferReason('');
+  };
+
   return (
     <div className="card">
       <div className="flex items-center justify-between mb-4">
@@ -20,8 +37,16 @@ function ServingNowCard({ token, industry, onSkip, skipBusy }) {
           <div className="font-display text-token-lg leading-none tracking-tightest text-accent num">
             {String(token.number).padStart(2, '0')}
           </div>
-          {token.priority === 'priority' && (
-            <span className="mt-2 inline-block text-xs px-2 py-0.5 bg-warn/10 text-warn border border-warn/30 font-medium">Priority</span>
+          <div className="mt-2 flex flex-wrap gap-2">
+            {token.priority === 'priority' && (
+              <span className="inline-block text-xs px-2 py-0.5 bg-warn/10 text-warn border border-warn/30 font-medium">Priority</span>
+            )}
+            {token.referred && (
+              <span className="inline-block text-xs px-2 py-0.5 bg-accent/10 text-accent border border-accent/30 font-medium">Referred</span>
+            )}
+          </div>
+          {token.patientName && (
+            <div className="mt-3 text-sm font-medium">{token.patientName}</div>
           )}
           <div className="mt-4 flex flex-wrap gap-x-8 gap-y-2 text-sm">
             <div>
@@ -32,11 +57,70 @@ function ServingNowCard({ token, industry, onSkip, skipBusy }) {
               <span className="label block">Called</span>
               <span>{new Date(token.calledAt).toLocaleTimeString()}</span>
             </div>
+            <div>
+              <span className="label block">Serving for</span>
+              <LiveTimer since={token.calledAt} className="font-medium" />
+            </div>
           </div>
+          {token.referralReason && (
+            <p className="mt-3 text-xs text-graphite italic">Referral note: {token.referralReason}</p>
+          )}
+
+          {/* Refer / transfer to another counter */}
+          {referOptions.length > 0 && (
+            <div className="mt-4">
+              {!showRefer ? (
+                <button
+                  onClick={() => setShowRefer(true)}
+                  className="text-xs px-3 py-1.5 border border-accent/40 text-accent hover:bg-accent hover:text-paper transition-colors"
+                >
+                  Refer to another counter →
+                </button>
+              ) : (
+                <div className="border border-accent/30 bg-accent/5 p-3 space-y-2">
+                  <span className="label block">Refer this patient to</span>
+                  <select
+                    value={referTo}
+                    onChange={e => setReferTo(e.target.value)}
+                    className="w-full border border-rule bg-paper px-2 py-1.5 text-sm focus:outline-none focus:border-ink"
+                  >
+                    <option value="">Select counter…</option>
+                    {referOptions.map(s => (
+                      <option key={s.id} value={s.id}>{getServiceLabel(s.id, industry)}</option>
+                    ))}
+                  </select>
+                  <input
+                    type="text"
+                    value={referReason}
+                    onChange={e => setReferReason(e.target.value)}
+                    placeholder="Reason (optional) — e.g. needs eye exam"
+                    maxLength={300}
+                    className="w-full border border-rule bg-paper px-2 py-1.5 text-sm focus:outline-none focus:border-ink"
+                  />
+                  <div className="flex gap-2">
+                    <button
+                      onClick={submitRefer}
+                      disabled={referBusy || !referTo}
+                      className="btn-primary text-xs px-3 py-1.5 disabled:opacity-40"
+                    >
+                      {referBusy ? 'Referring…' : 'Refer'}
+                    </button>
+                    <button
+                      onClick={() => { setShowRefer(false); setReferTo(''); setReferReason(''); }}
+                      className="btn-secondary text-xs px-3 py-1.5"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
           <button
             onClick={() => onSkip(token.id)}
             disabled={skipBusy}
-            className="mt-4 text-xs text-graphite hover:text-accent underline underline-offset-2 disabled:opacity-40"
+            className="mt-4 block text-xs text-graphite hover:text-accent underline underline-offset-2 disabled:opacity-40"
           >
             {skipBusy ? 'Marking…' : 'No-show / skip this token'}
           </button>
@@ -72,14 +156,17 @@ function WaitingList({ tokens, industry }) {
         {tokens.map((t, i) => (
           <div
             key={t.id}
-            className={`px-4 py-3 grid grid-cols-12 gap-3 items-center text-sm hover:bg-paper transition-colors ${t.priority === 'priority' ? 'bg-warn/5' : ''}`}
+            className={`px-4 py-3 grid grid-cols-12 gap-3 items-center text-sm hover:bg-paper transition-colors ${t.referred ? 'bg-accent/5' : t.priority === 'priority' ? 'bg-warn/5' : ''}`}
           >
             <div className="col-span-2 font-display text-2xl num">{String(t.number).padStart(2, '0')}</div>
             <div className="col-span-5 text-graphite flex items-center gap-1.5">
               {t.priority === 'priority' && (
                 <span className="text-xs text-warn font-bold" title="Priority">P</span>
               )}
-              {getServiceLabel(t.service, industry)}
+              {t.referred && (
+                <span className="text-xs text-accent font-bold" title="Referred from another counter">R</span>
+              )}
+              <span className="truncate">{t.patientName || getServiceLabel(t.service, industry)}</span>
             </div>
             <div className="col-span-3 font-mono text-xs text-graphite">
               {new Date(t.issuedAt).toLocaleTimeString()}
@@ -165,8 +252,8 @@ function PriorityQueueSection({ tokens, calledByService, industry, onCallNextPri
   );
 }
 
-function QueueColumn({ service, called, waiting, onCallNext, onSkip, busy, skipBusy, isPaused, industry, priorityBlocked, isServicePaused, onPauseService, onResumeService, pausingService }) {
-  const title = getServiceLabel(service.id, industry);
+function QueueColumn({ service, called, waiting, onCallNext, onSkip, busy, skipBusy, isPaused, industry, priorityBlocked, isServicePaused, onPauseService, onResumeService, pausingService, services, onRefer, referBusy }) {
+  const title = service.title || getServiceLabel(service.id, industry);
   const toggling = pausingService === service.id;
   return (
     <div className={`flex flex-col gap-4 ${priorityBlocked ? 'opacity-60' : ''}`}>
@@ -188,7 +275,15 @@ function QueueColumn({ service, called, waiting, onCallNext, onSkip, busy, skipB
           </button>
         </div>
       </div>
-      <ServingNowCard token={called} industry={industry} onSkip={onSkip} skipBusy={skipBusy} />
+      <ServingNowCard token={called} industry={industry} services={services} onSkip={onSkip} skipBusy={skipBusy} onRefer={onRefer} referBusy={referBusy} />
+      {waiting.length > 0 && (
+        <div className="flex items-center justify-between px-3 py-2 border border-accent/30 bg-accent/5">
+          <span className="label text-[10px] text-accent">Next in Queue</span>
+          <span className="font-display text-lg num">
+            {title.slice(0, 1).toUpperCase()}-{String(waiting[0].number).padStart(3, '0')}
+          </span>
+        </div>
+      )}
       {isServicePaused ? (
         <div className="w-full text-center py-2.5 text-xs text-warn border border-warn/40 bg-warn/5">
           This service is paused
@@ -311,8 +406,10 @@ export default function AdminDashboard() {
   const { user } = useAuth();
   const { state: fbState, tokens: fbTokens, announcement: fbAnnouncement, error: fbError, loading: fbLoading } = useQueueState();
   const cfg = useAppConfig();
+  const { services } = useQueues();
   const [busy, setBusy] = useState(false);
   const [skipBusy, setSkipBusy] = useState(false);
+  const [referBusy, setReferBusy] = useState(false);
   const [err, setErr] = useState(null);
   const [activeTab, setActiveTab] = useState(0);
   const [pausingService, setPausingService] = useState(null);
@@ -353,13 +450,15 @@ export default function AdminDashboard() {
 
   if (!user) return <Navigate to="/admin/login" replace />;
 
-  const services = getServices(cfg.industry);
   const tokenList = Object.values(tokensObj || {});
   const isPaused = state?.status === 'paused';
   const servedCount = tokenList.filter(t => t.status === 'served').length;
   const expiredCount = tokenList.filter(t => t.status === 'expired').length;
+  // Referred tokens are treated as priority-tier: they've already waited once at
+  // another counter, so they slot in ahead of fresh walk-ins.
+  const isPriorityTier = (t) => t.priority === 'priority' || t.referred === true;
   const priorityWaitingTokens = tokenList
-    .filter(t => t.status === 'waiting' && t.priority === 'priority')
+    .filter(t => t.status === 'waiting' && isPriorityTier(t))
     .sort((a, b) => a.number - b.number);
   const priorityWaiting = priorityWaitingTokens.length;
   // When any priority token is waiting, general (non-priority) queues are blocked.
@@ -371,8 +470,9 @@ export default function AdminDashboard() {
     waitingByService[s.id] = tokenList
       .filter(t => t.status === 'waiting' && t.service === s.id)
       .sort((a, b) => {
-        if (a.priority === 'priority' && b.priority !== 'priority') return -1;
-        if (a.priority !== 'priority' && b.priority === 'priority') return 1;
+        const ap = isPriorityTier(a), bp = isPriorityTier(b);
+        if (ap && !bp) return -1;
+        if (!ap && bp) return 1;
         return a.number - b.number;
       });
     calledByService[s.id] = tokenList.find(t => t.status === 'called' && t.service === s.id) || null;
@@ -396,6 +496,14 @@ export default function AdminDashboard() {
     try { await apiSkipToken(tokenId); }
     catch (e) { setErr(e.response?.data?.error || 'Could not skip token.'); }
     finally { setSkipBusy(false); }
+  };
+
+  const handleRefer = async (tokenId, toService, reason) => {
+    setReferBusy(true);
+    setErr(null);
+    try { await apiReferToken(tokenId, toService, reason); }
+    catch (e) { setErr(e.response?.data?.error || 'Could not refer token.'); }
+    finally { setReferBusy(false); }
   };
 
   const handleSetAnnouncement = async () => {
@@ -662,11 +770,14 @@ export default function AdminDashboard() {
             skipBusy={skipBusy}
             isPaused={isPaused}
             industry={cfg.industry}
-            priorityBlocked={priorityBlocked && !waitingByService[services[activeTab].id]?.some(t => t.priority === 'priority')}
+            priorityBlocked={priorityBlocked && !waitingByService[services[activeTab].id]?.some(isPriorityTier)}
             isServicePaused={pausedServices.includes(services[activeTab].id)}
             onPauseService={() => handlePauseService(services[activeTab].id)}
             onResumeService={() => handleResumeService(services[activeTab].id)}
             pausingService={pausingService}
+            services={services}
+            onRefer={handleRefer}
+            referBusy={referBusy}
           />
         )}
       </div>
@@ -685,11 +796,14 @@ export default function AdminDashboard() {
             skipBusy={skipBusy}
             isPaused={isPaused}
             industry={cfg.industry}
-            priorityBlocked={priorityBlocked && !waitingByService[s.id]?.some(t => t.priority === 'priority')}
+            priorityBlocked={priorityBlocked && !waitingByService[s.id]?.some(isPriorityTier)}
             isServicePaused={pausedServices.includes(s.id)}
             onPauseService={() => handlePauseService(s.id)}
             onResumeService={() => handleResumeService(s.id)}
             pausingService={pausingService}
+            services={services}
+            onRefer={handleRefer}
+            referBusy={referBusy}
           />
         ))}
       </div>

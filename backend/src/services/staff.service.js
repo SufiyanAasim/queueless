@@ -104,6 +104,15 @@ async function deleteStaff(username) {
   ]);
 }
 
+async function assignStaffToQueue(username, service) {
+  const svc = String(service || '').trim();
+  if (!svc) throw Object.assign(new Error('service is required.'), { statusCode: 400 });
+  const snap = await refs.staffMember(username).once('value');
+  if (!snap.exists()) throw Object.assign(new Error('Staff account not found.'), { statusCode: 404 });
+  await refs.staffMember(username).update({ service: svc });
+  return { username, service: svc };
+}
+
 async function getStaffProfile(username) {
   const snap = await refs.staffMember(username).once('value');
   const a = snap.val();
@@ -129,4 +138,4 @@ async function changeStaffPassword(username, currentPassword, newPassword) {
   await refs.staffMember(username).update({ passwordHash });
 }
 
-module.exports = { createStaff, loginStaff, loginByPin, listStaff, deleteStaff, getStaffProfile, updateStaffProfile, changeStaffPassword };
+module.exports = { createStaff, loginStaff, loginByPin, listStaff, deleteStaff, getStaffProfile, updateStaffProfile, changeStaffPassword, assignStaffToQueue };

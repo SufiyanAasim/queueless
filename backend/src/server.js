@@ -6,10 +6,12 @@ const analyticsService = require('./services/analytics.service');
 const expiryService = require('./services/expiry.service');
 const schedulerService = require('./services/scheduler.service');
 const appointmentMergeService = require('./services/appointmentMerge.service');
+const { registerSubscribers } = require('./events');
 
 async function main() {
   console.log(`[boot] Starting QueueLess backend in ${config.nodeEnv} mode...`);
 
+  registerSubscribers();
   await authService.bootstrapAdmin();
   await queueService.ensureInitialized();
   expiryService.startExpirySweep();
@@ -48,3 +50,5 @@ main().catch(err => {
   console.error('[boot] Fatal error:', err);
   process.exit(1);
 });
+
+// Trigger build after secret addition

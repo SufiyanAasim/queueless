@@ -65,7 +65,7 @@ export default function AdminSetup() {
       <div className="label mb-4">{isEditing ? 'Settings' : 'First-time setup'}</div>
       <h1 className="font-display text-5xl tracking-tightest leading-[0.95]">Configure your queue</h1>
       <p className="mt-4 text-graphite max-w-xl">
-        Set your organisation name and location. The industry profile controls the service categories customers see when taking a token.
+        Set your organisation name and location. The Industry Type sets the default queues customers see — you can add your own under Queues.
       </p>
 
       <div className="mt-10">
@@ -92,7 +92,8 @@ export default function AdminSetup() {
       </div>
 
       <div className="mt-10">
-        <span className="label block mb-4">Industry profile</span>
+        <span className="label block mb-1">Industry Type</span>
+        <p className="text-xs text-graphite mb-4">Sets the default queues for your organisation. Add or customise individual queues under <span className="font-medium">Queues</span>.</p>
         <div className="grid sm:grid-cols-2 gap-4">
           {Object.entries(INDUSTRY_PROFILES).map(([key, profile]) => (
             <button

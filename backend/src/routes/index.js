@@ -7,12 +7,23 @@ router.use('/auth',     require('./auth.routes'));
 router.use('/tokens',   require('./token.routes'));
 router.use('/admin',    require('./admin.routes'));
 router.use('/staff',    require('./staff.routes'));
+router.use('/assistant', require('./assistant.routes'));
+router.use(require('./messaging.routes')); // /conversations, /directory (per-route auth)
+router.use(require('./share.routes'));     // /shares (auth), /share/:id (public capability)
+router.use(require('./upload.routes'));    // /uploads (auth) — RTDB-backed shared files
 
 router.post('/feedback', asyncHandler(require('../controllers/feedback.controller').submitFeedback));
 
 router.get('/config', asyncHandler(async (req, res) => {
-  const snap = await refs.appConfig().once('value');
-  res.json(snap.val() || { industry: 'general', orgName: 'QueueLess' });
+  const queueAdminService = require('../services/queueAdmin.service');
+  const [snap, activeQueues] = await Promise.all([
+    refs.appConfig().once('value'),
+    queueAdminService.getActiveQueues().catch(() => []),
+  ]);
+  const cfg = snap.val() || { industry: 'general', orgName: 'QueueLess' };
+  // Custom queues (admin-defined) take precedence over the static industry
+  // profile on the frontend; empty array means "fall back to industry defaults".
+  res.json({ ...cfg, queues: activeQueues });
 }));
 
 // Public: live announcement (used by display board + customer pages)

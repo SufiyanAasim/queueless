@@ -44,6 +44,9 @@ jobs:
       - name: Run pipeline (small dataset, no charts)
         run: python run_pipeline.py --days 7 --avg-per-day 80 --skip-charts
 
+      - name: Train predictive models (export artefact for the backend)
+        run: python models/train_predictor.py
+
       - name: Generate notebook artifact
         run: python build_notebook.py
 

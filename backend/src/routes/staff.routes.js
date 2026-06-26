@@ -17,6 +17,7 @@ router.post('/login/pin', loginLimiter, asyncHandler(controller.loginPin));
 router.get('/queue',      requireStaff, asyncHandler(controller.getQueue));
 router.post('/queue/call-next',           requireStaff, asyncHandler(controller.callNext));
 router.put('/queue/tokens/:tokenId/note', requireStaff, asyncHandler(controller.setTokenNote));
+router.post('/queue/refer/:tokenId',      requireStaff, asyncHandler(controller.referToken));
 router.get('/profile',                    requireStaff, asyncHandler(controller.getProfile));
 router.put('/profile',                    requireStaff, asyncHandler(controller.updateProfile));
 router.post('/change-password',           requireStaff, asyncHandler(controller.changePassword));

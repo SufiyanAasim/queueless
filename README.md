@@ -2,11 +2,13 @@
 
 **Live:** [queueless-beta.vercel.app](https://queueless-beta.vercel.app)  
 **Author:** Muhammad Sufiyan Aasim · [@msufiyanpk](https://github.com/msufiyanpk)  
-**Latest release:** [v1.3.5 — Pulse](https://github.com/msufiyanpk/queueless/releases/tag/v1.3.5)
+**Latest release:** v1.4.5 — Intelligent Collaboration
 
 QueueLess is a full-stack, cloud-native digital queue management system that replaces paper tokens with a real-time browser experience. Customers take tokens from any device, track their live position, and get notified the moment their number is called — no app download required.
 
 Admins and staff manage the queue from a dedicated portal with a live dashboard, ML-assisted auto mode, granular analytics, and per-service staff portals. Every queue event is dual-written to MongoDB Atlas and a CSV event log, feeding a data mining pipeline that performs wait-time predictions, peak-hour heatmaps, and staffing recommendations.
+
+**v1.4.x turns QueueLess into an intelligent operational workspace:** admin-defined custom queues, cross-counter token referral, a grounded AI assistant (RAG, never fabricates data), internal team messaging (1:1 + group chat), a notification center, secure sharing with QR codes, shared files, and role-based access control — all on the free Firebase Spark plan (no Cloud Storage / Blaze required).
 
 ---
 
@@ -57,14 +59,28 @@ Admins and staff manage the queue from a dedicated portal with a live dashboard,
 ### Display board (`/display`)
 - Fullscreen TV-optimised view — now-serving token per service, priority section, welcome banner, announcement banner, flash animation on token change, live clock
 
+### Intelligent workspace (v1.4.x)
+
+- **Custom queue management** (`/admin/queues`) — admins create their own queues within an Industry Type with full CRUD: create, edit, enable/disable, archive, **delete (blocked while active tokens exist)**, reorder, capacity, working hours, average service time, token prefix, and **per-queue staff assignment** + analytics. Dedicated Create and Manage screens.
+- **Token referral / transfer** — move a live token between counters (e.g. hospital OPD → Eye Specialist); it keeps its number, records a referral trail, is served as priority-tier at the destination, and never auto-expires mid-transfer.
+- **AI Assistant** — a floating ✦ button on every screen + a full-screen workspace (`/assistant`). Answers operational questions (longest wait, today's summary, predicted traffic, staffing) using **Retrieval-Augmented Generation over verified backend data** — it never fabricates figures. Pluggable providers (zero-config grounded default + optional OpenAI / Groq / OpenRouter / Ollama / Gemini). Persistent conversation history (pin, rename, delete, export).
+- **Predictive insights** — explainable wait-time forecasts, congestion alerts, and recommendations from a trained model artefact (scikit-learn) with rule-based cold-start fallback.
+- **Internal messaging** — a floating 💬 deck with **1:1 and group chat for admins & staff**, team directory, emoji reactions, read receipts ("Seen"), and inline attachments (≤256 KB). Real-time without external services.
+- **Notification Center** — a header 🔔 with unread badge + a dedicated screen (`/notifications`); driven by an application-wide event bus (token referred, queue created, new message, …).
+- **Secure sharing** — share queue snapshots / analytics as **capability links + QR codes** with a printable view (`/share/:id`) and expiry/revoke.
+- **Shared files** (`/files`) — drag-and-drop sharing of reports, exports, PDFs, Excel, Word, ZIP (≤2 MB), **stored in RTDB to stay on the free Spark plan** (no Cloud Storage / Blaze).
+- **Role-based access control** — **Super Admin > Admin > Manager > Staff**. Managers run operations; only Admins+ manage accounts; only Super Admin changes roles. **Audit log** of sensitive actions at `/admin/audit`.
+
 ### Industry profiles
 
-| Profile | Services |
+Each Industry Type ships sensible default queues; admins can also add their own under **Queues**.
+
+| Profile | Default queues |
 |---|---|
-| **General Office** | General Inquiry, Consultation, Transaction |
-| **Bank / Finance** | New Account, Loan Application, Foreign Exchange, Card Services, General Banking |
-| **Medical / Hospital** | OPD / Doctor, Lab Tests, Pharmacy, Radiology, Emergency (auto-priority) |
-| **Restaurant / Dining** | Table 1–2, Table 3–4, Table 5+, Takeaway |
+| **General Office** | General Inquiry, Consultation, Transaction, Billing & Payments, Help & Support |
+| **Bank / Finance** | New Account, Loan, Foreign Exchange, Card Services, Priority Banking, Locker, General Banking |
+| **Medical / Hospital** | OPD, Eye Specialist, Cardiology, Dental, ENT, Dermatology, Orthopedics, Pediatrics, Gynecology, Lab, Pharmacy, Radiology, Emergency (auto-priority) |
+| **Restaurant / Dining** | Table 1–2, Table 3–4, Table 5+, Reservation, Takeaway, Bar / Lounge |
 
 ---
 
@@ -96,14 +112,16 @@ Admins and staff manage the queue from a dedicated portal with a live dashboard,
 | Joi | — | Request validation and environment variable schema |
 | express-rate-limit | — | Brute-force protection on PIN and login routes |
 | nodemailer | — | Optional token email with tracking link |
-| Jest + Supertest | — | Unit and integration tests |
+| Jest + Supertest | — | Unit and integration tests (46 tests) |
+| AI provider layer | — | Pluggable `AIProvider` (grounded default + OpenAI/Groq/OpenRouter/Ollama/Gemini) with RAG over verified data |
+| Event bus | Node `EventEmitter` | Application-wide events decoupling queue, messaging, and notification modules |
 
 ### Database & Cloud
 
 | Service | Purpose |
 |---|---|
-| Firebase Realtime Database | Live queue state, tokens, presence, announcements, appointments, admin accounts |
-| MongoDB Atlas | Persistent analytics event log (`queue_events`) with `staff_username` attribution |
+| Firebase Realtime Database | Live queue state, tokens, presence, announcements, appointments, admin accounts; custom queues; messaging, notifications & shared files (content via JWT API, real-time via content-free signal nodes) |
+| MongoDB Atlas | Persistent analytics event log (`queue_events`) + full per-token lifecycle mirror (`tokens`) |
 
 ### Analytics / Data Mining
 
@@ -260,6 +278,27 @@ queueless/
 └── README.md
 ```
 
+**New modules in v1.4.x** (not exhaustively expanded above):
+
+```
+backend/src/
+├── ai/                  # AIProvider abstraction (grounded + LLM), RAG retrieval, assistant + conversation services
+├── events/              # Application-wide event bus + subscriber registration
+├── services/            # queueAdmin, prediction, messaging, notification, share, upload, audit services
+├── controllers/         # assistant, messaging, notification, share, upload controllers
+├── routes/              # assistant, messaging, share, upload routes
+├── config/roles.js      # RBAC role hierarchy
+└── models/predictions.json   # Shipped trained ML artefact (free-plan fallback)
+
+frontend/src/
+├── components/          # AssistantDock, MessagingDeck, NotificationBell, ShareDialog, QueueForm, LiveTimer, PredictiveInsights, ErrorBoundary
+├── pages/               # AdminQueues(+New/+Edit), AdminAudit, AssistantWorkspace, Notifications, ShareView, SharedFiles, Credits
+├── services/api/        # Modular API client (client, queue, queues, messaging, notifications, assistant, share, files, …) re-exported by api.js
+└── hooks/useQueues.js · utils/queueRegistry.js   # Custom-queue resolution
+
+analytics/models/train_predictor.py   # Trains GradientBoosting + IsolationForest → predictions.json
+```
+
 ---
 
 ## Architecture
@@ -315,6 +354,22 @@ queueless/
                                        │  6 matplotlib charts  │
                                        └───────────────────────┘
 ```
+
+### v1.4.x API surface (all under `/api/v1`)
+
+| Module | Endpoints | Auth |
+|---|---|---|
+| Queues | `GET/POST /admin/queues`, `GET /admin/queues/:id`, `PUT /admin/queues/:id`, `PUT /admin/queues/:id/enabled`, `PUT /admin/queues/:id/archive`, `DELETE /admin/queues/:id`, `PUT /admin/queues/reorder`, `GET /admin/queues/:id/staff`, `GET /admin/queues/:id/analytics` | admin-tier |
+| Referral | `POST /admin/queue/refer/:tokenId`, `POST /staff/queue/refer/:tokenId` | admin / staff |
+| Predictions | `GET /admin/predictions` | admin-tier |
+| AI assistant | `POST /assistant`, `GET/POST /assistant/conversations`, `GET/PUT/DELETE /assistant/conversations/:id` | admin / staff |
+| Messaging | `GET /directory`, `GET/POST /conversations`, `GET/POST /conversations/:id/messages`, `PUT /conversations/:id/read`, `PUT /conversations/:id/messages/:mid/react` | admin / staff |
+| Notifications | `GET /notifications`, `PUT /notifications/:id/read`, `PUT /notifications/read-all` | admin / staff |
+| Sharing | `POST/GET /shares`, `DELETE /shares/:id`, `GET /share/:id` (public capability) | admin / staff |
+| Shared files | `POST/GET /uploads`, `GET /uploads/:id`, `DELETE /uploads/:id` | admin / staff |
+| RBAC + audit | `POST /admin/admins` (role), `PUT /admin/admins/:username/role` (superadmin), `GET /admin/audit` | admin / superadmin |
+
+Message, notification, and file **content is served only via the JWT API**; the Realtime Database holds only **content-free signal nodes** (`messageSignals`, `notificationSignals`) that clients subscribe to for real-time refresh — no Firebase Auth required.
 
 ---
 
@@ -389,7 +444,9 @@ firebase deploy --only database
 | Dual-write pattern | Every queue event written atomically to MongoDB + CSV for redundancy |
 | REST API design | Versioned at `/api/v1/`, role-segregated routes, Joi schema validation |
 | Stateless JWT auth | Admin + staff roles, service claim embedded in staff token |
-| Role-based access control | `requireAdmin` / `requireStaff` Express middleware; per-admin bcrypt accounts |
+| Role-based access control | `requireAdmin` / `requireStaff` / `requireRole(min)` middleware; **Super Admin > Admin > Manager > Staff** hierarchy; per-admin bcrypt accounts; audit log of sensitive actions |
+| AI provider abstraction | `AIProvider` interface with grounded (zero-config) + OpenAI/Groq/OpenRouter/Ollama/Gemini providers, selected via `AI_PROVIDER`; RAG grounding so no operational data is ever fabricated |
+| Capability-based sharing | Secure share links (128-bit random ids) + QR codes, served read-only via the API with expiry/revoke |
 | Firebase Security Rules | Schema-validated RTDB rules — clients read-only, server writes, presence client-writable |
 | Presence detection | Firebase `onDisconnect()` for real-time staff online/offline state |
 | CI/CD pipelines | GitHub Actions — automated tests, build verification, rules deploy on merge |
@@ -423,6 +480,8 @@ For detailed release notes and changelogs, see [CHANGELOG.md](CHANGELOG.md).
 
 | Version | Codename | Highlights |
 |---|---|---|
+| v1.4.5 | Intelligent Collaboration | AI assistant (RAG) + workspace, internal messaging (1:1/group, reactions, receipts, attachments), event bus + notification center, secure sharing + QR, shared files (Spark-free), RBAC + audit log |
+| v1.4.0 | Relay | Token referral between counters, custom queue management, live "serving for" timer + next-in-queue, Industry Type rename, trained ML predictions, credits page |
 | [v1.3.5](CHANGELOG.md#queueless-v135--pulse-latest) | Pulse | Proactive push alerts, per-service pause, re-queue, group tokens, SLA alerts, staff metrics, multi-admin, auto-reset, appointment merge |
 | [v1.3.0](CHANGELOG.md#queueless-v130--crew) | Crew | Profile management, priority queue engine, 8 new features, 0 vulnerabilities |
 | [v1.2.2](CHANGELOG.md#queueless-v122--vision) | Vision | Analytics report, AI suggestions, dynamic heatmap, UI fixes |

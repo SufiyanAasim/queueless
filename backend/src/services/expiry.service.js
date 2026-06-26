@@ -13,6 +13,9 @@ async function sweepExpiredTokens() {
     let count = 0;
 
     for (const token of Object.values(all)) {
+      // Referred patients are physically in the building (transferred between
+      // counters) — never auto-expire them, even if their clock lapses.
+      if (token.referred === true) continue;
       if (token.status === 'waiting' && token.expiresAt && token.expiresAt < now) {
         updates[`tokens/${token.id}/status`] = 'expired';
         updates[`tokens/${token.id}/expiredAt`] = now;
@@ -34,6 +37,7 @@ async function sweepExpiredTokens() {
             service: token.service,
             timestamp: now,
           }).catch(() => {});
+          analytics.upsertTokenRecord({ ...token, status: 'expired', expiredAt: now }).catch(() => {});
         }
       }
     }

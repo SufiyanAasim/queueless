@@ -2,6 +2,7 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const config = require('../config/env');
 const { refs } = require('../config/firebase');
+const { ROLES } = require('../config/roles');
 
 const BCRYPT_ROUNDS = 10;
 
@@ -9,7 +10,13 @@ async function bootstrapAdmin() {
   const { username, password } = config.bootstrapAdmin;
   const snap = await refs.admin(username).once('value');
   if (snap.exists()) {
-    console.log(`[auth] Admin "${username}" already exists - skipping bootstrap.`);
+    // Ensure the env-configured owner account is always a superadmin.
+    if (snap.val().role !== ROLES.SUPERADMIN) {
+      await refs.admin(username).update({ role: ROLES.SUPERADMIN });
+      console.log(`[auth] Promoted bootstrap admin "${username}" to superadmin.`);
+    } else {
+      console.log(`[auth] Admin "${username}" already exists - skipping bootstrap.`);
+    }
     return;
   }
   const passwordHash = await bcrypt.hash(password, BCRYPT_ROUNDS);
@@ -17,9 +24,9 @@ async function bootstrapAdmin() {
     username,
     passwordHash,
     createdAt: Date.now(),
-    role: 'admin',
+    role: ROLES.SUPERADMIN,
   });
-  console.log(`[auth] Bootstrapped admin account "${username}".`);
+  console.log(`[auth] Bootstrapped superadmin account "${username}".`);
 }
 
 async function login(username, password) {
@@ -39,7 +46,7 @@ async function login(username, password) {
   }
 
   const token = jwt.sign(
-    { sub: username, role: account.role || 'admin' },
+    { sub: username, role: account.role || 'admin', displayName: account.displayName || username },
     config.jwt.secret,
     { expiresIn: config.jwt.expiresIn }
   );
@@ -47,7 +54,7 @@ async function login(username, password) {
   return {
     token,
     expiresIn: config.jwt.expiresIn,
-    user: { username, role: account.role || 'admin' },
+    user: { username, role: account.role || 'admin', displayName: account.displayName || username },
   };
 }
 

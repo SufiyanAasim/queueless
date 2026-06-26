@@ -13,6 +13,15 @@ import AdminReport from './pages/AdminReport.jsx';
 import AdminFeedback from './pages/AdminFeedback.jsx';
 import AdminStaff from './pages/AdminStaff.jsx';
 import AdminManage from './pages/AdminManage.jsx';
+import AdminQueues from './pages/AdminQueues.jsx';
+import AdminQueueNew from './pages/AdminQueueNew.jsx';
+import AdminQueueEdit from './pages/AdminQueueEdit.jsx';
+import AdminAudit from './pages/AdminAudit.jsx';
+import Credits from './pages/Credits.jsx';
+import Notifications from './pages/Notifications.jsx';
+import AssistantWorkspace from './pages/AssistantWorkspace.jsx';
+import ShareView from './pages/ShareView.jsx';
+import SharedFiles from './pages/SharedFiles.jsx';
 import AdminChangePassword from './pages/AdminChangePassword.jsx';
 import AdminProfile from './pages/AdminProfile.jsx';
 import StaffLogin from './pages/StaffLogin.jsx';
@@ -33,6 +42,11 @@ export default function App() {
         <Routes>
           <Route path="/"                   element={<Home />} />
           <Route path="/take"               element={<TakeToken />} />
+          <Route path="/credits"            element={<Credits />} />
+          <Route path="/notifications"      element={<Notifications />} />
+          <Route path="/assistant"          element={<AssistantWorkspace />} />
+          <Route path="/share/:id"          element={<ShareView />} />
+          <Route path="/files"              element={<SharedFiles />} />
           <Route path="/lookup"             element={<Lookup />} />
           <Route path="/token/:id"          element={<MyToken />} />
           <Route path="/feedback/:tokenId"  element={<Feedback />} />
@@ -50,7 +64,11 @@ export default function App() {
             <Route path="report"    element={<AdminReport />} />
             <Route path="feedback"         element={<AdminFeedback />} />
             <Route path="staff"            element={<AdminStaff />} />
+            <Route path="queues"           element={<AdminQueues />} />
+            <Route path="queues/new"       element={<AdminQueueNew />} />
+            <Route path="queues/:id"       element={<AdminQueueEdit />} />
             <Route path="manage"           element={<AdminManage />} />
+            <Route path="audit"            element={<AdminAudit />} />
             <Route path="appointments"     element={<AdminAppointments />} />
             <Route path="change-password"  element={<AdminChangePassword />} />
             <Route path="profile"          element={<AdminProfile />} />

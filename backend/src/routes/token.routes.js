@@ -9,6 +9,8 @@ const takeTokenSchema = Joi.object({
   email: Joi.string().email().optional().allow('', null),
   priority: Joi.string().valid('normal', 'priority').default('normal'),
   groupSize: Joi.number().integer().min(1).max(10).default(1),
+  patientName: Joi.string().max(100).optional().allow('', null),
+  note: Joi.string().max(500).optional().allow('', null),
 });
 
 const tokenIdParamSchema = Joi.object({

@@ -6,6 +6,7 @@ const { refs } = require('../config/firebase');
 
 let mongoClient = null;
 let mongoCollection = null;
+let mongoTokensCollection = null;
 
 // Column order is the contract with the DM pipeline — keep stable.
 const CSV_COLUMNS = [
@@ -46,21 +47,56 @@ async function appendCsv(event) {
   await fsp.appendFile(filepath, row, 'utf8');
 }
 
+async function getMongoDb() {
+  if (!mongoClient) {
+    const { MongoClient } = require('mongodb');
+    mongoClient = new MongoClient(config.analytics.mongo.uri, {
+      serverSelectionTimeoutMS: 5000,
+    });
+    await mongoClient.connect();
+  }
+  return mongoClient.db(config.analytics.mongo.db);
+}
+
 async function getMongoCollection() {
   if (mongoCollection) return mongoCollection;
-  const { MongoClient } = require('mongodb');
-  mongoClient = new MongoClient(config.analytics.mongo.uri, {
-    serverSelectionTimeoutMS: 5000,
-  });
-  await mongoClient.connect();
-  const db = mongoClient.db(config.analytics.mongo.db);
+  const db = await getMongoDb();
   mongoCollection = db.collection(config.analytics.mongo.collection);
   return mongoCollection;
+}
+
+async function getMongoTokensCollection() {
+  if (mongoTokensCollection) return mongoTokensCollection;
+  const db = await getMongoDb();
+  mongoTokensCollection = db.collection(config.analytics.mongo.tokensCollection);
+  return mongoTokensCollection;
 }
 
 async function appendMongo(event) {
   const col = await getMongoCollection();
   await col.insertOne(event);
+}
+
+/**
+ * Mirror a complete token record into MongoDB (the `tokens` collection), keyed by
+ * the token's own id. Called at every lifecycle transition (issued / called /
+ * served / referred / expired) so Mongo holds the full, current state of every
+ * token alongside the append-only `queue_events` log. Firebase RTDB remains the
+ * live operational store; this is a durable analytical mirror. Non-fatal on error.
+ */
+async function upsertTokenRecord(token) {
+  if (!config.analytics.mongo.uri || !token || !token.id) return;
+  try {
+    const col = await getMongoTokensCollection();
+    const { id, ...rest } = token;
+    await col.updateOne(
+      { _id: id },
+      { $set: { ...rest, id, updatedAt: Date.now() } },
+      { upsert: true }
+    );
+  } catch (err) {
+    console.error('[analytics] upsertTokenRecord failed (non-fatal):', err.message);
+  }
 }
 
 async function logEvent(event) {
@@ -142,6 +178,7 @@ async function getTrafficStats() {
     const serviceDistribution = {};
     let totalIssued = 0;
     let totalExpired = 0;
+    let totalReferred = 0;
 
     const now = Date.now();
     const dailyTrend = {};
@@ -157,6 +194,7 @@ async function getTrafficStats() {
 
       for (const token of fbTokens) {
         if (token.status === 'expired') totalExpired++;
+        if (token.referred === true) totalReferred++;
         const ts = token.issuedAt;
         if (!ts) continue;
         const svc = token.service || 'general';
@@ -185,6 +223,7 @@ async function getTrafficStats() {
       peakHoursByService,
       totalIssued,
       totalExpired,
+      totalReferred,
       dropOffRate,
       avgWaitSeconds,
       staffingRecommendation,
@@ -200,6 +239,7 @@ async function getTrafficStats() {
       peakHoursByService: {},
       totalIssued: 0,
       totalExpired: 0,
+      totalReferred: 0,
       dropOffRate: 0,
       avgWaitSeconds: 0,
       staffingRecommendation: [],
@@ -265,6 +305,9 @@ async function getStaffMetrics() {
 
 async function close() {
   if (mongoClient) await mongoClient.close();
+  mongoClient = null;
+  mongoCollection = null;
+  mongoTokensCollection = null;
 }
 
-module.exports = { logEvent, close, CSV_COLUMNS, getTrafficStats, getStaffMetrics };
+module.exports = { logEvent, close, CSV_COLUMNS, getTrafficStats, getStaffMetrics, upsertTokenRecord };

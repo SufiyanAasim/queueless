@@ -46,7 +46,9 @@ exports.expireStaleTokens = onSchedule(
     const tokens = tokensSnap.val() || {};
 
     const expirations = Object.values(tokens)
-      .filter(t => t.status === TOKEN_STATUS_WAITING && t.expiresAt && t.expiresAt < now);
+      // Referred patients are physically present (transferred between counters) —
+      // never auto-expire them, mirroring the backend expiry sweep.
+      .filter(t => t.status === TOKEN_STATUS_WAITING && t.referred !== true && t.expiresAt && t.expiresAt < now);
 
     if (expirations.length === 0) {
       logger.info('No stale tokens to expire.');

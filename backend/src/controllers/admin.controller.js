@@ -1,8 +1,11 @@
 const bcrypt = require('bcryptjs');
 const queueService = require('../services/queue.service');
+const queueAdminService = require('../services/queueAdmin.service');
 const autoModeService = require('../services/autoMode.service');
 const staffService = require('../services/staff.service');
 const analyticsService = require('../services/analytics.service');
+const predictionService = require('../services/prediction.service');
+const auditService = require('../services/audit.service');
 const authService = require('../services/auth.service');
 const { refs } = require('../config/firebase');
 const path = require('path');
@@ -74,6 +77,15 @@ async function exportAnalyticsCsv(req, res) {
 async function getStaffMetrics(req, res) {
   const data = await analyticsService.getStaffMetrics();
   res.json(data);
+}
+
+async function getPredictions(req, res) {
+  const data = await predictionService.getPredictions();
+  res.json(data);
+}
+
+async function getAuditLog(req, res) {
+  res.json(await auditService.list({ limit: 200 }));
 }
 
 async function startAutoMode(req, res) {
@@ -153,13 +165,52 @@ async function createStaff(req, res) {
 
 async function removeStaff(req, res) {
   await staffService.deleteStaff(req.params.username);
+  auditService.record({ actor: req.user.sub, action: 'staff.deleted', target: req.params.username });
   res.json({ message: 'Staff member removed.' });
+}
+
+async function assignStaffQueue(req, res) {
+  const { username } = req.params;
+  const result = await staffService.assignStaffToQueue(username, req.body?.service);
+  res.json({ message: `${username} assigned to "${result.service}".`, ...result });
+}
+
+async function queueStaff(req, res) {
+  const queue = await queueAdminService.getQueueOverviewById(req.params.id);
+  const members = await staffService.listStaff();
+  res.json(members.filter(m => m.service === queue.key));
+}
+
+async function queueAnalytics(req, res) {
+  const queue = await queueAdminService.getQueueOverviewById(req.params.id);
+  const stats = await analyticsService.getTrafficStats();
+  res.json({
+    key: queue.key,
+    label: queue.label,
+    waitingCount: queue.waitingCount,
+    nowServing: queue.nowServing,
+    estimatedWaitSeconds: queue.estimatedWaitSeconds,
+    totalIssued: stats.serviceDistribution?.[queue.key] || 0,
+    peakHours: stats.peakHoursByService?.[queue.key] || {},
+    avgWaitSeconds: Math.round(stats.avgWaitSeconds || 0),
+  });
 }
 
 async function skipToken(req, res) {
   const { tokenId } = req.params;
   const result = await queueService.skipToken(tokenId);
   res.json(result);
+}
+
+async function referToken(req, res) {
+  const { tokenId } = req.params;
+  const { toService, reason, staffUsername } = req.body || {};
+  const result = await queueService.referToken(tokenId, {
+    toService,
+    reason: reason || null,
+    byStaff: staffUsername || req.user?.sub || null,
+  });
+  res.json({ message: `Token #${result.referred.number} referred to "${result.to}".`, ...result });
 }
 
 async function changePassword(req, res) {
@@ -225,6 +276,54 @@ async function confirmAppointment(req, res) {
   res.json({ message: 'Appointment confirmed.' });
 }
 
+// ---- Queue management (custom queues within an Industry Type) ----
+
+async function listQueues(req, res) {
+  const queues = await queueAdminService.listQueues({ includeArchived: true });
+  res.json(queues);
+}
+
+async function queuesOverview(req, res) {
+  const overview = await queueAdminService.getQueuesOverview();
+  res.json(overview);
+}
+
+async function getQueue(req, res) {
+  const queue = await queueAdminService.getQueueOverviewById(req.params.id);
+  res.json(queue);
+}
+
+async function createQueue(req, res) {
+  const queue = await queueAdminService.createQueue(req.body || {});
+  res.status(201).json({ message: `Queue "${queue.label}" created.`, queue });
+}
+
+async function updateQueue(req, res) {
+  const queue = await queueAdminService.updateQueue(req.params.id, req.body || {});
+  res.json({ message: 'Queue updated.', queue });
+}
+
+async function setQueueEnabled(req, res) {
+  const result = await queueAdminService.setEnabled(req.params.id, req.body?.enabled);
+  res.json({ message: result.enabled ? 'Queue enabled.' : 'Queue disabled.', ...result });
+}
+
+async function archiveQueue(req, res) {
+  const result = await queueAdminService.archiveQueue(req.params.id);
+  res.json({ message: 'Queue archived.', ...result });
+}
+
+async function deleteQueue(req, res) {
+  const result = await queueAdminService.deleteQueue(req.params.id);
+  auditService.record({ actor: req.user.sub, action: 'queue.deleted', target: req.params.id });
+  res.json({ message: 'Queue deleted.', ...result });
+}
+
+async function reorderQueues(req, res) {
+  const result = await queueAdminService.reorderQueues(req.body?.orderedIds);
+  res.json({ message: 'Queues reordered.', ...result });
+}
+
 async function listAdmins(req, res) {
   const snap = await refs.admins().once('value');
   const all = snap.val() || {};
@@ -237,12 +336,16 @@ async function listAdmins(req, res) {
 }
 
 async function createAdmin(req, res) {
-  const { username, password, displayName } = req.body;
+  const { username, password, displayName, role } = req.body;
   if (!username?.trim() || !password) {
     throw Object.assign(new Error('username and password are required.'), { statusCode: 400 });
   }
   if (password.length < 8) {
     throw Object.assign(new Error('Password must be at least 8 characters.'), { statusCode: 400 });
+  }
+  const desiredRole = role || 'admin';
+  if (!['admin', 'manager'].includes(desiredRole)) {
+    throw Object.assign(new Error('Role must be "admin" or "manager".'), { statusCode: 400 });
   }
 
   const allSnap = await refs.admins().once('value');
@@ -261,10 +364,11 @@ async function createAdmin(req, res) {
     username: uname,
     passwordHash,
     displayName: displayName?.trim() || uname,
-    role: 'admin',
+    role: desiredRole,
     createdAt: Date.now(),
   };
   await refs.admin(uname).set(record);
+  auditService.record({ actor: req.user.sub, action: 'admin.created', target: uname, meta: { role: desiredRole } });
 
   res.status(201).json({
     username: record.username,
@@ -283,23 +387,49 @@ async function deleteAdmin(req, res) {
   if (!snap.exists()) {
     throw Object.assign(new Error(`Admin "${username}" not found.`), { statusCode: 404 });
   }
+  // Only a superadmin may delete another superadmin.
+  if (snap.val().role === 'superadmin' && req.user.role !== 'superadmin') {
+    throw Object.assign(new Error('Only a superadmin can remove a superadmin account.'), { statusCode: 403 });
+  }
   await refs.admin(username).remove();
+  auditService.record({ actor: req.user.sub, action: 'admin.deleted', target: username });
   res.json({ message: `Admin "${username}" deleted.` });
+}
+
+async function setAdminRole(req, res) {
+  const { username } = req.params;
+  const { role } = req.body || {};
+  if (!['admin', 'manager', 'superadmin'].includes(role)) {
+    throw Object.assign(new Error('Role must be "superadmin", "admin", or "manager".'), { statusCode: 400 });
+  }
+  if (username === req.user.sub) {
+    throw Object.assign(new Error('You cannot change your own role.'), { statusCode: 400 });
+  }
+  const snap = await refs.admin(username).once('value');
+  if (!snap.exists()) {
+    throw Object.assign(new Error(`Admin "${username}" not found.`), { statusCode: 404 });
+  }
+  await refs.admin(username).update({ role });
+  auditService.record({ actor: req.user.sub, action: 'admin.role_changed', target: username, meta: { role } });
+  res.json({ username, role });
 }
 
 module.exports = {
   callNext, callNextPriority, pause, resume, activeQueue, reset,
-  getAnalytics, exportAnalyticsCsv, getStaffMetrics,
+  getAnalytics, exportAnalyticsCsv, getStaffMetrics, getPredictions, getAuditLog,
   startAutoMode, stopAutoMode, getAutoModeStatus,
   getAppConfig, updateAppConfig,
   getFeedback,
-  listStaff, createStaff, removeStaff,
-  skipToken,
+  listStaff, createStaff, removeStaff, assignStaffQueue,
+  skipToken, referToken,
   changePassword,
   getProfile, updateProfile,
   setAnnouncement, clearAnnouncement,
   setTokenNote,
   listAppointments, cancelAppointment, confirmAppointment,
   pauseService, resumeService,
-  listAdmins, createAdmin, deleteAdmin,
+  listAdmins, createAdmin, deleteAdmin, setAdminRole,
+  queueStaff, queueAnalytics,
+  listQueues, queuesOverview, getQueue, createQueue, updateQueue,
+  setQueueEnabled, archiveQueue, deleteQueue, reorderQueues,
 };

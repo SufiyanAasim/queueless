@@ -19,6 +19,11 @@ function buildApp() {
     origin: config.corsOrigin.split(',').map(s => s.trim()),
     credentials: false,
   }));
+  // Messaging endpoints accept small inline attachments, so they get a larger
+  // JSON limit; everything else stays tight at 10kb. This scoped parser runs
+  // first for /conversations, so the global 10kb parser skips those paths.
+  app.use('/api/v1/conversations', express.json({ limit: '512kb' }));
+  app.use('/api/v1/uploads', express.json({ limit: '4mb' })); // 2MB file ≈ 2.7MB base64
   app.use(express.json({ limit: '10kb' }));
   app.use(express.urlencoded({ extended: false, limit: '10kb' }));
 
