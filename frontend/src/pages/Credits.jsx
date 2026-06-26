@@ -164,7 +164,7 @@ export default function Credits() {
       </div>
 
       <div className="mt-14 pt-8 border-t border-rule flex items-center justify-between text-sm">
-        <span className="text-graphite font-mono">QueueLess v1.4.5 “Intelligent Collaboration”</span>
+        <span className="text-graphite font-mono">QueueLess v1.4.5 "Zenith" — Intelligent Collaboration</span>
         <Link to="/" className="btn-secondary text-sm">← Back to home</Link>
       </div>
     </div>

@@ -2,7 +2,7 @@
 
 **Live:** [queueless-beta.vercel.app](https://queueless-beta.vercel.app)  
 **Author:** Muhammad Sufiyan Aasim · [@msufiyanpk](https://github.com/msufiyanpk)  
-**Latest release:** v1.4.5 — Intelligent Collaboration
+**Latest release:** v1.4.5 — Zenith _(Intelligent Collaboration)_
 
 QueueLess is a full-stack, cloud-native digital queue management system that replaces paper tokens with a real-time browser experience. Customers take tokens from any device, track their live position, and get notified the moment their number is called — no app download required.
 
@@ -478,14 +478,14 @@ firebase deploy --only database
 
 For detailed release notes and changelogs, see [CHANGELOG.md](CHANGELOG.md).
 
-| Version | Codename | Highlights |
-|---|---|---|
-| [v1.4.5](CHANGELOG.md#queueless-v145--intelligent-collaboration) | Intelligent Collaboration | AI assistant (RAG) + workspace, internal messaging (1:1/group, reactions, receipts, attachments), event bus + notification center, secure sharing + QR, shared files (Spark-free), RBAC + audit log |
-| [v1.4.0](CHANGELOG.md#queueless-v140--relay) | Relay | Token referral between counters, custom queue management, live "serving for" timer + next-in-queue, Industry Type rename, trained ML predictions, credits page |
-| [v1.3.5](CHANGELOG.md#queueless-v135--pulse-latest) | Pulse | Proactive push alerts, per-service pause, re-queue, group tokens, SLA alerts, staff metrics, multi-admin, auto-reset, appointment merge |
-| [v1.3.0](CHANGELOG.md#queueless-v130--crew) | Crew | Profile management, priority queue engine, 8 new features, 0 vulnerabilities |
-| [v1.2.2](CHANGELOG.md#queueless-v122--vision) | Vision | Analytics report, AI suggestions, dynamic heatmap, UI fixes |
-| [v1.2.0](CHANGELOG.md#queueless-v120--scope) | Scope | Initial release — core queue system, analytics dashboard, staff portal |
+| Version | Codename | Milestone | Highlights |
+|---|---|---|---|
+| [v1.4.5](CHANGELOG.md#queueless-v145--zenith) | **Zenith** | Intelligent Collaboration | AI assistant (RAG) + workspace, internal messaging (1:1/group, reactions, receipts, attachments), event bus + notification center, secure sharing + QR, shared files (Spark-free), RBAC + audit log |
+| [v1.4.0](CHANGELOG.md#queueless-v140--polaris) | **Polaris** | Relay | Token referral between counters, custom queue management, live "serving for" timer + next-in-queue, Industry Type rename, trained ML predictions, credits page |
+| [v1.3.5](CHANGELOG.md#queueless-v135--nebula) | **Nebula** | Pulse | Proactive push alerts, per-service pause, re-queue, group tokens, SLA alerts, staff metrics, multi-admin, auto-reset, appointment merge |
+| [v1.3.0](CHANGELOG.md#queueless-v130--eclipse) | **Eclipse** | Crew | Profile management, priority queue engine, 8 new features, 0 vulnerabilities |
+| [v1.2.2](CHANGELOG.md#queueless-v122--comet) | **Comet** | Alive | Analytics report, AI suggestions, dynamic heatmap, UI fixes |
+| [v1.2.0](CHANGELOG.md#queueless-v120--nova) | **Nova** | Sight | Initial release — core queue system, analytics dashboard, staff portal |
 
 ---
 
