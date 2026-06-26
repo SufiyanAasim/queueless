@@ -57,11 +57,11 @@ export default function QueueForm({ initial, onSubmit, onCancel, busy, submitLab
         <div className="grid grid-cols-2 gap-3">
           <label className="block">
             <span className="label">Opens</span>
-            <input value={form.open} onChange={set('open')} placeholder="09:00" className={field} />
+            <input type="time" value={form.open} onChange={set('open')} className={field} />
           </label>
           <label className="block">
             <span className="label">Closes</span>
-            <input value={form.close} onChange={set('close')} placeholder="17:00" className={field} />
+            <input type="time" value={form.close} onChange={set('close')} className={field} />
           </label>
         </div>
       </div>

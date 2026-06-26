@@ -4,6 +4,71 @@ All notable changes to the QueueLess project will be documented in this file.
 
 ---
 
+## QueueLess v1.6.5 — Aurora (Unreleased)
+
+Codename **Aurora** · Milestone _Summit_. Credits overhaul, documentation refresh, and the release re-coding.
+
+### 🎖️ Credits page overhaul
+
+- "Developed by **Mohammad Sufiyan Aasim** (msufiyanpk)" with clickable **GitHub** and **email** buttons.
+- The **MS** block now shows the live GitHub profile picture (`github.com/msufiyanpk.png`) with a text-initials fallback; updating it on GitHub updates it here.
+- Role line reads **"Software Engineer, Data Science & AIMLOps"**; the "Send a thank-you" button opens a pre-filled email; tech split into **Languages** and **Core Concepts** headings.
+
+### 📚 Documentation & release re-coding
+
+- README / CHANGELOG re-coded to the **space-codename + one-word milestone** scheme (Nova/Comet/Eclipse/Nebula/Polaris/Zenith) and v1.2.2 retagged to **v1.2.5**.
+- Unique emoji per changelog section; `.env.example` and the API surface kept in sync with the code.
+
+---
+
+## QueueLess v1.6.0 — Quasar (Unreleased)
+
+Codename **Quasar** · Milestone _Forge_. The messaging experience is rebuilt as a docked tray.
+
+### 🪟 LinkedIn-style docked message tray
+
+- Replaced the floating chat bubble with a **bottom-anchored docked bar** that slides a chat panel up/down.
+- **Persistent state** — open/closed is remembered across navigation via `localStorage`.
+- **Live unread badge** on the bar that updates even while collapsed (via the content-free `messageSignals` node); smooth hardware-accelerated slide transition.
+
+---
+
+## QueueLess v1.5.5 — Pulsar (Unreleased)
+
+Codename **Pulsar** · Milestone _Insight_. Setup and input UX polish.
+
+### 🕰️ Clock-style time pickers
+
+- Native clock-style time inputs (matching the Daily auto-reset field) for queue **working hours** when creating/editing queues.
+
+### 🏙️ City selection at setup
+
+- "Configure your queue" now offers a **city dropdown** (major cities + a custom "Other") alongside the organisation name, replacing the free-text location field.
+
+---
+
+## QueueLess v1.5.0 — Orion (Unreleased)
+
+Codename **Orion** · Milestone _Beacon_. Data-quality fixes and the deployment-gap clarification.
+
+### 🧮 Industry-aware analytics
+
+- The analytics **Service Distribution** and peak-hour charts now show **only the current Industry Type's services** (or your custom queues) — stale cross-industry services (Forex/Loan/Card Services from earlier configs) are hidden, with a clarifying subtitle and empty-state.
+
+### 🧾 Enriched analytics CSV
+
+- The exported `queue_events.csv` now includes the **serving counter (`staff_username`)** and **organisation name** alongside token number, service, and timestamps — reliable, traceable export data.
+
+### 🚫 Proper No-show / Skip control
+
+- The skip/no-show action on admin & staff dashboards is now a **clearly styled button** (was an easy-to-miss text link).
+
+### 🧭 Deployment-gap clarification
+
+- Confirmed the new v1.4.x routes (`/admin/queues/overview`, `/admin/audit`, `/admin/queue/refer/:id`, `/admin/predictions`, `/uploads`, `/conversations`, `/notifications`) resolve correctly in the codebase; the live **404s were the old backend still deployed on Render**, not code bugs. Resolved by deploying the current backend.
+
+---
+
 ## QueueLess v1.4.5 — Zenith
 
 Codename **Zenith** · Milestone _Intelligent Collaboration_. A multi-phase release turning QueueLess
@@ -275,7 +340,7 @@ Codename **Eclipse** · Milestone _Crew_. The biggest release yet — full accou
 
 ---
 
-## QueueLess v1.2.2 — Comet
+## QueueLess v1.2.5 — Comet
 
 Codename **Comet** · Milestone _Alive_. A focused patch release hardening the analytics pipeline, fixing UI regressions, and improving admin tooling.
 

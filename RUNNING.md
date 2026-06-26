@@ -154,10 +154,20 @@ python run_pipeline.py
 
 ### Run with real backend data
 
-If the backend has been running with `ANALYTICS_SINK=csv`, events are written to `analytics/data/queue_events.csv`. Skip the simulator step and run:
+If the backend has been running with `ANALYTICS_SINK=csv`, events are written to `analytics/data/queue_events.csv` (now including the serving counter `staff_username` and `org_name` columns). Skip the simulator step and run:
 
 ```bash
 python run_pipeline.py
+```
+
+### Train the prediction artefact (consumed by the backend)
+
+The backend's predictive insights load a compact `predictions.json` artefact. Regenerate it from the latest events with:
+
+```bash
+python models/train_predictor.py
+# Trains GradientBoosting (service time) + IsolationForest (anomalies) + seasonal arrivals
+# → analytics/models/predictions.json  (backend falls back to heuristics if absent)
 ```
 
 ### What gets generated
@@ -166,7 +176,8 @@ python run_pipeline.py
 |---|---|
 | Processed data | `analytics/data/` |
 | 6 charts (PNG) | `analytics/data/*.png` |
-| Trained model | `analytics/models/lr_model.joblib` |
+| Trained regression model | `analytics/models/linreg_wait_predictor.joblib` |
+| Prediction artefact (consumed by the backend) | `analytics/models/predictions.json` |
 | Jupyter notebook | `analytics/notebooks/QueueLess_Analysis.ipynb` |
 
 ### Open the notebook

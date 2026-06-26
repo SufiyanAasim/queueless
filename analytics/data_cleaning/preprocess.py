@@ -169,6 +169,19 @@ def build_tokens_frame(events: pd.DataFrame) -> pd.DataFrame:
              .merge(call_meta,  on="token_id", how="left")
              .merge(serve_meta, on="token_id", how="left"))
 
+    # Enriched fields (present in the backend/simulator CSV v1.5+): the serving
+    # counter and organisation name. Merged only when available, so legacy CSVs
+    # without these columns still preprocess cleanly.
+    if "staff_username" in lifecycle.columns:
+        served_by = (lifecycle[lifecycle["event_type"] == "token_served"]
+                     [["token_id", "staff_username"]]
+                     .rename(columns={"staff_username": "served_by"}))
+        pivot = pivot.merge(served_by, on="token_id", how="left")
+    if "org_name" in lifecycle.columns:
+        org = (lifecycle[["token_id", "org_name"]]
+               .dropna(subset=["org_name"]).drop_duplicates("token_id"))
+        pivot = pivot.merge(org, on="token_id", how="left")
+
     # Final status: terminal column wins (served > expired > called > issued).
     def status_for(row):
         if pd.notna(row["served_at"]):  return "served"

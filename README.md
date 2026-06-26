@@ -44,7 +44,7 @@ Admins and staff manage the queue from a dedicated portal with a live dashboard,
 - **Staff management** — create/remove staff, assign services, set PIN for kiosk login, see who is online/offline
 - **Admin accounts** — manage up to 10 admin accounts at `/admin/manage`; bcrypt-hashed passwords
 - **Feedback viewer** — customer ratings and comments with average score; record verbal feedback manually
-- **Settings** — organisation name, industry profile, display board message, SLA target, auto-reset time
+- **Settings** — organisation name, city/location, Industry Type, display board message, SLA target, auto-reset time
 - **Admin profile** — edit display name, change password
 
 ### Staff portal (`/staff`)
@@ -65,7 +65,7 @@ Admins and staff manage the queue from a dedicated portal with a live dashboard,
 - **Token referral / transfer** — move a live token between counters (e.g. hospital OPD → Eye Specialist); it keeps its number, records a referral trail, is served as priority-tier at the destination, and never auto-expires mid-transfer.
 - **AI Assistant** — a floating ✦ button on every screen + a full-screen workspace (`/assistant`). Answers operational questions (longest wait, today's summary, predicted traffic, staffing) using **Retrieval-Augmented Generation over verified backend data** — it never fabricates figures. Pluggable providers (zero-config grounded default + optional OpenAI / Groq / OpenRouter / Ollama / Gemini). Persistent conversation history (pin, rename, delete, export).
 - **Predictive insights** — explainable wait-time forecasts, congestion alerts, and recommendations from a trained model artefact (scikit-learn) with rule-based cold-start fallback.
-- **Internal messaging** — a floating 💬 deck with **1:1 and group chat for admins & staff**, team directory, emoji reactions, read receipts ("Seen"), and inline attachments (≤256 KB). Real-time without external services.
+- **Internal messaging** — a **docked 💬 message tray** (bottom-anchored, slide-up, persistent) with **1:1 and group chat for admins & staff**, team directory, emoji reactions, read receipts ("Seen"), and inline attachments (≤256 KB). Real-time without external services.
 - **Notification Center** — a header 🔔 with unread badge + a dedicated screen (`/notifications`); driven by an application-wide event bus (token referred, queue created, new message, …).
 - **Secure sharing** — share queue snapshots / analytics as **capability links + QR codes** with a printable view (`/share/:id`) and expiry/revoke.
 - **Shared files** (`/files`) — drag-and-drop sharing of reports, exports, PDFs, Excel, Word, ZIP (≤2 MB), **stored in RTDB to stay on the free Spark plan** (no Cloud Storage / Blaze).
@@ -480,11 +480,15 @@ For detailed release notes and changelogs, see [CHANGELOG.md](CHANGELOG.md).
 
 | Version | Codename | Milestone | Highlights |
 |---|---|---|---|
+| v1.6.5 _(unreleased)_ | **Aurora** | Summit | Credits overhaul, documentation refresh, release re-coding |
+| v1.6.0 _(unreleased)_ | **Quasar** | Forge | LinkedIn-style docked message tray (persistent, live badge) |
+| v1.5.5 _(unreleased)_ | **Pulsar** | Insight | Clock-style time pickers, city selection at setup |
+| v1.5.0 _(unreleased)_ | **Orion** | Beacon | Industry-aware analytics, enriched CSV export, proper No-show/Skip button, deployment-gap fix |
 | [v1.4.5](CHANGELOG.md#queueless-v145--zenith) | **Zenith** | Intelligent Collaboration | AI assistant (RAG) + workspace, internal messaging (1:1/group, reactions, receipts, attachments), event bus + notification center, secure sharing + QR, shared files (Spark-free), RBAC + audit log |
 | [v1.4.0](CHANGELOG.md#queueless-v140--polaris) | **Polaris** | Relay | Token referral between counters, custom queue management, live "serving for" timer + next-in-queue, Industry Type rename, trained ML predictions, credits page |
 | [v1.3.5](CHANGELOG.md#queueless-v135--nebula) | **Nebula** | Pulse | Proactive push alerts, per-service pause, re-queue, group tokens, SLA alerts, staff metrics, multi-admin, auto-reset, appointment merge |
 | [v1.3.0](CHANGELOG.md#queueless-v130--eclipse) | **Eclipse** | Crew | Profile management, priority queue engine, 8 new features, 0 vulnerabilities |
-| [v1.2.2](CHANGELOG.md#queueless-v122--comet) | **Comet** | Alive | Analytics report, AI suggestions, dynamic heatmap, UI fixes |
+| [v1.2.5](CHANGELOG.md#queueless-v125--comet) | **Comet** | Alive | Analytics report, AI suggestions, dynamic heatmap, UI fixes |
 | [v1.2.0](CHANGELOG.md#queueless-v120--nova) | **Nova** | Sight | Initial release — core queue system, analytics dashboard, staff portal |
 
 ---

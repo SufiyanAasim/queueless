@@ -5,6 +5,12 @@ import { useAppConfig } from '../hooks/useAppConfig.js';
 import { apiUpdateConfig } from '../services/api.js';
 import { INDUSTRY_PROFILES } from '../utils/industry.js';
 
+const CITIES = [
+  'Karachi', 'Lahore', 'Islamabad', 'Rawalpindi', 'Faisalabad', 'Multan', 'Peshawar',
+  'Quetta', 'Hyderabad', 'Gujranwala', 'Sialkot', 'Bahawalpur', 'Sargodha', 'Sukkur',
+  'Abbottabad', 'Mardan', 'Gujrat', 'Larkana', 'Sheikhupura',
+];
+
 export default function AdminSetup() {
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -16,6 +22,7 @@ export default function AdminSetup() {
   const [displayMessage, setDisplayMessage] = useState('');
   const [slaMinutes, setSlaMinutes] = useState('');
   const [autoResetTime, setAutoResetTime] = useState('');
+  const [otherCity, setOtherCity] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
 
@@ -24,7 +31,7 @@ export default function AdminSetup() {
     if (!cfg) return;
     if (cfg.industry) setIndustry(cfg.industry);
     if (cfg.orgName && cfg.orgName !== 'QueueLess') setOrgName(cfg.orgName);
-    if (cfg.location) setLocation(cfg.location);
+    if (cfg.location) { setLocation(cfg.location); setOtherCity(!CITIES.includes(cfg.location)); }
     if (cfg.displayMessage) setDisplayMessage(cfg.displayMessage);
     if (cfg.slaMinutes) setSlaMinutes(String(cfg.slaMinutes));
     if (cfg.autoResetTime) setAutoResetTime(cfg.autoResetTime);
@@ -80,15 +87,32 @@ export default function AdminSetup() {
       </div>
 
       <div className="mt-8">
-        <span className="label block mb-1">Location</span>
-        <p className="text-xs text-graphite mb-3">Shown in the status bar and on printed tokens — e.g. Karachi, Pakistan</p>
-        <input
-          type="text"
-          value={location}
-          onChange={e => setLocation(e.target.value)}
-          placeholder="e.g. Karachi, Pakistan"
-          className="w-full sm:max-w-md border border-rule bg-cream px-4 py-3 text-sm focus:outline-none focus:border-ink"
-        />
+        <span className="label block mb-1">City / Location</span>
+        <p className="text-xs text-graphite mb-3">Shown in the status bar and on printed tokens.</p>
+        <div className="flex flex-col sm:flex-row gap-3 sm:max-w-md">
+          <select
+            value={otherCity ? 'Other' : location}
+            onChange={e => {
+              const v = e.target.value;
+              if (v === 'Other') { setOtherCity(true); setLocation(''); }
+              else { setOtherCity(false); setLocation(v); }
+            }}
+            className="w-full border border-rule bg-cream px-4 py-3 text-sm focus:outline-none focus:border-ink"
+          >
+            <option value="">Select a city…</option>
+            {CITIES.map(c => <option key={c} value={c}>{c}</option>)}
+            <option value="Other">Other…</option>
+          </select>
+          {otherCity && (
+            <input
+              type="text"
+              value={location}
+              onChange={e => setLocation(e.target.value)}
+              placeholder="Enter your city"
+              className="w-full border border-rule bg-cream px-4 py-3 text-sm focus:outline-none focus:border-ink"
+            />
+          )}
+        </div>
       </div>
 
       <div className="mt-10">

@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Navigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext.jsx';
 import { useAppConfig } from '../hooks/useAppConfig.js';
-import { getServiceLabel } from '../utils/industry.js';
+import { getServiceLabel, getServices } from '../utils/industry.js';
 import { apiAnalytics, apiStaffMetrics, ADMIN_TOKEN_KEY } from '../services/api.js';
 import Stat from '../components/Stat.jsx';
 import PredictiveInsights from '../components/PredictiveInsights.jsx';
@@ -98,16 +98,21 @@ export default function AdminAnalytics() {
   }));
   const maxDaily = Math.max(...dailyEntries.map(d => d.count), 1);
 
-  const distEntries = Object.entries(serviceDistribution).map(([svc, count]) => ({
-    service: svc,
-    label: getServiceLabel(svc, cfg.industry),
-    count,
-  })).sort((a, b) => b.count - a.count);
+  // Only count services that belong to the CURRENT Industry Type (or custom
+  // queues) — hides stale services from tokens issued under other configurations.
+  const allowedServices = new Set(getServices(cfg.industry).map(s => s.id));
+  const distEntries = Object.entries(serviceDistribution)
+    .filter(([svc]) => allowedServices.has(svc))
+    .map(([svc, count]) => ({
+      service: svc,
+      label: getServiceLabel(svc, cfg.industry),
+      count,
+    })).sort((a, b) => b.count - a.count);
   const maxDist = Math.max(...distEntries.map(d => d.count), 1);
   const totalDist = distEntries.reduce((s, d) => s + d.count, 0) || 1;
 
-  // Peak hours bar chart data with stacked services
-  const serviceKeys = Object.keys(peakHoursByService);
+  // Peak hours bar chart data with stacked services (current industry only)
+  const serviceKeys = Object.keys(peakHoursByService).filter(k => allowedServices.has(k));
 
   return (
     <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 xl:px-10 py-10">
@@ -214,9 +219,10 @@ export default function AdminAnalytics() {
 
         {/* Service distribution */}
         <div className="card">
-          <h2 className="font-display text-2xl mb-5">Service Distribution</h2>
+          <h2 className="font-display text-2xl mb-1">Service Distribution</h2>
+          <p className="text-xs text-graphite mb-5">Share of tokens issued per queue/counter for your current Industry Type — which services are busiest.</p>
           {distEntries.length === 0 ? (
-            <div className="text-center py-10 text-graphite">No data yet.</div>
+            <div className="text-center py-10 text-graphite">No tokens recorded for this Industry Type's services yet.</div>
           ) : (
             <div className="space-y-3">
               {distEntries.map((d, i) => (

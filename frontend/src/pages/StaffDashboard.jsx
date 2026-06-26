@@ -168,9 +168,9 @@ export default function StaffDashboard() {
             <button
               onClick={handleSkip}
               disabled={skipBusy}
-              className="text-xs text-graphite hover:text-accent underline underline-offset-2 disabled:opacity-40"
+              className="inline-flex items-center gap-1.5 text-xs px-3 py-1.5 border border-accent/50 text-accent font-medium hover:bg-accent hover:text-paper transition-colors disabled:opacity-40"
             >
-              {skipBusy ? 'Marking…' : 'No-show / skip'}
+              <span aria-hidden="true">⊘</span> {skipBusy ? 'Marking…' : 'No-show / Skip'}
             </button>
           )}
         </div>

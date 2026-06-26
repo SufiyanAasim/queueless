@@ -50,7 +50,7 @@ export default function Credits() {
     <div className="max-w-4xl mx-auto px-6 py-16">
       <div className="label mb-3">QueueLess · Credits</div>
       <h1 className="font-display text-5xl sm:text-7xl tracking-tightest leading-[0.92]">
-        Built by<br />
+        Developed by<br />
         <span className="text-accent">Mohammad Sufiyan Aasim </span>
         <a
           href="https://github.com/msufiyanpk"
@@ -88,7 +88,7 @@ export default function Credits() {
           </div>
           <div className="min-w-0 flex-1">
             <div className="font-display text-3xl">Mohammad Sufiyan Aasim</div>
-            <div className="text-sm text-graphite mt-1">Software Engineer, Data Science & AIMLOps</div>
+            <div className="text-sm text-graphite mt-1">Software Engineer, Data Sciences & AIMLOps</div>
             <div className="mt-3 flex flex-wrap gap-2 text-xs">
               <span className="px-2 py-1 border border-rule bg-paper">Data Sciences</span>
               <span className="px-2 py-1 border border-rule bg-paper">AI/MLOps Engineering</span>

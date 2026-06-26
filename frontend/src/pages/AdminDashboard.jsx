@@ -120,9 +120,9 @@ function ServingNowCard({ token, industry, services, onSkip, skipBusy, onRefer, 
           <button
             onClick={() => onSkip(token.id)}
             disabled={skipBusy}
-            className="mt-4 block text-xs text-graphite hover:text-accent underline underline-offset-2 disabled:opacity-40"
+            className="mt-4 inline-flex items-center gap-1.5 text-xs px-3 py-2 border border-accent/50 text-accent font-medium hover:bg-accent hover:text-paper transition-colors disabled:opacity-40"
           >
-            {skipBusy ? 'Marking…' : 'No-show / skip this token'}
+            <span aria-hidden="true">⊘</span> {skipBusy ? 'Marking…' : 'No-show / Skip token'}
           </button>
         </>
       ) : (
@@ -217,9 +217,9 @@ function PriorityQueueSection({ tokens, calledByService, industry, onCallNextPri
           <button
             onClick={() => onSkip(priorityCalled.id)}
             disabled={skipBusy}
-            className="ml-auto text-xs text-graphite hover:text-accent underline underline-offset-2 disabled:opacity-40"
+            className="ml-auto inline-flex items-center gap-1.5 text-xs px-3 py-2 border border-accent/50 text-accent font-medium hover:bg-accent hover:text-paper transition-colors disabled:opacity-40"
           >
-            {skipBusy ? 'Marking…' : 'No-show / skip'}
+            <span aria-hidden="true">⊘</span> {skipBusy ? 'Marking…' : 'No-show / Skip'}
           </button>
         </div>
       )}

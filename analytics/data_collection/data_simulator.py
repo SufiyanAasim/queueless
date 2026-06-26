@@ -54,10 +54,16 @@ CSV_COLUMNS = [
     "queue_length",
     "wait_duration_seconds",
     "service_duration_seconds",
+    "staff_username",   # the counter / operator that served the token
+    "org_name",         # organisation name for traceability
 ]
 
 SERVICES = ["general", "consultation", "transaction"]
 SERVICE_WEIGHTS = [0.55, 0.25, 0.20]  # general is most common
+
+# Synthetic org + per-service counter operators, mirroring the enriched backend CSV.
+ORG_NAME = "QueueLess Demo Clinic"
+STAFF_BY_SERVICE = {"general": "aisha", "consultation": "bilal", "transaction": "danish"}
 
 # Operating hours (24h). Arrivals outside this window are clipped.
 OPEN_HOUR = 9
@@ -97,6 +103,8 @@ class Event:
     queue_length: int | None = None
     wait_duration_seconds: int | None = None
     service_duration_seconds: int | None = None
+    staff_username: str | None = None
+    org_name: str | None = None
 
     def to_row(self) -> list:
         return [getattr(self, c) if getattr(self, c) is not None else "" for c in CSV_COLUMNS]
@@ -269,6 +277,14 @@ def simulate(days: int, avg_per_day: int, start_date: datetime,
         next_token_number += n
 
     all_events.sort(key=lambda e: e.timestamp)
+
+    # Stamp org name on every event and the serving counter on call/serve events,
+    # matching the enriched backend CSV schema.
+    for e in all_events:
+        e.org_name = ORG_NAME
+        if e.event_type in ("token_called", "token_served"):
+            e.staff_username = STAFF_BY_SERVICE.get(e.service, "staff")
+
     return all_events
 
 

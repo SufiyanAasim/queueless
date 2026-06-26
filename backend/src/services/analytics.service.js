@@ -8,7 +8,8 @@ let mongoClient = null;
 let mongoCollection = null;
 let mongoTokensCollection = null;
 
-// Column order is the contract with the DM pipeline — keep stable.
+// Column order is the contract with the DM pipeline — keep existing columns
+// stable; new fields are appended at the end (org name + serving counter).
 const CSV_COLUMNS = [
   'event_type',
   'token_id',
@@ -19,7 +20,20 @@ const CSV_COLUMNS = [
   'queue_length',
   'wait_duration_seconds',
   'service_duration_seconds',
+  'staff_username',   // the counter / operator that served the token
+  'org_name',         // organisation name for traceability
 ];
+
+// Cache the org name (from RTDB config) so each event write doesn't re-read it.
+let _orgNameCache = { name: 'QueueLess', ts: 0 };
+async function getOrgName() {
+  if (Date.now() - _orgNameCache.ts < 60_000) return _orgNameCache.name;
+  try {
+    const snap = await refs.appConfig().once('value');
+    _orgNameCache = { name: (snap.val() && snap.val().orgName) || 'QueueLess', ts: Date.now() };
+  } catch { /* keep previous value */ }
+  return _orgNameCache.name;
+}
 
 function csvEscape(value) {
   if (value === null || value === undefined) return '';
@@ -30,14 +44,34 @@ function csvEscape(value) {
   return str;
 }
 
+const _csvVerified = new Set();
+
 async function ensureCsvHeader(filepath) {
+  if (_csvVerified.has(filepath)) return;
   const dir = path.dirname(filepath);
   await fsp.mkdir(dir, { recursive: true });
-  try {
-    await fsp.access(filepath, fs.constants.F_OK);
-  } catch {
-    await fsp.writeFile(filepath, CSV_COLUMNS.join(',') + '\n', 'utf8');
+  const header = CSV_COLUMNS.join(',');
+
+  let exists = true;
+  try { await fsp.access(filepath, fs.constants.F_OK); } catch { exists = false; }
+
+  if (!exists) {
+    await fsp.writeFile(filepath, header + '\n', 'utf8');
+  } else {
+    // If the existing header doesn't match the current schema (e.g. new columns
+    // were added), archive the old file and start fresh so rows never go ragged.
+    try {
+      const fh = await fsp.open(filepath, 'r');
+      const { buffer, bytesRead } = await fh.read(Buffer.alloc(4096), 0, 4096, 0);
+      await fh.close();
+      const firstLine = buffer.toString('utf8', 0, bytesRead).split('\n', 1)[0].trim();
+      if (firstLine !== header) {
+        await fsp.rename(filepath, `${filepath}.legacy-${Date.now()}`);
+        await fsp.writeFile(filepath, header + '\n', 'utf8');
+      }
+    } catch { /* unreadable — leave it as-is */ }
   }
+  _csvVerified.add(filepath);
 }
 
 async function appendCsv(event) {
@@ -111,6 +145,7 @@ async function logEvent(event) {
     wait_duration_seconds: event.wait_duration_seconds ?? null,
     service_duration_seconds: event.service_duration_seconds ?? null,
     staff_username: event.staff_username || null,
+    org_name: await getOrgName(),
   };
 
   const writes = [];
