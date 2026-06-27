@@ -4,7 +4,7 @@ All notable changes to the QueueLess project will be documented in this file.
 
 ---
 
-## QueueLess v1.6.5 — Aurora (Unreleased)
+## QueueLess v1.6.5 — Aurora
 
 Codename **Aurora** · Milestone _Summit_. Credits overhaul, UX polish, live config broadcasting, messaging widget fix, test coverage, and Render deploy reliability hardening.
 
@@ -38,7 +38,7 @@ Codename **Aurora** · Milestone _Summit_. Credits overhaul, UX polish, live con
 
 ---
 
-## QueueLess v1.6.0 — Quasar (Unreleased)
+## QueueLess v1.6.0 — Quasar
 
 Codename **Quasar** · Milestone _Forge_. The messaging experience is rebuilt as a docked tray.
 
@@ -50,7 +50,7 @@ Codename **Quasar** · Milestone _Forge_. The messaging experience is rebuilt as
 
 ---
 
-## QueueLess v1.5.5 — Pulsar (Unreleased)
+## QueueLess v1.5.5 — Pulsar
 
 Codename **Pulsar** · Milestone _Insight_. Setup and input UX polish.
 
@@ -64,7 +64,7 @@ Codename **Pulsar** · Milestone _Insight_. Setup and input UX polish.
 
 ---
 
-## QueueLess v1.5.0 — Orion (Unreleased)
+## QueueLess v1.5.0 — Orion
 
 Codename **Orion** · Milestone _Beacon_. Data-quality fixes and the deployment-gap clarification.
 

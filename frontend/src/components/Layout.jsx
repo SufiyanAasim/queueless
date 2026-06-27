@@ -409,7 +409,7 @@ export default function Layout({ children }) {
           </div>
           <span className="flex items-center gap-3">
             <Link to="/credits" className="hover:text-ink transition-colors underline underline-offset-2">Credits</Link>
-            <span className="font-mono">v1.4.5 “Zenith” · cloud-native token qms</span>
+            <span className="font-mono">v1.6.5 “Aurora” · cloud-native token qms</span>
           </span>
         </div>
       </footer>

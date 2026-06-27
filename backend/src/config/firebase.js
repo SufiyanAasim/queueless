@@ -1,9 +1,10 @@
 const admin = require('firebase-admin');
+const { getDatabase } = require('firebase-admin/database');
 const config = require('./env');
 
-if (!admin.apps.length) {
+if (!admin.getApps().length) {
   admin.initializeApp({
-    credential: admin.credential.cert({
+    credential: admin.cert({
       projectId: config.firebase.projectId,
       clientEmail: config.firebase.clientEmail,
       privateKey: config.firebase.privateKey,
@@ -12,7 +13,7 @@ if (!admin.apps.length) {
   });
 }
 
-const db = admin.database();
+const db = getDatabase();
 
 const refs = {
   queueState: () => db.ref('queue/state'),

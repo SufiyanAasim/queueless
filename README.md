@@ -2,7 +2,7 @@
 
 **Live:** [queueless-beta.vercel.app](https://queueless-beta.vercel.app)  
 **Author:** Muhammad Sufiyan Aasim · [@msufiyanpk](https://github.com/msufiyanpk)  
-**Latest release:** v1.4.5 — Zenith _(Intelligent Collaboration)_
+**Latest release:** v1.6.5 — Aurora _(Summit)_
 
 QueueLess is a full-stack, cloud-native digital queue management system that replaces paper tokens with a real-time browser experience. Customers take tokens from any device, track their live position, and get notified the moment their number is called — no app download required.
 
@@ -480,10 +480,10 @@ For detailed release notes and changelogs, see [CHANGELOG.md](CHANGELOG.md).
 
 | Version | Codename | Milestone | Highlights |
 |---|---|---|---|
-| v1.6.5 _(unreleased)_ | **Aurora** | Summit | Credits overhaul, documentation refresh, release re-coding |
-| v1.6.0 _(unreleased)_ | **Quasar** | Forge | LinkedIn-style docked message tray (persistent, live badge) |
-| v1.5.5 _(unreleased)_ | **Pulsar** | Insight | Clock-style time pickers, city selection at setup |
-| v1.5.0 _(unreleased)_ | **Orion** | Beacon | Industry-aware analytics, enriched CSV export, proper No-show/Skip button, deployment-gap fix |
+| [v1.6.5](CHANGELOG.md#queueless-v165--aurora) | **Aurora** | Summit | Credits overhaul, documentation refresh, release re-coding |
+| [v1.6.0](CHANGELOG.md#queueless-v160--quasar) | **Quasar** | Forge | LinkedIn-style docked message tray (persistent, live badge) |
+| [v1.5.5](CHANGELOG.md#queueless-v155--pulsar) | **Pulsar** | Insight | Clock-style time pickers, city selection at setup |
+| [v1.5.0](CHANGELOG.md#queueless-v150--orion) | **Orion** | Beacon | Industry-aware analytics, enriched CSV export, proper No-show/Skip button, deployment-gap fix |
 | [v1.4.5](CHANGELOG.md#queueless-v145--zenith) | **Zenith** | Intelligent Collaboration | AI assistant (RAG) + workspace, internal messaging (1:1/group, reactions, receipts, attachments), event bus + notification center, secure sharing + QR, shared files (Spark-free), RBAC + audit log |
 | [v1.4.0](CHANGELOG.md#queueless-v140--polaris) | **Polaris** | Relay | Token referral between counters, custom queue management, live "serving for" timer + next-in-queue, Industry Type rename, trained ML predictions, credits page |
 | [v1.3.5](CHANGELOG.md#queueless-v135--nebula) | **Nebula** | Pulse | Proactive push alerts, per-service pause, re-queue, group tokens, SLA alerts, staff metrics, multi-admin, auto-reset, appointment merge |
