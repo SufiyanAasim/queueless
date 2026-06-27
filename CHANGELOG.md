@@ -6,18 +6,35 @@ All notable changes to the QueueLess project will be documented in this file.
 
 ## QueueLess v1.6.5 — Aurora (Unreleased)
 
-Codename **Aurora** · Milestone _Summit_. Credits overhaul, documentation refresh, and the release re-coding.
+Codename **Aurora** · Milestone _Summit_. Credits overhaul, UX polish, live config broadcasting, messaging widget fix, test coverage, and Render deploy reliability hardening.
 
 ### 🎖️ Credits page overhaul
 
-- "Developed by **Mohammad Sufiyan Aasim** (msufiyanpk)" with clickable **GitHub** and **email** buttons.
-- The **MS** block now shows the live GitHub profile picture (`github.com/msufiyanpk.png`) with a text-initials fallback; updating it on GitHub updates it here.
-- Role line reads **"Software Engineer, Data Science & AIMLOps"**; the "Send a thank-you" button opens a pre-filled email; tech split into **Languages** and **Core Concepts** headings.
+- Role subtitle simplified to **"Software Engineer"**; specialisms moved into chip tags (Data Sciences, AI/MLOps Engineering).
+- Added a **Frameworks & Tools** chip grid: React, Vite, Tailwind CSS, Node.js, Express, Firebase, MongoDB, scikit-learn, pandas, GitHub Actions.
+- Removed the automatic `mailto:` redirect on confetti trigger — the thank-you count feedback is now sufficient.
+- "Thanks sent!" copy updated to **"Thanks! 🎉"** for the first thank-you; email address line removed from the button row.
 
-### 📚 Documentation & release re-coding
+### 🏗️ Layout & UX fixes
 
-- README / CHANGELOG re-coded to the **space-codename + one-word milestone** scheme (Nova/Comet/Eclipse/Nebula/Polaris/Zenith) and v1.2.2 retagged to **v1.2.5**.
-- Unique emoji per changelog section; `.env.example` and the API surface kept in sync with the code.
+- `Layout.jsx` root div gets `pb-20` so page content is never hidden behind the fixed messaging dock.
+- `MessagingDeck` toggle button collapses to `w-auto` when closed, avoiding a wide invisible tap target covering the bottom-right corner.
+
+### ⚡ Live config broadcasting
+
+- `AdminSetup.jsx` now dispatches a `queueless:config` custom event after saving settings — no page reload required.
+- `useAppConfig.js` subscribes to that event and updates all consumers (footer status bar, etc.) immediately.
+
+### 🧪 Test coverage
+
+- New test in `queue.test.js`: `GET /admin/queues/overview` must return `401` without auth and `200` with a valid token (never `404`) — guards against regression of the Render deployment gap.
+
+### 🚀 Render deployment reliability
+
+- `render.yaml` `buildCommand` changed from `npm install` to `npm ci` — ensures every deploy uses exact locked dependency versions.
+- Removed stale `// Trigger build after secret addition` comment from `server.js` (manual workaround, superseded by the CI deploy hook).
+
+
 
 ---
 

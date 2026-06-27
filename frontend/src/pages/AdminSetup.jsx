@@ -49,14 +49,18 @@ export default function AdminSetup() {
       const parsedSla = slaMinutes ? Number(slaMinutes) : null;
       const trimmedReset = autoResetTime || null;
       await apiUpdateConfig(industry, orgName.trim(), trimmedLocation, trimmedMessage, parsedSla, trimmedReset);
-      localStorage.setItem('queueless.appConfig', JSON.stringify({
+      const newCfg = {
+        ...(cfg || {}),
         industry,
         orgName: orgName.trim(),
         location: trimmedLocation,
         displayMessage: trimmedMessage,
         slaMinutes: parsedSla,
         autoResetTime: trimmedReset,
-      }));
+      };
+      localStorage.setItem('queueless.appConfig', JSON.stringify(newCfg));
+      // Notify all useAppConfig consumers (footer status bar, etc.) immediately.
+      window.dispatchEvent(new CustomEvent('queueless:config', { detail: newCfg }));
       navigate('/admin');
     } catch (e) {
       setError(e.response?.data?.error || 'Could not save. Please try again.');

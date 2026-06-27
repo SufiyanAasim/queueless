@@ -41,9 +41,6 @@ export default function Credits() {
         : { y: 0.6 },
       colors: ['#E2603F', '#1A1A1A', '#F7F3EC'],
     });
-    setTimeout(() => {
-      window.location.href = 'mailto:sufiyanaasim@outlook.com?subject=Thank%20you%20for%20QueueLess!';
-    }, 400);
   };
 
   return (
@@ -88,7 +85,7 @@ export default function Credits() {
           </div>
           <div className="min-w-0 flex-1">
             <div className="font-display text-3xl">Mohammad Sufiyan Aasim</div>
-            <div className="text-sm text-graphite mt-1">Software Engineer, Data Sciences & AIMLOps</div>
+            <div className="text-sm text-graphite mt-1">Software Engineer</div>
             <div className="mt-3 flex flex-wrap gap-2 text-xs">
               <span className="px-2 py-1 border border-rule bg-paper">Data Sciences</span>
               <span className="px-2 py-1 border border-rule bg-paper">AI/MLOps Engineering</span>
@@ -127,12 +124,9 @@ export default function Credits() {
           </button>
           {count > 0 && (
             <span className="text-sm text-graphite">
-              {count === 1 ? 'Thanks sent!' : `${count} thank-yous and counting`} — much appreciated.
+              {count === 1 ? 'Thanks! 🎉' : `${count} thank-yous and counting`} — much appreciated.
             </span>
           )}
-        </div>
-        <div className="text-xs text-graphite sm:border-l sm:border-rule sm:pl-6 py-1">
-          Say hello at <a href="mailto:sufiyanaasim@outlook.com" className="text-accent font-medium hover:underline">sufiyanaasim@outlook.com</a>
         </div>
       </div>
 
@@ -151,6 +145,14 @@ export default function Credits() {
       <h2 className="mt-12 font-display text-2xl tracking-tightest">Languages</h2>
       <div className="mt-4 flex flex-wrap gap-2 text-xs">
         {['JavaScript', 'Python', 'HTML5', 'CSS3'].map(t => (
+          <span key={t} className="px-3 py-1.5 border border-rule bg-cream hover:border-ink transition-colors">{t}</span>
+        ))}
+      </div>
+
+      {/* Frameworks & Tools */}
+      <h2 className="mt-10 font-display text-2xl tracking-tightest">Frameworks & Tools</h2>
+      <div className="mt-4 flex flex-wrap gap-2 text-xs">
+        {['React', 'Vite', 'Tailwind CSS', 'Node.js', 'Express', 'Firebase', 'MongoDB', 'scikit-learn', 'pandas', 'GitHub Actions'].map(t => (
           <span key={t} className="px-3 py-1.5 border border-rule bg-cream hover:border-ink transition-colors">{t}</span>
         ))}
       </div>

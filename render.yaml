@@ -3,7 +3,7 @@ services:
     name: queueless-backend
     runtime: node
     rootDir: backend
-    buildCommand: npm install
+    buildCommand: npm ci
     startCommand: node src/server.js
     plan: free
     envVars:

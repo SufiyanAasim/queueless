@@ -293,6 +293,15 @@ describe('Queue management (custom queues)', () => {
     adminToken = res.body.token;
   });
 
+  test('GET /admin/queues/overview resolves (200 with auth, 401 without — never 404)', async () => {
+    const noAuth = await request(app).get('/api/v1/admin/queues/overview');
+    expect(noAuth.status).toBe(401); // route exists → auth required (not "Route not found")
+
+    const ok = await request(app).get('/api/v1/admin/queues/overview').set('Authorization', `Bearer ${adminToken}`);
+    expect(ok.status).toBe(200);
+    expect(Array.isArray(ok.body)).toBe(true);
+  });
+
   test('creates a queue with a derived key and prefix', async () => {
     const res = await request(app)
       .post('/api/v1/admin/queues')

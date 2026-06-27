@@ -148,7 +148,7 @@ export default function MessagingDeck() {
   const seenByOther = myLast && active?.reads && Object.entries(active.reads).some(([u, ts]) => u !== me && ts >= myLast.createdAt);
 
   return (
-    <div className="fixed bottom-0 right-4 z-[60] w-[min(calc(100vw-2rem),22rem)] print:hidden">
+    <div className={`fixed bottom-0 right-4 z-[60] ${open ? 'w-[min(calc(100vw-2rem),22rem)]' : 'w-auto'} print:hidden`}>
       {/* Slide-up panel */}
       <div
         className={`bg-paper border border-rule border-b-0 shadow-2xl flex flex-col overflow-hidden transition-all duration-300 ease-out ${open ? 'h-[min(70vh,30rem)] opacity-100' : 'h-0 opacity-0'}`}

@@ -50,5 +50,3 @@ main().catch(err => {
   console.error('[boot] Fatal error:', err);
   process.exit(1);
 });
-
-// Trigger build after secret addition

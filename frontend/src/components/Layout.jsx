@@ -82,7 +82,7 @@ export default function Layout({ children }) {
   ];
 
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="min-h-screen flex flex-col pb-20">
       <header className="border-b border-rule sticky top-0 z-40 bg-paper print:hidden">
         <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 xl:px-10 py-3 flex items-center justify-between gap-4">
           {/* Logo only — org identity lives in the footer status bar */}

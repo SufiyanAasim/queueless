@@ -19,5 +19,18 @@ export function useAppConfig() {
     }).catch(() => {});
   }, []);
 
+  // Live-update every consumer (e.g. the footer status bar) when settings are
+  // saved, without a full page reload.
+  useEffect(() => {
+    const onUpdate = (e) => {
+      const data = e.detail;
+      if (!data) return;
+      setCfg(data);
+      setCustomQueues(Array.isArray(data.queues) ? data.queues : []);
+    };
+    window.addEventListener('queueless:config', onUpdate);
+    return () => window.removeEventListener('queueless:config', onUpdate);
+  }, []);
+
   return cfg || { industry: 'general', orgName: 'QueueLess' };
 }
