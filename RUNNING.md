@@ -127,7 +127,21 @@ The UI is now live at **http://localhost:5173**
 ```bash
 npm run build      # production build → dist/
 npm run preview    # serve the production build locally (port 4173)
+npm run dev:lan    # dev server reachable from other devices on your LAN
 ```
+
+### LAN access (kiosk / display board on another device)
+
+1. `npm run dev:lan` (binds Vite to all interfaces).
+2. In `frontend/.env.local` set `VITE_API_BASE_URL=http://<your-LAN-IP>:4000/api/v1`
+   (a kiosk pointing at `localhost` would call itself).
+3. Add `http://<your-LAN-IP>:5173` to `CORS_ORIGIN` in `backend/.env`.
+4. Open `http://<your-LAN-IP>:5173/display` (or `/kiosk`) on the LAN device.
+
+> **Windows path warning:** if the repo lives in a folder whose path contains
+> `&` or parentheses, npm's `.cmd` shims can fail
+> (`Cannot find module 'D:\...vite.js'`). Keep the repo in a plain path, or
+> invoke tools directly: `node node_modules/vite/bin/vite.js`.
 
 ---
 

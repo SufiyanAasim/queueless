@@ -1,6 +1,6 @@
 {
   "name": "queueless-frontend",
-  "version": "1.6.5",
+  "version": "1.7.0",
   "description": "QueueLess - React frontend. Owner: Ifrahim Yousaf (Frontend Module).",
   "private": true,
   "type": "module",
@@ -9,6 +9,7 @@
   },
   "scripts": {
     "dev": "vite",
+    "dev:lan": "vite --host",
     "build": "vite build",
     "preview": "vite preview",
     "lint": "echo 'Add ESLint in v2'"

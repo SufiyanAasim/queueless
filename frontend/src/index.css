@@ -47,6 +47,19 @@
 .dark .bg-ink {
   color: #171615 !important;
 }
+/* Children with explicit text-paper (incl. opacity variants like text-paper/70)
+   would otherwise stay light on the flipped-light bg — force them dark too.
+   Fixes unreadable text in Smart Staffing, docked messaging bar, chat bubbles. */
+.dark .bg-ink [class*="text-paper"],
+.dark [class*="bg-ink"] [class*="text-paper"],
+.dark .bg-ink.text-paper {
+  color: rgba(23, 22, 21, 0.85) !important;
+}
+/* Light "chip" backgrounds (bg-paper/15) inside a flipped bg-ink card need a
+   dark tint to stay visible. */
+.dark .bg-ink [class*="bg-paper/"] {
+  background-color: rgba(23, 22, 21, 0.08) !important;
+}
 /* btn-primary hover switches to accent (dark red) — text should be light */
 .dark .btn-primary:hover {
   color: #F0EBE3 !important;

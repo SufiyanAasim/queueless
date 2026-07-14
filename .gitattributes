@@ -1,0 +1,25 @@
+# Normalise line endings: LF in the repo, native on checkout where needed.
+* text=auto eol=lf
+
+# Windows scripts keep CRLF.
+*.bat text eol=crlf
+*.cmd text eol=crlf
+*.ps1 text eol=crlf
+
+# Binary assets — never diff or normalise.
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.webp binary
+*.ico binary
+*.woff binary
+*.woff2 binary
+*.joblib binary
+*.zip binary
+*.pdf binary
+
+# Generated / vendored content: collapse in diffs and language stats.
+package-lock.json linguist-generated=true -diff
+analytics/notebooks/*.ipynb linguist-documentation=true
+frontend/dist/** linguist-generated=true -diff

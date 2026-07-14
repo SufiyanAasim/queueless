@@ -45,7 +45,11 @@ export default function TakeToken() {
   services.forEach(s => {
     waitingByService[s.id] = tokenList.filter(t => t.status === 'waiting' && t.service === s.id).length;
   });
-  const AVG_SECS = 180;
+  // Live average from the backend (observed waits), falling back to the
+  // org default — never a hardcoded constant.
+  const orgAvgSecs = cfg.avgServiceSeconds || 180;
+  const avgSecsFor = (svcId) =>
+    services.find(s => s.id === svcId)?.avgServiceSeconds || orgAvgSecs;
 
   const handleTake = async () => {
     setSubmitting(true);
@@ -89,7 +93,7 @@ export default function TakeToken() {
       <div className={`mt-10 grid gap-4 ${services.length <= 3 ? 'sm:grid-cols-3' : services.length === 4 ? 'sm:grid-cols-2 lg:grid-cols-4' : 'sm:grid-cols-2 lg:grid-cols-3'}`}>
         {services.map(s => {
           const count = waitingByService[s.id] || 0;
-          const waitStr = formatWait(count * AVG_SECS);
+          const waitStr = formatWait(count * avgSecsFor(s.id));
           const isSelected = service === s.id;
           const isServicePaused = queueState?.pausedServices?.includes(s.id);
           return (

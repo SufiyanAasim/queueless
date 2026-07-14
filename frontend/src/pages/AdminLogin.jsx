@@ -9,6 +9,7 @@ export default function AdminLogin() {
   const navigate = useNavigate();
   const location = useLocation();
   const justSignedOut = location.state?.signedOut === true;
+  const sessionExpired = location.state?.sessionExpired === true;
 
   if (user) return <Navigate to="/admin" replace />;
 
@@ -23,6 +24,11 @@ export default function AdminLogin() {
       {justSignedOut && (
         <div className="mb-8 p-3 border border-success/30 bg-success/10 text-success text-sm">
           You have been signed out successfully.
+        </div>
+      )}
+      {sessionExpired && (
+        <div className="mb-8 p-3 border border-warn/40 bg-warn/10 text-warn text-sm">
+          Your session has expired. Please sign in again.
         </div>
       )}
       <div className="label mb-4">Admin access</div>

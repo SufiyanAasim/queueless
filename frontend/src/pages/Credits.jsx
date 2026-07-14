@@ -50,12 +50,12 @@ export default function Credits() {
         Developed by<br />
         <span className="text-accent">Mohammad Sufiyan Aasim </span>
         <a
-          href="https://github.com/msufiyanpk"
+          href="https://github.com/SufiyanAasim"
           target="_blank"
           rel="noopener noreferrer"
           className="inline-block text-2xl sm:text-3xl font-sans font-normal text-graphite hover:text-ink underline ml-3 align-baseline"
         >
-          (msufiyanpk)
+          (SufiyanAasim)
         </a>
       </h1>
       <p className="mt-5 text-graphite max-w-xl">
@@ -71,7 +71,7 @@ export default function Credits() {
       >
         <div className="flex flex-col sm:flex-row sm:items-center gap-6">
           <img
-            src="https://github.com/msufiyanpk.png"
+            src="https://github.com/SufiyanAasim.png"
             alt="Mohammad Sufiyan Aasim"
             className="w-20 h-20 shrink-0 object-cover border border-rule bg-ink"
             onError={(e) => {
@@ -94,7 +94,7 @@ export default function Credits() {
             </div>
             <div className="mt-4 flex flex-wrap items-center gap-3">
               <a
-                href="https://github.com/msufiyanpk"
+                href="https://github.com/SufiyanAasim"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="btn-secondary text-xs flex items-center gap-2 px-3 py-1.5 border border-rule hover:border-ink hover:text-ink transition-colors bg-paper"
@@ -166,7 +166,7 @@ export default function Credits() {
       </div>
 
       <div className="mt-14 pt-8 border-t border-rule flex items-center justify-between text-sm">
-        <span className="text-graphite font-mono">QueueLess v1.6.5 "Aurora" — Summit</span>
+        <span className="text-graphite font-mono">QueueLess v1.7.0 "Cosmos" — LAN Connectivity & UI Polish</span>
         <Link to="/" className="btn-secondary text-sm">← Back to home</Link>
       </div>
     </div>

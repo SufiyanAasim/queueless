@@ -1,6 +1,6 @@
 {
   "name": "queueless-backend",
-  "version": "1.6.5",
+  "version": "1.7.0",
   "description": "QueueLess — REST API server for Smart Token & Queue Management System.",
   "main": "src/server.js",
   "type": "commonjs",

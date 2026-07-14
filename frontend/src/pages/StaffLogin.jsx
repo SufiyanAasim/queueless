@@ -7,6 +7,7 @@ export default function StaffLogin() {
   const navigate = useNavigate();
   const location = useLocation();
   const justSignedOut = location.state?.signedOut === true;
+  const sessionExpired = location.state?.sessionExpired === true;
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
 
@@ -21,6 +22,11 @@ export default function StaffLogin() {
       {justSignedOut && (
         <div className="mb-6 p-3 border border-success/30 bg-success/10 text-success text-sm">
           You have been signed out successfully.
+        </div>
+      )}
+      {sessionExpired && (
+        <div className="mb-6 p-3 border border-warn/40 bg-warn/10 text-warn text-sm">
+          Your session has expired. Please sign in again.
         </div>
       )}
       <div className="label mb-4">Staff portal</div>

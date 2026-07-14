@@ -1,0 +1,42 @@
+version: 2
+updates:
+  # Frontend (React / Vite)
+  - package-ecosystem: npm
+    directory: "/frontend"
+    schedule:
+      interval: weekly
+    labels: ["dependencies", "frontend"]
+    groups:
+      frontend-minor:
+        update-types: ["minor", "patch"]
+
+  # Backend (Express)
+  - package-ecosystem: npm
+    directory: "/backend"
+    schedule:
+      interval: weekly
+    labels: ["dependencies", "backend"]
+    groups:
+      backend-minor:
+        update-types: ["minor", "patch"]
+
+  # Firebase Cloud Functions
+  - package-ecosystem: npm
+    directory: "/firebase/functions"
+    schedule:
+      interval: monthly
+    labels: ["dependencies", "backend"]
+
+  # Analytics pipeline (Python)
+  - package-ecosystem: pip
+    directory: "/analytics"
+    schedule:
+      interval: monthly
+    labels: ["dependencies"]
+
+  # GitHub Actions
+  - package-ecosystem: github-actions
+    directory: "/"
+    schedule:
+      interval: monthly
+    labels: ["dependencies", "ci"]

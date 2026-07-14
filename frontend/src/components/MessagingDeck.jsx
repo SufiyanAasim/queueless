@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
+import { useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext.jsx';
 import { useStaff } from '../context/StaffContext.jsx';
 import { db, ref, onValue, off } from '../firebase.js';
@@ -38,11 +39,21 @@ function readFileAsDataUrl(file) {
 export default function MessagingDeck() {
   const { user } = useAuth();
   const { staff } = useStaff();
+  const location = useLocation();
   const me = user?.username || staff?.username || null;
 
   const [open, setOpen] = useState(() => {
     try { return localStorage.getItem(OPEN_KEY) === '1'; } catch { return false; }
   });
+
+  // Auto-close the tray whenever the user navigates to a different screen
+  // (and persist the closed state so it stays closed on the next screen).
+  const firstRender = useRef(true);
+  useEffect(() => {
+    if (firstRender.current) { firstRender.current = false; return; }
+    setOpen(false);
+    try { localStorage.setItem(OPEN_KEY, '0'); } catch { /* noop */ }
+  }, [location.pathname]);
   const [view, setView] = useState('list');
   const [conversations, setConversations] = useState([]);
   const [activeId, setActiveId] = useState(null);

@@ -1,0 +1,67 @@
+name: 🐛 Bug report
+description: Report something that is broken or behaving unexpectedly
+title: "fix: <short description>"
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to report a bug. Please fill in as much detail as you can.
+  - type: textarea
+    id: description
+    attributes:
+      label: Describe the bug
+      description: A clear and concise description of what the bug is.
+      placeholder: When I call the next token on the OPD counter, the display board does not update.
+    validations:
+      required: true
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: Steps to reproduce
+      description: Step-by-step instructions to reproduce the behaviour.
+      placeholder: |
+        1. Sign in as admin
+        2. Go to Dashboard
+        3. Click "Call Next" on the OPD column
+        4. Observe the display board
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behaviour
+      placeholder: The display board should flash and show the newly called token.
+    validations:
+      required: true
+  - type: textarea
+    id: screenshots
+    attributes:
+      label: Screenshots / console output
+      description: Attach screenshots or paste relevant browser console / server logs.
+  - type: dropdown
+    id: area
+    attributes:
+      label: Affected area
+      options:
+        - Frontend (React / Vercel)
+        - Backend (Express / Render)
+        - Firebase (RTDB / rules / functions)
+        - Analytics (Python pipeline / ML)
+        - CI/CD
+        - Documentation
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Version
+      placeholder: v1.7.0 "Cosmos"
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment
+      placeholder: |
+        Browser: Chrome 126
+        OS: Windows 11
+        Deployment: local / Vercel + Render

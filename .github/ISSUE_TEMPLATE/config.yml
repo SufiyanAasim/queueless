@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: 🔒 Security report
+    url: https://github.com/SufiyanAasim/queueless/security/advisories/new
+    about: Please report security vulnerabilities privately — never in a public issue. See SECURITY.md.
+  - name: 💬 Support
+    url: https://github.com/SufiyanAasim/queueless/blob/main/SUPPORT.md
+    about: How to get help with QueueLess.

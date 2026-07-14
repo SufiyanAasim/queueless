@@ -1,0 +1,10 @@
+# Default owner for everything in the repository.
+* @SufiyanAasim
+
+# Module-specific ownership (same owner today; split as the team grows).
+/frontend/  @SufiyanAasim
+/backend/   @SufiyanAasim
+/firebase/  @SufiyanAasim
+/analytics/ @SufiyanAasim
+/docs/      @SufiyanAasim
+/.github/   @SufiyanAasim

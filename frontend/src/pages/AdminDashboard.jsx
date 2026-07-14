@@ -575,20 +575,37 @@ export default function AdminDashboard() {
         </div>
       </div>
 
-      {/* Metrics */}
+      {/* Metrics — each tile deep-links into Analytics */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-px bg-rule mb-6">
-        <div className="bg-paper p-5"><Stat label="Waiting" value={totalWaiting} /></div>
-        <div className="bg-paper p-5"><Stat label="Now serving" value={state?.currentTokenNumber || '—'} accent /></div>
-        <div className="bg-paper p-5"><Stat label="Served today" value={servedCount} /></div>
-        <div className="bg-paper p-5"><Stat label="Priority waiting" value={priorityWaiting} /></div>
+        <Link to="/admin/analytics" title="Open Analytics" className="bg-paper p-5 hover:bg-cream transition-colors cursor-pointer group">
+          <Stat label="Waiting" value={totalWaiting} />
+          <span className="mt-1 block text-[10px] text-graphite opacity-0 group-hover:opacity-100 transition-opacity">View analytics →</span>
+        </Link>
+        <Link to="/admin/analytics" title="Open Analytics" className="bg-paper p-5 hover:bg-cream transition-colors cursor-pointer group">
+          <Stat label="Now serving" value={state?.currentTokenNumber || '—'} accent />
+          <span className="mt-1 block text-[10px] text-graphite opacity-0 group-hover:opacity-100 transition-opacity">View analytics →</span>
+        </Link>
+        <Link to="/admin/analytics" title="Open Analytics" className="bg-paper p-5 hover:bg-cream transition-colors cursor-pointer group">
+          <Stat label="Served today" value={servedCount} />
+          <span className="mt-1 block text-[10px] text-graphite opacity-0 group-hover:opacity-100 transition-opacity">View analytics →</span>
+        </Link>
+        <Link to="/admin/analytics" title="Open Analytics" className="bg-paper p-5 hover:bg-cream transition-colors cursor-pointer group">
+          <Stat label="Priority waiting" value={priorityWaiting} />
+          <span className="mt-1 block text-[10px] text-graphite opacity-0 group-hover:opacity-100 transition-opacity">View analytics →</span>
+        </Link>
       </div>
 
-      {/* SLA alert bar */}
+      {/* SLA alert bar — clickable, deep-links into Analytics */}
       {slaOverdueTokens.length > 0 && (
-        <div className="mb-6 px-4 py-3 border border-warn/60 bg-warn/10 text-warn text-sm flex items-center gap-2">
+        <Link
+          to="/admin/analytics"
+          className="mb-6 px-4 py-3 border border-warn/60 bg-warn/10 text-warn text-sm flex items-center gap-2 hover:bg-warn/20 transition-colors cursor-pointer"
+          title="Open Analytics to investigate"
+        >
           <span>&#9888;</span>
           <span>{slaOverdueTokens.length} token{slaOverdueTokens.length !== 1 ? 's' : ''} have exceeded the {cfg.slaMinutes}-minute wait target</span>
-        </div>
+          <span className="ml-auto text-xs underline underline-offset-2 shrink-0">Investigate →</span>
+        </Link>
       )}
 
       {/* Auto Mode */}

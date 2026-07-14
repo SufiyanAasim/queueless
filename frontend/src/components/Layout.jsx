@@ -4,6 +4,7 @@ import { useAuth } from '../context/AuthContext.jsx';
 import { useStaff } from '../context/StaffContext.jsx';
 import { useTheme } from '../context/ThemeContext.jsx';
 import { useAppConfig } from '../hooks/useAppConfig.js';
+import { useSessionExpiry } from '../hooks/useSessionExpiry.js';
 import AssistantDock from './AssistantDock.jsx';
 import MessagingDeck from './MessagingDeck.jsx';
 import NotificationBell from './NotificationBell.jsx';
@@ -25,6 +26,9 @@ export default function Layout({ children }) {
   const dropRef = useRef(null);
 
   const cfg = useAppConfig();
+
+  // Auto-logout with a "session expired" notice when the JWT lapses.
+  useSessionExpiry();
 
   if (onDisplay) return <ErrorBoundary key={loc.pathname}>{children}</ErrorBoundary>;
 
@@ -189,6 +193,18 @@ export default function Layout({ children }) {
                         <span className="text-base leading-none">🔑</span>
                         <span>Change password</span>
                       </Link>
+                      <Link to="/assistant" onClick={() => setAdminDropOpen(false)} className="flex items-center gap-3 px-4 py-2.5 text-sm text-graphite hover:text-ink hover:bg-cream transition-colors">
+                        <span className="text-base leading-none">✦</span>
+                        <span>AI Workspace</span>
+                      </Link>
+                      <Link to="/files" onClick={() => setAdminDropOpen(false)} className="flex items-center gap-3 px-4 py-2.5 text-sm text-graphite hover:text-ink hover:bg-cream transition-colors">
+                        <span className="text-base leading-none">📁</span>
+                        <span>Shared files</span>
+                      </Link>
+                      <Link to="/notifications" onClick={() => setAdminDropOpen(false)} className="flex items-center gap-3 px-4 py-2.5 text-sm text-graphite hover:text-ink hover:bg-cream transition-colors">
+                        <span className="text-base leading-none">🔔</span>
+                        <span>Notifications</span>
+                      </Link>
                     </div>
                     <div className="border-t border-rule py-1">
                       <button
@@ -270,6 +286,22 @@ export default function Layout({ children }) {
                         <span className="text-base leading-none">🔑</span>
                         <span>Change password</span>
                       </Link>
+                      <Link
+                        to="/assistant"
+                        onClick={() => setAdminDropOpen(false)}
+                        className="flex items-center gap-3 px-4 py-2.5 text-sm text-graphite hover:text-ink hover:bg-cream transition-colors"
+                      >
+                        <span className="text-base leading-none">✦</span>
+                        <span>AI Workspace</span>
+                      </Link>
+                      <Link
+                        to="/notifications"
+                        onClick={() => setAdminDropOpen(false)}
+                        className="flex items-center gap-3 px-4 py-2.5 text-sm text-graphite hover:text-ink hover:bg-cream transition-colors"
+                      >
+                        <span className="text-base leading-none">🔔</span>
+                        <span>Notifications</span>
+                      </Link>
                     </div>
 
                     <div className="border-t border-rule py-1">
@@ -326,6 +358,8 @@ export default function Layout({ children }) {
                   </div>
                   <Link to="/admin/profile" onClick={() => setMobileOpen(false)} className="py-2 text-graphite hover:text-ink">My profile</Link>
                   <Link to="/admin/change-password" onClick={() => setMobileOpen(false)} className="py-2 text-graphite hover:text-ink">Change password</Link>
+                  <Link to="/assistant" onClick={() => setMobileOpen(false)} className="py-2 text-graphite hover:text-ink">AI Workspace</Link>
+                  <Link to="/notifications" onClick={() => setMobileOpen(false)} className="py-2 text-graphite hover:text-ink">Notifications</Link>
                   <button
                     onClick={() => handleLogout(false)}
                     disabled={signingOut}
@@ -340,6 +374,9 @@ export default function Layout({ children }) {
                   <Link to="/staff" onClick={() => setMobileOpen(false)} className="py-2 text-graphite hover:text-ink font-medium">My Queue</Link>
                   <Link to="/staff/profile" onClick={() => setMobileOpen(false)} className="py-2 text-graphite hover:text-ink">My profile</Link>
                   <Link to="/staff/change-password" onClick={() => setMobileOpen(false)} className="py-2 text-graphite hover:text-ink">Change password</Link>
+                  <Link to="/assistant" onClick={() => setMobileOpen(false)} className="py-2 text-graphite hover:text-ink">AI Workspace</Link>
+                  <Link to="/files" onClick={() => setMobileOpen(false)} className="py-2 text-graphite hover:text-ink">Shared files</Link>
+                  <Link to="/notifications" onClick={() => setMobileOpen(false)} className="py-2 text-graphite hover:text-ink">Notifications</Link>
                   <div className="py-2 flex items-center justify-between border-t border-rule mt-1">
                     <span className="text-graphite text-xs">{dark ? 'Dark mode' : 'Light mode'}</span>
                     <button
@@ -409,7 +446,7 @@ export default function Layout({ children }) {
           </div>
           <span className="flex items-center gap-3">
             <Link to="/credits" className="hover:text-ink transition-colors underline underline-offset-2">Credits</Link>
-            <span className="font-mono">v1.6.5 “Aurora” · cloud-native token qms</span>
+            <span className="font-mono">v1.7.0 “Cosmos” · cloud-native token qms</span>
           </span>
         </div>
       </footer>

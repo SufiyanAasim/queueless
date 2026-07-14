@@ -16,14 +16,22 @@ router.post('/feedback', asyncHandler(require('../controllers/feedback.controlle
 
 router.get('/config', asyncHandler(async (req, res) => {
   const queueAdminService = require('../services/queueAdmin.service');
-  const [snap, activeQueues] = await Promise.all([
+  const analyticsService = require('../services/analytics.service');
+  const config = require('../config/env');
+  const [snap, activeQueues, stats] = await Promise.all([
     refs.appConfig().once('value'),
     queueAdminService.getActiveQueues().catch(() => []),
+    analyticsService.getTrafficStats().catch(() => ({})),
   ]);
   const cfg = snap.val() || { industry: 'general', orgName: 'QueueLess' };
+  // Live average service time (observed waits when available, configured
+  // default otherwise) so customer-facing wait previews are never static.
+  const avgServiceSeconds = Math.round(
+    (stats.avgWaitSeconds > 0 ? stats.avgWaitSeconds : config.queue.avgServiceTimeSeconds) || 180
+  );
   // Custom queues (admin-defined) take precedence over the static industry
   // profile on the frontend; empty array means "fall back to industry defaults".
-  res.json({ ...cfg, queues: activeQueues });
+  res.json({ ...cfg, queues: activeQueues, avgServiceSeconds });
 }));
 
 // Public: live announcement (used by display board + customer pages)

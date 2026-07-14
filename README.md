@@ -1,8 +1,36 @@
-# QueueLess — Smart Queue Token Management System
+<div align="center">
 
-**Live:** [queueless-beta.vercel.app](https://queueless-beta.vercel.app)  
-**Author:** Muhammad Sufiyan Aasim · [@msufiyanpk](https://github.com/msufiyanpk)  
-**Latest release:** v1.6.5 — Aurora _(Summit)_
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/images/queueless-wordmark-dark.svg">
+  <img src="docs/images/queueless-wordmark-light.svg" alt="QueueLess logo" width="360">
+</picture>
+
+### A cloud-native smart token & queue management system
+
+![Version](https://img.shields.io/badge/version-1.7.0-blue)
+![Release](https://img.shields.io/badge/release-Cosmos%20%E2%80%94%20LAN%20Connectivity%20%26%20UI%20Polish-8A2BE2)
+![License](https://img.shields.io/badge/license-MIT-green)
+![Frontend](https://img.shields.io/badge/frontend-React%2018%20%2B%20Vite-61DAFB)
+![Backend](https://img.shields.io/badge/backend-Node%2020%20%2B%20Express-339933)
+![Realtime](https://img.shields.io/badge/realtime-Firebase%20RTDB-FFCA28)
+![Tests](https://img.shields.io/badge/backend%20tests-48%20passing-brightgreen)
+![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen)
+
+Replaces paper tokens with a real-time browser experience — customers take a
+token from any device, track their live position, and get notified the moment
+their number is called. No app download, no accounts for customers.
+
+[Live Demo](https://queueless-beta.vercel.app) · [Changelog](CHANGELOG.md) · [Roadmap](ROADMAP.md) · [Report a Bug](https://github.com/SufiyanAasim/queueless/issues/new/choose)
+
+</div>
+
+---
+
+**Author:** Muhammad Sufiyan Aasim · [@SufiyanAasim](https://github.com/SufiyanAasim)  
+**Latest release:** v1.7.0 — Cosmos _(LAN Connectivity & UI Polish)_
+
+**Docs:** [Architecture](docs/Architecture.md) · [API](docs/API.md) · [Deployment](docs/Deployment.md) · [Development](docs/Development.md) · [Guides](docs/AdminGuide.md) · [Troubleshooting](docs/Troubleshooting.md) · [Release notes](docs/releases)  
+**Community:** [Contributing](CONTRIBUTING.md) · [Security](SECURITY.md) · [Support](SUPPORT.md) · [Roadmap](ROADMAP.md) · [Release process](RELEASE.md) · [Code of Conduct](CODE_OF_CONDUCT.md)
 
 QueueLess is a full-stack, cloud-native digital queue management system that replaces paper tokens with a real-time browser experience. Customers take tokens from any device, track their live position, and get notified the moment their number is called — no app download required.
 
@@ -12,7 +40,7 @@ Admins and staff manage the queue from a dedicated portal with a live dashboard,
 
 ---
 
-## Features
+## ✨ Features
 
 ### Customer-facing
 - **Take a token** — pick a service, request priority if needed (elderly, medical, VIP), and get a token number instantly
@@ -84,7 +112,7 @@ Each Industry Type ships sensible default queues; admins can also add their own 
 
 ---
 
-## Tech Stack
+## 🛠️ Technology Stack
 
 ### Frontend
 
@@ -145,7 +173,14 @@ Each Industry Type ships sensible default queues; admins can also add their own 
 
 ---
 
-## Project Structure
+## 🗂️ Project Structure
+
+> **Note:** unlike a single-app repo (e.g. Metro Navigation System's `src/`),
+> QueueLess is a **monorepo of independently deployed modules** — Vercel and
+> Render each build from their own root directory (`frontend/`, `backend/`),
+> so the deployable modules live at the top level by design. The mapping to
+> the conventional `src/ · tests/ · config/` layout is documented in
+> [docs/Development.md](docs/Development.md).
 
 ```
 queueless/
@@ -301,7 +336,7 @@ analytics/models/train_predictor.py   # Trains GradientBoosting + IsolationFores
 
 ---
 
-## Architecture
+## 🏗️ Architecture
 
 ```
                     ┌──────────────────────────────────────────┐
@@ -373,7 +408,7 @@ Message, notification, and file **content is served only via the JWT API**; the 
 
 ---
 
-## Quick Start (Local)
+## 🚀 Getting Started
 
 ### Backend
 
@@ -410,7 +445,7 @@ python run_pipeline.py
 
 ---
 
-## Deployment
+## ☁️ Deployment
 
 ### Firebase Rules
 
@@ -434,7 +469,7 @@ firebase deploy --only database
 
 ---
 
-## Cloud Computing Concepts Applied
+## 🧠 Cloud Computing Concepts Applied
 
 | Concept | Implementation |
 |---|---|
@@ -454,7 +489,7 @@ firebase deploy --only database
 | Event-driven architecture | Queue state changes propagate to all connected clients via Firebase push |
 | Scheduled background tasks | `setInterval` auto-reset scheduler and appointment-merge service — no cron daemon required |
 
-## Data Mining Concepts Applied
+## 📊 Data Mining Concepts Applied
 
 | Concept | Implementation |
 |---|---|
@@ -474,12 +509,13 @@ firebase deploy --only database
 
 ---
 
-## Releases
+## 📦 Releases
 
-For detailed release notes and changelogs, see [CHANGELOG.md](CHANGELOG.md).
+For the change log, see [CHANGELOG.md](CHANGELOG.md); full per-release notes live in [docs/releases/](docs/releases).
 
 | Version | Codename | Milestone | Highlights |
 |---|---|---|---|
+| [v1.7.0](CHANGELOG.md#queueless-v170--cosmos) | **Cosmos** | LAN Connectivity & UI Polish | LAN support, interactive UI pass, session expiry, dark-mode fixes, professional repo structure |
 | [v1.6.5](CHANGELOG.md#queueless-v165--aurora) | **Aurora** | Summit | Credits overhaul, documentation refresh, release re-coding |
 | [v1.6.0](CHANGELOG.md#queueless-v160--quasar) | **Quasar** | Forge | LinkedIn-style docked message tray (persistent, live badge) |
 | [v1.5.5](CHANGELOG.md#queueless-v155--pulsar) | **Pulsar** | Insight | Clock-style time pickers, city selection at setup |
@@ -493,6 +529,49 @@ For detailed release notes and changelogs, see [CHANGELOG.md](CHANGELOG.md).
 
 ---
 
-## License
+## 🧪 Testing
 
-This project is licensed under the [MIT License](LICENSE) © 2026 M Sufiyan Aasim ([@msufiyanpk](https://github.com/msufiyanpk)).
+The backend ships **48 integration tests** (Jest + Supertest) covering the
+queue engine, referral, custom queues, RBAC, messaging, notifications,
+sharing, uploads, the AI assistant, and every auth/error path. The Firebase
+layer is mocked in-memory, so the suite runs with **no external services**:
+
+```bash
+cd backend && npm test
+```
+
+The frontend gate is the production build (`npm run build`); UI flows are
+verified manually in **both light and dark mode**. The analytics pipeline
+has a CI smoke test (`python run_pipeline.py --days 5 --skip-charts`).
+See [docs/Development.md](docs/Development.md).
+
+## 🛡️ Security
+
+Clients are **read-only** on Firebase RTDB — every write goes through the
+JWT-protected API using the Admin SDK. Message/notification/file content is
+served only after server-side membership + RBAC checks; passwords and PINs
+are bcrypt-hashed; logins, token issuance, and the AI assistant are
+rate-limited; sensitive admin actions land in an append-only audit log.
+Report vulnerabilities privately — see [SECURITY.md](SECURITY.md).
+
+## 🤝 Contributors
+
+| | Name | Role |
+|---|------|------|
+| <img src="https://github.com/SufiyanAasim.png" width="48" height="48" alt="SufiyanAasim" /> | [Mohammad Sufiyan Aasim](https://github.com/SufiyanAasim) | Software Engineer · Data Sciences & AIMLOps |
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) to get involved.
+
+## 📄 License
+
+MIT License © 2026 Mohammad Sufiyan Aasim ([@SufiyanAasim](https://github.com/SufiyanAasim)) — see [LICENSE](LICENSE).
+
+---
+
+<div align="center">
+
+⭐ **Star this repo if QueueLess saved you a queue.**
+
+[Report Bug](https://github.com/SufiyanAasim/queueless/issues/new/choose) · [Request Feature](https://github.com/SufiyanAasim/queueless/issues/new/choose)
+
+</div>

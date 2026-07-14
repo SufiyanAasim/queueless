@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext.jsx';
 import { useStaff } from '../context/StaffContext.jsx';
 import { apiAssistant } from '../services/api.js';
@@ -32,6 +32,7 @@ function renderText(text) {
 export default function AssistantDock() {
   const { user } = useAuth();
   const { staff } = useStaff();
+  const location = useLocation();
   const [open, setOpen] = useState(false);
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState('');
@@ -41,6 +42,11 @@ export default function AssistantDock() {
   useEffect(() => {
     if (scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
   }, [messages, busy]);
+
+  // Auto-close the panel whenever the user navigates to a different screen.
+  useEffect(() => {
+    setOpen(false);
+  }, [location.pathname]);
 
   // The assistant requires an authenticated admin or staff session.
   if (!user && !staff) return null;

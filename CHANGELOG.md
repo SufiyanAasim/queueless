@@ -4,9 +4,57 @@ All notable changes to the QueueLess project will be documented in this file.
 
 ---
 
+## QueueLess v1.7.0 — Cosmos
+
+Codename **Cosmos** · _LAN Connectivity & UI Polish_. LAN support, UI fixes, performance improvements, session expiry, and a professional repository structure.
+
+### 📡 LAN connectivity
+
+- New `npm run dev:lan` script binds the dev server to all interfaces — kiosks and display boards on the same network can open the app via the machine's LAN IP.
+- Step-by-step LAN guide (API base URL + CORS configuration) in `RUNNING.md` and `docs/Development.md`.
+
+### 🖱️ Interactive UI pass
+
+- Dashboard metric tiles are now **clickable** (deep-link into Analytics) with hover affordances.
+- The SLA overdue alert bar links straight to the Analytics screen.
+- Hover/cursor affordances added wherever an element performs an action.
+
+### 🕒 Session expiry
+
+- New `useSessionExpiry` watchdog decodes the stored admin/staff JWT and checks every 30 s — expired sessions sign out **immediately** and land on the login screen with a "Your session has expired" notice (instead of failing on the next request).
+
+### 🌒 Dark-mode readability
+
+- Global overrides for `text-paper` variants inside flipped `bg-ink` surfaces — fixes invisible text in **Smart Staffing**, the docked messaging bar, and chat bubbles; light chips (`bg-paper/15`) get a dark tint.
+
+### 🚪 Auto-closing workspace panels
+
+- The ✦ Assistant panel and 💬 messaging tray now **close automatically when you switch screens** (route change), with the tray's closed state persisted.
+
+### 🧭 Hidden screens surfaced
+
+- **AI Workspace**, **Notifications**, and **Shared files** links added to the ADMIN ▾ / staff account menus (desktop + mobile) — every screen is now reachable without typing a URL.
+
+### 📈 No static analytics data
+
+- Public `/config` now returns a live `avgServiceSeconds` (observed waits → configured default); the Take-a-Token wait preview uses per-queue averages → live org average — the last hardcoded `180 s` constant is gone.
+
+### 🧑‍💻 Author identity
+
+- GitHub handle updated to **SufiyanAasim** across the app and docs; the Credits picture now loads live from `github.com/SufiyanAasim.png` (auto-updates with the GitHub avatar).
+
+### 🏛️ Professional repository structure
+
+- `.github/`: issue templates (bug/feature/docs/question + security contact), PR template, CODEOWNERS, grouped Dependabot config.
+- `docs/`: Architecture, full API reference, Deployment + env-var matrix, Development guide (incl. LAN access and the Windows `&`-path pitfall), Admin/Staff/User guides, Troubleshooting, and per-release notes (v1.2.0 → v1.7.0) — file naming aligned with the Metro Navigation System repo conventions.
+- Root governance: `CONTRIBUTING.md`, `SECURITY.md`, `CODE_OF_CONDUCT.md`, `SUPPORT.md`, `ROADMAP.md`, `RELEASE.md`, `.editorconfig`, `.gitattributes`.
+- README restructured: badges, hero links, contributors table, per-release notes index.
+
+---
+
 ## QueueLess v1.6.5 — Aurora
 
-Codename **Aurora** · Milestone _Summit_. Credits overhaul, UX polish, live config broadcasting, messaging widget fix, test coverage, and Render deploy reliability hardening.
+Codename **Aurora** · Milestone _Summit_. Credits overhaul, UX polish, live config broadcasting, messaging widget fix, and Render deploy reliability hardening.
 
 ### 🎖️ Credits page overhaul
 

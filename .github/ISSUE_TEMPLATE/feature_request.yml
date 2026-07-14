@@ -1,0 +1,47 @@
+name: ✨ Feature request
+description: Suggest a new feature or improvement
+title: "feat: <short description>"
+labels: ["feature"]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem statement
+      description: What problem does this feature solve? Who benefits?
+      placeholder: Staff cannot see how long the current customer has been waiting before being called.
+    validations:
+      required: true
+  - type: textarea
+    id: solution
+    attributes:
+      label: Proposed solution
+      description: Describe the behaviour you would like to see.
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options:
+        - Frontend (React / Vercel)
+        - Backend (Express / Render)
+        - Firebase (RTDB / rules / functions)
+        - Analytics (Python pipeline / ML)
+        - AI Assistant
+        - Messaging / Notifications
+        - CI/CD
+        - Documentation
+    validations:
+      required: true
+  - type: dropdown
+    id: priority
+    attributes:
+      label: Suggested priority
+      options:
+        - priority-high
+        - priority-medium
+        - priority-low

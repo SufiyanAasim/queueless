@@ -1,6 +1,6 @@
-# --------------------------------------------------------------------------
-# QueueLess â€” top-level .gitignore
-# --------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
+# QueueLess — top-level .gitignore
+# ---------------------------------------------------------------------------
 
 # Environment files (NEVER commit real secrets)
 .env
@@ -17,6 +17,7 @@ yarn-error.log*
 .pnp.*
 .yarn/cache
 .yarn/install-state.gz
+.eslintcache
 
 # Build outputs
 dist/
@@ -24,6 +25,9 @@ build/
 .next/
 .vite/
 .turbo/
+
+# Test coverage
+coverage/
 
 # Python
 __pycache__/
@@ -50,6 +54,16 @@ analytics/data/tokens_processed.csv
 analytics/data/charts/
 analytics/models/*.joblib
 analytics/models/predictions.json
+# Archived legacy-schema CSVs created by the backend schema guard
+*.legacy-*
+
+# Deployment / hosting CLI caches
+.vercel/
+.firebase/
+firebase-debug.log*
+
+# AI tooling (local session data)
+.claude/
 
 # OS / Editor
 .DS_Store
@@ -63,5 +77,9 @@ Thumbs.db
 logs/
 *.log
 
-# Firebase Admin SDK Secrets
+# Temporary files
+tmp/
+.cache/
+
+# Firebase Admin SDK secrets
 *firebase-adminsdk*.json
