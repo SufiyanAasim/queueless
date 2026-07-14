@@ -1,7 +1,7 @@
 {
   "name": "queueless-frontend",
   "version": "1.7.0",
-  "description": "QueueLess - React frontend. Owner: Ifrahim Yousaf (Frontend Module).",
+  "description": "QueueLess - React frontend. Owner: Mohammad Sufiyan Aasim (Frontend Module).",
   "private": true,
   "type": "module",
   "engines": {
