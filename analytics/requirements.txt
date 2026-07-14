@@ -20,5 +20,5 @@ pymongo>=4.6,<5.0
 
 # Notebook environment
 jupyter>=1.0
-ipykernel>=6.29
+ipykernel>=7.3.0
 nbformat>=5.10
