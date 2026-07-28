@@ -7,5 +7,8 @@
   "dependencies": {
     "firebase-admin": "^12.4.0",
     "firebase-functions": "^5.0.1"
+  },
+  "overrides": {
+    "uuid": "^11.1.1"
   }
 }
