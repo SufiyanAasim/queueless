@@ -16,7 +16,6 @@ ENV PORT=4000
 
 COPY --from=dependencies --chown=node:node /app/backend/node_modules ./backend/node_modules
 COPY --chown=node:node backend ./backend
-COPY --chown=node:node analytics/models/predictions.json ./analytics/models/predictions.json
 
 USER node
 EXPOSE 4000
