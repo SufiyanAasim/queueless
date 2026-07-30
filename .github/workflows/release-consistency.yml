@@ -1,0 +1,55 @@
+name: Release Consistency
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'backend/package.json'
+      - 'backend/package-lock.json'
+      - 'backend/src/app.js'
+      - 'frontend/package.json'
+      - 'frontend/package-lock.json'
+      - 'frontend/src/**'
+      - 'docs/releases/**'
+      - 'scripts/check-release-consistency.mjs'
+      - 'README.md'
+      - 'CHANGELOG.md'
+      - 'RELEASE.md'
+      - 'ROADMAP.md'
+      - 'SUPPORT.md'
+      - '.github/ISSUE_TEMPLATE/bug_report.yml'
+      - '.github/workflows/release-consistency.yml'
+  pull_request:
+    paths:
+      - 'backend/package.json'
+      - 'backend/package-lock.json'
+      - 'backend/src/app.js'
+      - 'frontend/package.json'
+      - 'frontend/package-lock.json'
+      - 'frontend/src/**'
+      - 'docs/releases/**'
+      - 'scripts/check-release-consistency.mjs'
+      - 'README.md'
+      - 'CHANGELOG.md'
+      - 'RELEASE.md'
+      - 'ROADMAP.md'
+      - 'SUPPORT.md'
+      - '.github/ISSUE_TEMPLATE/bug_report.yml'
+      - '.github/workflows/release-consistency.yml'
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    name: Verify release history and runtime metadata
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout complete history
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Verify canonical chronology and current version
+        run: node scripts/check-release-consistency.mjs

@@ -3,6 +3,7 @@ const cors = require('cors');
 const helmet = require('helmet');
 const morgan = require('morgan');
 const rateLimit = require('express-rate-limit');
+const { version } = require('../package.json');
 
 const config = require('./config/env');
 const routes = require('./routes');
@@ -52,7 +53,7 @@ function buildApp() {
   app.get('/', (req, res) => {
     res.json({
       message: 'Welcome to the QueueLess API server.',
-      version: '1.7.0',
+      version,
       status: 'active',
     });
   });

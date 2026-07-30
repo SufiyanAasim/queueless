@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import confetti from 'canvas-confetti';
+import { RELEASE_TITLE } from '../config/release.js';
 
 const MODULES = [
   { name: 'System Architecture', desc: 'Monorepo design, deployment topology, branch strategy' },
@@ -166,7 +167,7 @@ export default function Credits() {
       </div>
 
       <div className="mt-14 pt-8 border-t border-rule flex items-center justify-between text-sm">
-        <span className="text-graphite font-mono">QueueLess v1.7.0 "Cosmos" — LAN Connectivity & UI Polish</span>
+        <span className="text-graphite font-mono">{RELEASE_TITLE}</span>
         <Link to="/" className="btn-secondary text-sm">← Back to home</Link>
       </div>
     </div>

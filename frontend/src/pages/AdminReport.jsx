@@ -5,6 +5,7 @@ import { useAppConfig } from '../hooks/useAppConfig.js';
 import { getServices, getServiceLabel } from '../utils/industry.js';
 import { apiAnalytics } from '../services/api.js';
 import Stat from '../components/Stat.jsx';
+import { RELEASE_BADGE } from '../config/release.js';
 
 export default function AdminReport() {
   const { user } = useAuth();
@@ -278,7 +279,7 @@ export default function AdminReport() {
       <div className="hidden print:block mt-12 pt-4" style={{ borderTop: '1px solid #E4DDD3' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '9px', color: '#8A8278', fontFamily: '"Georgia", serif', letterSpacing: '0.08em' }}>
           <span>{cfg.orgName && cfg.orgName !== 'QueueLess' ? cfg.orgName : 'QueueLess'}{cfg.location ? ` · ${cfg.location}` : ''}</span>
-          <span style={{ fontFamily: 'monospace' }}>v1.6.5 · cloud-native token qms</span>
+          <span style={{ fontFamily: 'monospace' }}>{RELEASE_BADGE} · cloud-native token qms</span>
         </div>
       </div>
     </div>
