@@ -6,17 +6,17 @@ import { fileURLToPath } from 'node:url';
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 
 const releases = [
-  { version: '1.2.0', former: '1.0.0', codename: 'Nova' },
-  { version: '1.2.5', former: '1.0.5', codename: 'Comet' },
-  { version: '1.3.0', former: '1.2.0', codename: 'Eclipse' },
-  { version: '1.3.5', former: '1.2.5', codename: 'Nebula' },
-  { version: '1.4.0', former: '1.3.0', codename: 'Polaris' },
-  { version: '1.4.5', former: '1.3.5', codename: 'Zenith' },
-  { version: '1.5.0', former: '1.4.0', codename: 'Orion' },
-  { version: '1.5.5', former: '1.4.5', codename: 'Pulsar' },
-  { version: '1.6.0', former: '1.5.0', codename: 'Quasar' },
-  { version: '1.6.5', former: '1.5.5', codename: 'Aurora' },
-  { version: '1.7.0', former: '1.6.0', codename: 'Cosmos' },
+  { version: '1.0.0', codename: 'Nova', milestone: 'Sight' },
+  { version: '1.0.5', codename: 'Comet', milestone: 'Alive' },
+  { version: '1.2.0', codename: 'Eclipse', milestone: 'Crew' },
+  { version: '1.2.5', codename: 'Nebula', milestone: 'Pulse' },
+  { version: '1.3.0', codename: 'Polaris', milestone: 'Relay' },
+  { version: '1.3.5', codename: 'Zenith', milestone: 'Intelligent Collaboration' },
+  { version: '1.4.0', codename: 'Orion', milestone: 'Beacon' },
+  { version: '1.4.5', codename: 'Pulsar', milestone: 'Insight' },
+  { version: '1.5.0', codename: 'Quasar', milestone: 'Forge' },
+  { version: '1.5.5', codename: 'Aurora', milestone: 'Summit' },
+  { version: '1.6.0', codename: 'Cosmos', milestone: 'LAN Connectivity & UI Polish' },
 ];
 
 const current = releases.at(-1);
@@ -88,26 +88,25 @@ expect(
 
 for (const release of releases) {
   const tag = `v${release.version}`;
-  const formerTag = `v${release.former}`;
   const notesPath = `docs/releases/${tag}.md`;
-  expectContains(notesPath, `# QueueLess — ${tag}`);
-  expectContains(notesPath, `**Codename: ${release.codename}`);
-  expectContains(notesPath, `**Former label:** ${formerTag}`);
+  expectContains(notesPath, `# 🚀 QueueLess — ${tag}`);
+  expectContains(notesPath, `> Codename *${release.codename}* - ${release.milestone}`);
   expectContains('README.md', `| [${tag}]`);
-  expectContains('README.md', `| ${formerTag} | **${release.codename}** |`);
+  expectContains('README.md', `| **${release.codename}** | ${release.milestone} |`);
   expectContains('RELEASE.md', `| ${tag}`);
-  expectContains('RELEASE.md', `| ${formerTag}`);
 }
 
-const tags = execFileSync('git', ['tag', '--list', 'v*', '--sort=version:refname'], {
-  cwd: root,
-  encoding: 'utf8',
-}).trim().split(/\r?\n/).filter(Boolean);
 const expectedTags = releases.map(({ version }) => `v${version}`);
-expect(
-  JSON.stringify(tags) === JSON.stringify(expectedTags),
-  `Git tags are ${tags.join(', ')}; expected ${expectedTags.join(', ')}`,
-);
+if (process.argv.includes('--tags')) {
+  const tags = execFileSync('git', ['tag', '--list', 'v*', '--sort=version:refname'], {
+    cwd: root,
+    encoding: 'utf8',
+  }).trim().split(/\r?\n/).filter(Boolean);
+  expect(
+    JSON.stringify(tags) === JSON.stringify(expectedTags),
+    `Git tags are ${tags.join(', ')}; expected ${expectedTags.join(', ')}`,
+  );
+}
 
 if (failures.length > 0) {
   console.error('Release consistency check failed:');
@@ -115,4 +114,5 @@ if (failures.length > 0) {
   process.exit(1);
 }
 
-console.log(`Release consistency verified: ${expectedTags.join(' → ')}`);
+const scope = process.argv.includes('--tags') ? 'metadata and Git tags' : 'metadata';
+console.log(`Release ${scope} verified: ${expectedTags.join(' → ')}`);

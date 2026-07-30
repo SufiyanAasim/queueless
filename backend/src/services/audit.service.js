@@ -1,5 +1,5 @@
 /**
- * Audit log (v1.4.5 Phase 5b).
+ * Audit log (v1.3.5 Phase 5b).
  *
  * Append-only record of sensitive actions (who did what, to which target, when).
  * Fire-and-forget from callers; never throws back into the request path.

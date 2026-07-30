@@ -1,5 +1,5 @@
 /**
- * Predictive queue assistance (v1.4.0).
+ * Predictive queue assistance (v1.3.0).
  *
  * Deliberately practical and *explainable* rather than a black-box deep model:
  * every number it returns can be traced to observed data, and it falls back to

@@ -14,7 +14,7 @@
 ## Before opening an issue
 
 1. Search existing issues — your problem may already be tracked.
-2. Reproduce on the latest release (`v1.7.0 "Cosmos"` or newer).
+2. Reproduce on the latest release (`v1.6.0 "Cosmos"` or newer).
 3. Collect the browser console output and/or backend logs.
 4. Note your environment: browser, OS, and whether you run locally or on
    Vercel + Render.

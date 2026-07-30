@@ -1,5 +1,5 @@
 /**
- * Queue management service (v1.4.0).
+ * Queue management service (v1.3.0).
  *
  * Lets administrators define their own queues/counters within an Industry Type
  * instead of being limited to the static industry profiles. Each queue's `key`
