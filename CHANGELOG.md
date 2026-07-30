@@ -439,7 +439,7 @@ Codename **Comet** · Milestone _Alive_. A focused patch release hardening the a
 
 ## QueueLess v1.0.0 — Nova
 
-Codename **Nova** · Milestone _Sight_. The first stable release of QueueLess — a cloud-native, token-based queue management system built for real organisations.
+Codename **Nova** · Milestone _Sight_. The first pre-release of QueueLess — a cloud-native, token-based queue management system built for real organisations.
 
 ### ✨ What's included
 
