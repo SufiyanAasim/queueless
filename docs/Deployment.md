@@ -9,7 +9,7 @@ code and vice-versa (CI is path-filtered; hosts use `rootDir`).
    `package.json`).
 2. Framework: Vite (auto-detected); `frontend/vercel.json` provides SPA
    rewrites.
-3. Node 20 or 22.
+3. Node 20.19+ (matching `frontend/package.json`).
 4. Add all `VITE_*` variables from `frontend/.env.example`, with
    `VITE_API_BASE_URL` pointing at the Render backend
    (e.g. `https://<service>.onrender.com/api/v1`).
@@ -88,15 +88,19 @@ serves trained predictions (heuristic fallback otherwise).
 | `JWT_SECRET` | backend | ✅ | — | ≥ 32 chars |
 | `JWT_EXPIRES_IN` | backend | — | 8h | Admin session length |
 | `ADMIN_USERNAME` / `ADMIN_PASSWORD` | backend | ✅ | — | Bootstrap superadmin |
-| `FIREBASE_PROJECT_ID` / `CLIENT_EMAIL` / `PRIVATE_KEY` / `DATABASE_URL` | backend | ✅ | — | Admin SDK service account |
+| `FIREBASE_PROJECT_ID` / `FIREBASE_CLIENT_EMAIL` / `FIREBASE_PRIVATE_KEY` / `FIREBASE_DATABASE_URL` | backend | ✅ | — | Admin SDK service account |
 | `AVG_SERVICE_TIME_SECONDS` | backend | — | 180 | Wait-estimate fallback |
 | `TOKEN_EXPIRY_SECONDS` | backend | — | 3600 | Token TTL |
 | `ANALYTICS_SINK` | backend | — | csv | `csv` \| `mongo` |
 | `ANALYTICS_CSV_PATH` | backend | — | ../analytics/data/queue_events.csv | Event log path |
 | `ANALYTICS_MODEL_PATH` | backend | — | ../analytics/models/predictions.json | Trained artefact |
-| `MONGO_URI` / `MONGO_DB` / `MONGO_COLLECTION` / `MONGO_TOKENS_COLLECTION` | backend | mongo mode | queueless / queue_events / tokens | Atlas analytics store |
-| `SMTP_HOST` / `PORT` / `USER` / `PASS` / `FROM` | backend | — | — | Token emails (blank = disabled) |
-| `FRONTEND_URL` | backend | — | localhost:5173 | Links in emails/shares |
+| `MONGO_URI` | backend | mongo mode | — | Atlas connection string |
+| `MONGO_DB` | backend | — | queueless | Atlas database |
+| `MONGO_COLLECTION` | backend | — | queue_events | Analytics event collection |
+| `MONGO_TOKENS_COLLECTION` | backend | — | tokens | Token lifecycle mirror |
+| `SMTP_HOST` / `SMTP_USER` / `SMTP_PASS` | backend | — | — | Token email connection (blank host = disabled) |
+| `SMTP_PORT` / `SMTP_FROM` | backend | — | 587 / noreply@queueless.app | Token email delivery settings |
+| `FRONTEND_URL` | backend | — | http://localhost:5173 | Links in emails/shares |
 | `AI_PROVIDER` | backend | — | grounded | grounded \| openai \| groq \| openrouter \| ollama \| gemini |
 | `AI_API_KEY` / `AI_MODEL` / `AI_BASE_URL` | backend | LLM mode | — | Provider credentials |
 

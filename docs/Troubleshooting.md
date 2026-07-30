@@ -63,7 +63,7 @@ backend `.env` if you need longer sessions.
 
 ## Tests fail locally
 
-Backend tests mock Firebase — no services needed. Ensure Node ≥ 20 and a
+Backend tests mock Firebase — no services needed. Ensure Node ≥ 20.19 and a
 clean `npm install`. Run verbosely: `npm test -- --verbose`.
 
 ## LAN device can't reach the app

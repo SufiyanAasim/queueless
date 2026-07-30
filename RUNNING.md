@@ -2,7 +2,7 @@
 
 This guide walks you through running every part of the stack on your own machine.
 
-**Prerequisites:** Node.js 20+, Python 3.11+, a Firebase project (Realtime Database enabled), npm
+**Prerequisites:** Node.js 20.19+, Python 3.11+, a Firebase project (Realtime Database enabled), npm
 
 ---
 
