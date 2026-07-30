@@ -6,7 +6,7 @@ The deployed **backend is older than the frontend**. These routes exist
 from v1.3.5+; redeploy the Render backend. Verify with:
 
 ```bash
-curl https://<backend>/api/v1/           # → { version: "1.6.0", ... }
+curl https://<backend>/                  # → { version: "1.6.0", ... }
 ```
 
 ## AI assistant says "could not reach the operational data"
