@@ -11,7 +11,7 @@
 [![Container](https://img.shields.io/badge/GHCR-v1.6.0-2496ED?logo=docker&logoColor=white)](https://github.com/users/SufiyanAasim/packages/container/package/queueless)
 ![Release](https://img.shields.io/badge/release-Cosmos%20%E2%80%94%20LAN%20Connectivity%20%26%20UI%20Polish-8A2BE2)
 ![License](https://img.shields.io/badge/license-MIT-green)
-![Frontend](https://img.shields.io/badge/frontend-React%2018%20%2B%20Vite-61DAFB)
+![Frontend](https://img.shields.io/badge/frontend-React%2019%20%2B%20Vite-61DAFB)
 ![Backend](https://img.shields.io/badge/backend-Node%2020%20%2B%20Express-339933)
 ![Realtime](https://img.shields.io/badge/realtime-Firebase%20RTDB-FFCA28)
 ![Tests](https://img.shields.io/badge/backend%20tests-48%20passing-brightgreen)
@@ -27,7 +27,7 @@ their number is called. No app download, no accounts for customers.
 
 ---
 
-**Author:** Muhammad Sufiyan Aasim · [@SufiyanAasim](https://github.com/SufiyanAasim)  
+**Author:** Mohammad Sufiyan Aasim · [@SufiyanAasim](https://github.com/SufiyanAasim)<br>
 **Latest release:** v1.6.0 — Cosmos _(LAN Connectivity & UI Polish)_
 
 **Docs:** [Architecture](docs/Architecture.md) · [API](docs/API.md) · [Deployment](docs/Deployment.md) · [Development](docs/Development.md) · [Guides](docs/AdminGuide.md) · [Troubleshooting](docs/Troubleshooting.md) · [Release notes](docs/releases)  
@@ -37,7 +37,7 @@ QueueLess is a full-stack, cloud-native digital queue management system that rep
 
 Admins and staff manage the queue from a dedicated portal with a live dashboard, ML-assisted auto mode, granular analytics, and per-service staff portals. Every queue event is dual-written to MongoDB Atlas and a CSV event log, feeding a data mining pipeline that performs wait-time predictions, peak-hour heatmaps, and staffing recommendations.
 
-**v1.3.x turns QueueLess into an intelligent operational workspace:** admin-defined custom queues, cross-counter token referral, a grounded AI assistant (RAG, never fabricates data), internal team messaging (1:1 + group chat), a notification center, secure sharing with QR codes, shared files, and role-based access control — all on the free Firebase Spark plan (no Cloud Storage / Blaze required).
+**v1.3.x introduced the intelligent operational workspace:** admin-defined custom queues, cross-counter token referral, a grounded AI assistant (RAG, never fabricates data), internal team messaging (1:1 + group chat), a notification center, secure sharing with QR codes, shared files, and role-based access control — all on the free Firebase Spark plan (no Cloud Storage / Blaze required).
 
 ---
 
@@ -119,9 +119,9 @@ Each Industry Type ships sensible default queues; admins can also add their own 
 
 | Technology | Version | Purpose |
 |---|---|---|
-| React | 18 | UI component framework |
+| React | 19 | UI component framework |
 | Vite | 8 | Build tool and dev server |
-| React Router | 6 | Client-side routing |
+| React Router DOM | 7 | Client-side routing |
 | Tailwind CSS | 3 | Utility-first styling with custom design tokens |
 | Firebase JS SDK | 12 | Real-time WebSocket subscriptions for live queue state, tokens, presence, and announcements |
 | Axios | 1 | HTTP client with JWT interceptors |
@@ -141,7 +141,7 @@ Each Industry Type ships sensible default queues; admins can also add their own 
 | Joi | — | Request validation and environment variable schema |
 | express-rate-limit | — | Brute-force protection on PIN and login routes |
 | nodemailer | — | Optional token email with tracking link |
-| Jest + Supertest | — | Unit and integration tests (46 tests) |
+| Jest + Supertest | — | Unit and integration tests (48 tests) |
 | AI provider layer | — | Pluggable `AIProvider` (grounded default + OpenAI/Groq/OpenRouter/Ollama/Gemini) with RAG over verified data |
 | Event bus | Node `EventEmitter` | Application-wide events decoupling queue, messaging, and notification modules |
 
@@ -548,10 +548,11 @@ See [docs/Development.md](docs/Development.md).
 
 ## 🛡️ Security
 
-Clients are **read-only** on Firebase RTDB — every write goes through the
-JWT-protected API using the Admin SDK. Message/notification/file content is
-served only after server-side membership + RBAC checks; passwords and PINs
-are bcrypt-hashed; logins, token issuance, and the AI assistant are
+Clients cannot write operational or content-bearing Firebase RTDB data —
+those writes go through the JWT-protected API using the Admin SDK. The only
+direct client write is scoped staff presence. Message/notification/file
+content is served only after server-side membership + RBAC checks; passwords
+and PINs are bcrypt-hashed; logins, token issuance, and the AI assistant are
 rate-limited; sensitive admin actions land in an append-only audit log.
 Report vulnerabilities privately — see [SECURITY.md](SECURITY.md).
 
