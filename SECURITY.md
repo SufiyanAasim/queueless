@@ -40,8 +40,9 @@ Out of scope:
 
 ## Security design notes
 
-- Clients are **read-only** on Firebase RTDB; all writes go through the
-  JWT-protected Express API using the Admin SDK.
+- Clients cannot write operational or content-bearing Firebase RTDB data;
+  those writes go through the JWT-protected Express API using the Admin SDK.
+  Scoped staff presence is the only direct client-write exception.
 - Message, notification, and file **content** is served only via the API
   after server-side membership checks; RTDB carries content-free
   "signal" nodes for real-time refresh.

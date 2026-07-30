@@ -5,8 +5,8 @@ QueueLess is a cloud-native monorepo with four independently deployed modules.
 ## Module map
 
 ```
-frontend/   React 18 + Vite SPA ──────────▶ Vercel   (static + CDN)
-backend/    Node 20 + Express REST API ───▶ Render   (web service)
+frontend/   React 19 + Vite SPA ──────────▶ Vercel   (static + CDN)
+backend/    Node 20.19+ + Express API ────▶ Render   (web service)
 firebase/   RTDB rules + Cloud Functions ─▶ Firebase (Spark plan)
 analytics/  Python pandas + scikit-learn ─▶ CI artifact (predictions.json)
 ```
@@ -30,8 +30,9 @@ Customer browser ──REST──▶ Express API ──Admin SDK──▶ Fireba
 
 - **Firebase RTDB** is the operational store: queue state, tokens, staff,
   admins, custom queues, presence, appointments, config.
-- **Clients never write RTDB** — writes go through the JWT API; security
-  rules enforce read-only (plus presence).
+- **Clients cannot write operational or content-bearing RTDB data** — those
+  writes go through the JWT API. Scoped staff presence is the only direct
+  client-write exception.
 - **MongoDB + CSV** are the analytical event log (dual-write, both optional).
 
 ## Real-time model (no Firebase Auth required)

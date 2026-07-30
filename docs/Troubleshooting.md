@@ -6,7 +6,7 @@ The deployed **backend is older than the frontend**. These routes exist
 from v1.4.5+; redeploy the Render backend. Verify with:
 
 ```bash
-curl https://<backend>/api/v1/           # → { version: "1.7.0", ... }
+curl https://<backend>/                  # → { version: "1.7.0", ... }
 ```
 
 ## AI assistant says "could not reach the operational data"
@@ -63,7 +63,7 @@ backend `.env` if you need longer sessions.
 
 ## Tests fail locally
 
-Backend tests mock Firebase — no services needed. Ensure Node ≥ 20 and a
+Backend tests mock Firebase — no services needed. Ensure Node ≥ 20.19 and a
 clean `npm install`. Run verbosely: `npm test -- --verbose`.
 
 ## LAN device can't reach the app

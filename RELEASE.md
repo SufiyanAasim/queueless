@@ -14,11 +14,11 @@ How QueueLess versions, names, tags, and ships releases.
 
 ## Release naming
 
-Format: **vX.Y.Z · Codename — Milestone**
+Release heading format: **QueueLess vX.Y.Z — Codename**. The milestone is
+recorded separately in the release table and tag message.
 
 - **Codenames** follow a single theme: **space** (never mix themes).
-- **Milestones** are one word (exception: historical
-  "Intelligent Collaboration").
+- **Milestones** are concise release themes; historical names are preserved.
 
 | Version | Codename | Milestone |
 |---------|----------|-----------|
@@ -39,8 +39,8 @@ Reserved future codenames: Atlas, Helios, Lyra, Vega, Sirius.
 Display format for release titles:
 
 ```
-🚀 QueueLess v1.7.0
-Codename: Cosmos — LAN Connectivity & UI Polish
+QueueLess v1.7.0 — Cosmos
+Milestone: LAN Connectivity & UI Polish
 ```
 
 ## Git tags
