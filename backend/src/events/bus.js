@@ -1,5 +1,5 @@
 /**
- * Application-wide event bus (v1.4.5 Phase 3).
+ * Application-wide event bus (v1.3.5 Phase 3).
  *
  * A thin wrapper over Node's EventEmitter that lets modules communicate through
  * events instead of tightly-coupled service calls. Emitting is fire-and-forget

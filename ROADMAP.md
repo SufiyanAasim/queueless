@@ -1,6 +1,6 @@
 # Roadmap
 
-Planned direction after **v1.7.0 "Cosmos"**. Order and scope may change;
+Planned direction after **v1.6.0 "Cosmos"**. Order and scope may change;
 items graduate into GitHub milestones when work begins.
 
 ## Near term

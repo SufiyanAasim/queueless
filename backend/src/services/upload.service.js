@@ -1,5 +1,5 @@
 /**
- * Shared files (v1.4.5 Phase 5c) — Spark-plan friendly.
+ * Shared files (v1.3.5 Phase 5c) — Spark-plan friendly.
  *
  * Files are stored in the Realtime Database via the Admin SDK (no Cloud Storage /
  * Blaze plan required), with metadata indexed separately so listings never pull

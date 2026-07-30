@@ -1,5 +1,5 @@
 /**
- * Persistent AI conversation store (v1.4.5 Phase 5).
+ * Persistent AI conversation store (v1.3.5 Phase 5).
  *
  * Per-user AI chat history backed by RTDB and served only via the JWT API.
  * Powers the AI workspace: history, rename, pin, delete, export.

@@ -42,7 +42,7 @@ ci/<short-name>          workflows / pipelines    ci/github-actions
 perf/<short-name>        performance              perf/analytics-cache
 security/<short-name>    security hardening       security/rate-limits
 hotfix/<short-name>      urgent production fix    hotfix/login
-release/vX.Y.Z           release stabilisation    release/v1.7.0
+release/vX.Y.Z           release stabilisation    release/v1.6.0
 ```
 
 ## Commit convention

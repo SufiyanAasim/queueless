@@ -1,5 +1,5 @@
 /**
- * Role model (v1.4.5 Phase 6).
+ * Role model (v1.3.5 Phase 6).
  *
  * Admin-tier hierarchy: superadmin > admin > manager. `staff` is the separate
  * counter-operator role. Higher rank implies all lower-rank permissions.

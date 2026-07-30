@@ -56,7 +56,7 @@ body:
     id: version
     attributes:
       label: Version
-      placeholder: v1.7.0 "Cosmos"
+      placeholder: v1.6.0 "Cosmos"
   - type: textarea
     id: environment
     attributes:

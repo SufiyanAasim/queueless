@@ -36,6 +36,20 @@ PRs get preview URLs.
 > Render service is running an older backend than the frontend expects.
 > Redeploy the backend.
 
+## Backend container → GitHub Packages
+
+The production backend image is published to GitHub Container Registry:
+
+```bash
+docker pull ghcr.io/sufiyanaasim/queueless:v1.6.0
+docker run --env-file backend/.env -p 4000:4000 ghcr.io/sufiyanaasim/queueless:v1.6.0
+```
+
+The **Publish GitHub Package** workflow builds `backend/Dockerfile` from the
+repository root and publishes immutable version and commit-SHA tags plus the
+moving `latest` tag. The OCI source label links the package back to this
+repository.
+
 ## Firebase
 
 ```bash

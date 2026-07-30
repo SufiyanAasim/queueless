@@ -1,5 +1,5 @@
 /**
- * Secure sharing (v1.4.5 Phase 5b).
+ * Secure sharing (v1.3.5 Phase 5b).
  *
  * Creates capability links to read-only snapshots (queue analytics, queue
  * snapshots, token status, reports). The share id is a 128-bit random token that

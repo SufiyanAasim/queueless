@@ -7,7 +7,8 @@
 
 ### A cloud-native smart token & queue management system
 
-![Version](https://img.shields.io/badge/version-1.7.0-blue)
+![Version](https://img.shields.io/badge/version-1.6.0-blue)
+[![Container](https://img.shields.io/badge/GHCR-v1.6.0-2496ED?logo=docker&logoColor=white)](https://github.com/users/SufiyanAasim/packages/container/package/queueless)
 ![Release](https://img.shields.io/badge/release-Cosmos%20%E2%80%94%20LAN%20Connectivity%20%26%20UI%20Polish-8A2BE2)
 ![License](https://img.shields.io/badge/license-MIT-green)
 ![Frontend](https://img.shields.io/badge/frontend-React%2018%20%2B%20Vite-61DAFB)
@@ -27,7 +28,7 @@ their number is called. No app download, no accounts for customers.
 ---
 
 **Author:** Muhammad Sufiyan Aasim · [@SufiyanAasim](https://github.com/SufiyanAasim)  
-**Latest release:** v1.7.0 — Cosmos _(LAN Connectivity & UI Polish)_
+**Latest release:** v1.6.0 — Cosmos _(LAN Connectivity & UI Polish)_
 
 **Docs:** [Architecture](docs/Architecture.md) · [API](docs/API.md) · [Deployment](docs/Deployment.md) · [Development](docs/Development.md) · [Guides](docs/AdminGuide.md) · [Troubleshooting](docs/Troubleshooting.md) · [Release notes](docs/releases)  
 **Community:** [Contributing](CONTRIBUTING.md) · [Security](SECURITY.md) · [Support](SUPPORT.md) · [Roadmap](ROADMAP.md) · [Release process](RELEASE.md) · [Code of Conduct](CODE_OF_CONDUCT.md)
@@ -36,7 +37,7 @@ QueueLess is a full-stack, cloud-native digital queue management system that rep
 
 Admins and staff manage the queue from a dedicated portal with a live dashboard, ML-assisted auto mode, granular analytics, and per-service staff portals. Every queue event is dual-written to MongoDB Atlas and a CSV event log, feeding a data mining pipeline that performs wait-time predictions, peak-hour heatmaps, and staffing recommendations.
 
-**v1.4.x turns QueueLess into an intelligent operational workspace:** admin-defined custom queues, cross-counter token referral, a grounded AI assistant (RAG, never fabricates data), internal team messaging (1:1 + group chat), a notification center, secure sharing with QR codes, shared files, and role-based access control — all on the free Firebase Spark plan (no Cloud Storage / Blaze required).
+**v1.3.x turns QueueLess into an intelligent operational workspace:** admin-defined custom queues, cross-counter token referral, a grounded AI assistant (RAG, never fabricates data), internal team messaging (1:1 + group chat), a notification center, secure sharing with QR codes, shared files, and role-based access control — all on the free Firebase Spark plan (no Cloud Storage / Blaze required).
 
 ---
 
@@ -87,7 +88,7 @@ Admins and staff manage the queue from a dedicated portal with a live dashboard,
 ### Display board (`/display`)
 - Fullscreen TV-optimised view — now-serving token per service, priority section, welcome banner, announcement banner, flash animation on token change, live clock
 
-### Intelligent workspace (v1.4.x)
+### Intelligent workspace (v1.3.x)
 
 - **Custom queue management** (`/admin/queues`) — admins create their own queues within an Industry Type with full CRUD: create, edit, enable/disable, archive, **delete (blocked while active tokens exist)**, reorder, capacity, working hours, average service time, token prefix, and **per-queue staff assignment** + analytics. Dedicated Create and Manage screens.
 - **Token referral / transfer** — move a live token between counters (e.g. hospital OPD → Eye Specialist); it keeps its number, records a referral trail, is served as priority-tier at the destination, and never auto-expires mid-transfer.
@@ -313,7 +314,7 @@ queueless/
 └── README.md
 ```
 
-**New modules in v1.4.x** (not exhaustively expanded above):
+**New modules in v1.3.x** (not exhaustively expanded above):
 
 ```
 backend/src/
@@ -390,7 +391,7 @@ analytics/models/train_predictor.py   # Trains GradientBoosting + IsolationFores
                                        └───────────────────────┘
 ```
 
-### v1.4.x API surface (all under `/api/v1`)
+### v1.3.x API surface (all under `/api/v1`)
 
 | Module | Endpoints | Auth |
 |---|---|---|
@@ -512,21 +513,20 @@ firebase deploy --only database
 ## 📦 Releases
 
 For the change log, see [CHANGELOG.md](CHANGELOG.md); full per-release notes live in [docs/releases/](docs/releases).
-The release history was re-coded without changing milestone order; the former labels are retained below for traceability.
 
-| Version | Former label | Codename | Milestone | Highlights |
-|---|---|---|---|---|
-| [v1.7.0](CHANGELOG.md#queueless-v170--cosmos) | v1.6.0 | **Cosmos** | LAN Connectivity & UI Polish | LAN support, interactive UI pass, session expiry, dark-mode fixes, professional repo structure |
-| [v1.6.5](CHANGELOG.md#queueless-v165--aurora) | v1.5.5 | **Aurora** | Summit | Credits overhaul, documentation refresh, release re-coding |
-| [v1.6.0](CHANGELOG.md#queueless-v160--quasar) | v1.5.0 | **Quasar** | Forge | LinkedIn-style docked message tray (persistent, live badge) |
-| [v1.5.5](CHANGELOG.md#queueless-v155--pulsar) | v1.4.5 | **Pulsar** | Insight | Clock-style time pickers, city selection at setup |
-| [v1.5.0](CHANGELOG.md#queueless-v150--orion) | v1.4.0 | **Orion** | Beacon | Industry-aware analytics, enriched CSV export, proper No-show/Skip button, deployment-gap fix |
-| [v1.4.5](CHANGELOG.md#queueless-v145--zenith) | v1.3.5 | **Zenith** | Intelligent Collaboration | AI assistant (RAG) + workspace, internal messaging (1:1/group, reactions, receipts, attachments), event bus + notification center, secure sharing + QR, shared files (Spark-free), RBAC + audit log |
-| [v1.4.0](CHANGELOG.md#queueless-v140--polaris) | v1.3.0 | **Polaris** | Relay | Token referral between counters, custom queue management, live "serving for" timer + next-in-queue, Industry Type rename, trained ML predictions, credits page |
-| [v1.3.5](CHANGELOG.md#queueless-v135--nebula) | v1.2.5 | **Nebula** | Pulse | Proactive push alerts, per-service pause, re-queue, group tokens, SLA alerts, staff metrics, multi-admin, auto-reset, appointment merge |
-| [v1.3.0](CHANGELOG.md#queueless-v130--eclipse) | v1.2.0 | **Eclipse** | Crew | Profile management, priority queue engine, 8 new features, 0 vulnerabilities |
-| [v1.2.5](CHANGELOG.md#queueless-v125--comet) | v1.0.5 | **Comet** | Alive | Analytics report, AI suggestions, dynamic heatmap, UI fixes |
-| [v1.2.0](CHANGELOG.md#queueless-v120--nova) | v1.0.0 | **Nova** | Sight | Initial release — core queue system, analytics dashboard, staff portal |
+| Version | Codename | Milestone | Highlights |
+|---|---|---|---|
+| [v1.6.0](docs/releases/v1.6.0.md) | **Cosmos** | LAN Connectivity & UI Polish | LAN support, interactive UI pass, session expiry, dark-mode fixes, professional repo structure |
+| [v1.5.5](docs/releases/v1.5.5.md) | **Aurora** | Summit | Credits overhaul, documentation refresh, release re-coding |
+| [v1.5.0](docs/releases/v1.5.0.md) | **Quasar** | Forge | LinkedIn-style docked message tray (persistent, live badge) |
+| [v1.4.5](docs/releases/v1.4.5.md) | **Pulsar** | Insight | Clock-style time pickers, city selection at setup |
+| [v1.4.0](docs/releases/v1.4.0.md) | **Orion** | Beacon | Industry-aware analytics, enriched CSV export, proper No-show/Skip button, deployment-gap fix |
+| [v1.3.5](docs/releases/v1.3.5.md) | **Zenith** | Intelligent Collaboration | AI assistant (RAG) + workspace, internal messaging (1:1/group, reactions, receipts, attachments), event bus + notification center, secure sharing + QR, shared files (Spark-free), RBAC + audit log |
+| [v1.3.0](docs/releases/v1.3.0.md) | **Polaris** | Relay | Token referral between counters, custom queue management, live "serving for" timer + next-in-queue, Industry Type rename, trained ML predictions, credits page |
+| [v1.2.5](docs/releases/v1.2.5.md) | **Nebula** | Pulse | Proactive push alerts, per-service pause, re-queue, group tokens, SLA alerts, staff metrics, multi-admin, auto-reset, appointment merge |
+| [v1.2.0](docs/releases/v1.2.0.md) | **Eclipse** | Crew | Profile management, priority queue engine, 8 new features, 0 vulnerabilities |
+| [v1.0.5](docs/releases/v1.0.5.md) | **Comet** | Alive | Analytics report, AI suggestions, dynamic heatmap, UI fixes |
+| [v1.0.0](docs/releases/v1.0.0.md) | **Nova** | Sight | Initial release — core queue system, analytics dashboard, staff portal |
 
 ---
 

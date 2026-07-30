@@ -1,5 +1,5 @@
 """
-Offline predictive-model trainer for QueueLess (v1.4.0).
+Offline predictive-model trainer for QueueLess (v1.3.0).
 
 Reads the queue event log (data/queue_events.csv) and trains practical,
 explainable models, then exports a single compact JSON artefact

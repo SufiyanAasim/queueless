@@ -1,5 +1,5 @@
 /**
- * Notification Center (v1.4.5 Phase 3).
+ * Notification Center (v1.3.5 Phase 3).
  *
  * Subscribes to the event bus and turns domain events into per-user
  * notifications. Like messaging, notification content is stored in RTDB but

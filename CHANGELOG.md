@@ -2,15 +2,9 @@
 
 All notable changes to the QueueLess project will be documented in this file.
 
-The canonical release sequence is `v1.2.0`, `v1.2.5`, `v1.3.0`, `v1.3.5`,
-`v1.4.0`, `v1.4.5`, `v1.5.0`, `v1.5.5`, `v1.6.0`, `v1.6.5`, and `v1.7.0`.
-These labels replace the former sequence `v1.0.0` through `v1.6.0` without
-changing release order or milestone contents; see [RELEASE.md](RELEASE.md) for
-the exact one-to-one mapping.
-
 ---
 
-## QueueLess v1.7.0 — Cosmos
+## QueueLess v1.6.0 — Cosmos
 
 Codename **Cosmos** · _LAN Connectivity & UI Polish_. LAN support, UI fixes, performance improvements, session expiry, and a professional repository structure.
 
@@ -52,13 +46,13 @@ Codename **Cosmos** · _LAN Connectivity & UI Polish_. LAN support, UI fixes, pe
 ### 🏛️ Professional repository structure
 
 - `.github/`: issue templates (bug/feature/docs/question + security contact), PR template, CODEOWNERS, grouped Dependabot config.
-- `docs/`: Architecture, full API reference, Deployment + env-var matrix, Development guide (incl. LAN access and the Windows `&`-path pitfall), Admin/Staff/User guides, Troubleshooting, and per-release notes (v1.2.0 → v1.7.0) — file naming aligned with the Metro Navigation System repo conventions.
+- `docs/`: Architecture, full API reference, Deployment + env-var matrix, Development guide (incl. LAN access and the Windows `&`-path pitfall), Admin/Staff/User guides, Troubleshooting, and per-release notes (v1.0.0 → v1.6.0) — file naming aligned with the Metro Navigation System repo conventions.
 - Root governance: `CONTRIBUTING.md`, `SECURITY.md`, `CODE_OF_CONDUCT.md`, `SUPPORT.md`, `ROADMAP.md`, `RELEASE.md`, `.editorconfig`, `.gitattributes`.
 - README restructured: badges, hero links, contributors table, per-release notes index.
 
 ---
 
-## QueueLess v1.6.5 — Aurora
+## QueueLess v1.5.5 — Aurora
 
 Codename **Aurora** · Milestone _Summit_. Credits overhaul, UX polish, live config broadcasting, messaging widget fix, and Render deploy reliability hardening.
 
@@ -92,7 +86,7 @@ Codename **Aurora** · Milestone _Summit_. Credits overhaul, UX polish, live con
 
 ---
 
-## QueueLess v1.6.0 — Quasar
+## QueueLess v1.5.0 — Quasar
 
 Codename **Quasar** · Milestone _Forge_. The messaging experience is rebuilt as a docked tray.
 
@@ -104,7 +98,7 @@ Codename **Quasar** · Milestone _Forge_. The messaging experience is rebuilt as
 
 ---
 
-## QueueLess v1.5.5 — Pulsar
+## QueueLess v1.4.5 — Pulsar
 
 Codename **Pulsar** · Milestone _Insight_. Setup and input UX polish.
 
@@ -118,7 +112,7 @@ Codename **Pulsar** · Milestone _Insight_. Setup and input UX polish.
 
 ---
 
-## QueueLess v1.5.0 — Orion
+## QueueLess v1.4.0 — Orion
 
 Codename **Orion** · Milestone _Beacon_. Data-quality fixes and the deployment-gap clarification.
 
@@ -136,11 +130,11 @@ Codename **Orion** · Milestone _Beacon_. Data-quality fixes and the deployment-
 
 ### 🧭 Deployment-gap clarification
 
-- Confirmed the new v1.4.x routes (`/admin/queues/overview`, `/admin/audit`, `/admin/queue/refer/:id`, `/admin/predictions`, `/uploads`, `/conversations`, `/notifications`) resolve correctly in the codebase; the live **404s were the old backend still deployed on Render**, not code bugs. Resolved by deploying the current backend.
+- Confirmed the new v1.3.x routes (`/admin/queues/overview`, `/admin/audit`, `/admin/queue/refer/:id`, `/admin/predictions`, `/uploads`, `/conversations`, `/notifications`) resolve correctly in the codebase; the live **404s were the old backend still deployed on Render**, not code bugs. Resolved by deploying the current backend.
 
 ---
 
-## QueueLess v1.4.5 — Zenith
+## QueueLess v1.3.5 — Zenith
 
 Codename **Zenith** · Milestone _Intelligent Collaboration_. A multi-phase release turning QueueLess
 into an intelligent operational workspace. **Phase 1 ships the AI Assistant**,
@@ -209,7 +203,7 @@ workspace follow in later phases.
 
 ---
 
-## QueueLess v1.4.0 — Polaris
+## QueueLess v1.3.0 — Polaris
 
 Codename **Polaris** · Milestone _Relay_. This release makes the queue *flow*: tokens can be handed
 between counters without being lost, administrators can shape their own queues,
@@ -269,7 +263,7 @@ ahead of the rush.
 
 ---
 
-## QueueLess v1.3.5 — Nebula
+## QueueLess v1.2.5 — Nebula
 
 Codename **Nebula** · Milestone _Pulse_. This release turns QueueLess into a proactive, self-managing queue system. Admins gain granular service-level control, staff actions are tracked and attributed, customers receive early push alerts, and the queue can now reset itself overnight — all without manual intervention.
 
@@ -358,7 +352,7 @@ Codename **Nebula** · Milestone _Pulse_. This release turns QueueLess into a pr
 
 ---
 
-## QueueLess v1.3.0 — Eclipse
+## QueueLess v1.2.0 — Eclipse
 
 Codename **Eclipse** · Milestone _Crew_. The biggest release yet — full account management for admins and staff, a smarter queue engine, eight new platform features, and a zero-vulnerability dependency baseline.
 
@@ -411,7 +405,7 @@ Codename **Eclipse** · Milestone _Crew_. The biggest release yet — full accou
 
 ---
 
-## QueueLess v1.2.5 — Comet
+## QueueLess v1.0.5 — Comet
 
 Codename **Comet** · Milestone _Alive_. A focused patch release hardening the analytics pipeline, fixing UI regressions, and improving admin tooling.
 
@@ -443,7 +437,7 @@ Codename **Comet** · Milestone _Alive_. A focused patch release hardening the a
 
 ---
 
-## QueueLess v1.2.0 — Nova
+## QueueLess v1.0.0 — Nova
 
 Codename **Nova** · Milestone _Sight_. The first stable release of QueueLess — a cloud-native, token-based queue management system built for real organisations.
 

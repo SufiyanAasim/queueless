@@ -1,5 +1,5 @@
 export const RELEASE = Object.freeze({
-  version: '1.7.0',
+  version: '1.6.0',
   codename: 'Cosmos',
   milestone: 'LAN Connectivity & UI Polish',
 });

@@ -3,10 +3,10 @@
 ## `Route not found: GET /api/v1/admin/queues/overview` (or /audit, /conversations, /notifications, /uploads, /assistant)
 
 The deployed **backend is older than the frontend**. These routes exist
-from v1.4.5+; redeploy the Render backend. Verify with:
+from v1.3.5+; redeploy the Render backend. Verify with:
 
 ```bash
-curl https://<backend>/api/v1/           # → { version: "1.7.0", ... }
+curl https://<backend>/api/v1/           # → { version: "1.6.0", ... }
 ```
 
 ## AI assistant says "could not reach the operational data"
@@ -46,13 +46,13 @@ node node_modules/jest/bin/jest.js --runInBand
 
 ## Analytics charts show services from a different Industry Type
 
-Fixed in v1.5.0 — charts filter to the current Industry Type / custom
+Fixed in v1.4.0 — charts filter to the current Industry Type / custom
 queues. If you still see stale entries, hard-refresh so the cached config
 (`localStorage.queueless.appConfig`) updates.
 
 ## Dark mode: unreadable text on dark cards
 
-Fixed in v1.7.0 via global overrides in `frontend/src/index.css`
+Fixed in v1.6.0 via global overrides in `frontend/src/index.css`
 (`.dark .bg-ink [class*="text-paper"]`). If a new component regresses,
 follow the same pattern — never hardcode light text on `bg-ink`.
 

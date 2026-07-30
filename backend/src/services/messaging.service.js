@@ -1,5 +1,5 @@
 /**
- * Internal messaging (v1.4.5 Phase 2).
+ * Internal messaging (v1.3.5 Phase 2).
  *
  * Security model (no Firebase Auth in this app): message CONTENT is stored in
  * RTDB but is **never client-readable** — it is served only through the JWT API

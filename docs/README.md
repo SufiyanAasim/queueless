@@ -10,7 +10,7 @@
 | [StaffGuide.md](StaffGuide.md) | Staff portal + kiosk walkthrough |
 | [UserGuide.md](UserGuide.md) | Customer-facing flows |
 | [Troubleshooting.md](Troubleshooting.md) | Common problems and fixes |
-| [releases/](releases/) | Full release notes per version (v1.2.0 → v1.7.0) |
+| [releases/](releases/) | Full release notes per version (v1.0.0 → v1.6.0) |
 
 Root-level references: [README](../README.md) · [RUNNING](../RUNNING.md) ·
 [CHANGELOG](../CHANGELOG.md) · [CONTRIBUTING](../CONTRIBUTING.md) ·

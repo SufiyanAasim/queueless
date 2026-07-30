@@ -4,7 +4,7 @@ How QueueLess versions, names, tags, and ships releases.
 
 ## Semantic versioning
 
-`MAJOR.MINOR.PATCH` — e.g. `1.7.0`
+`MAJOR.MINOR.PATCH` — e.g. `1.6.0`
 
 | Part  | Bump when |
 |-------|-----------|
@@ -20,40 +20,37 @@ Format: **vX.Y.Z · Codename — Milestone**
 - **Milestones** are one word (exception: historical
   "Intelligent Collaboration").
 
-The canonical history below supersedes the former labels while preserving the
-original release order and milestone contents.
-
-| Version | Former label | Codename | Milestone |
-|---------|--------------|----------|-----------|
-| v1.2.0  | v1.0.0       | Nova     | Sight     |
-| v1.2.5  | v1.0.5       | Comet    | Alive     |
-| v1.3.0  | v1.2.0       | Eclipse  | Crew      |
-| v1.3.5  | v1.2.5       | Nebula   | Pulse     |
-| v1.4.0  | v1.3.0       | Polaris  | Relay     |
-| v1.4.5  | v1.3.5       | Zenith   | Intelligent Collaboration |
-| v1.5.0  | v1.4.0       | Orion    | Beacon    |
-| v1.5.5  | v1.4.5       | Pulsar   | Insight   |
-| v1.6.0  | v1.5.0       | Quasar   | Forge     |
-| v1.6.5  | v1.5.5       | Aurora   | Summit    |
-| v1.7.0  | v1.6.0       | Cosmos   | LAN Connectivity & UI Polish |
+| Version | Codename | Milestone |
+|---------|----------|-----------|
+| v1.0.0  | Nova     | Sight     |
+| v1.0.5  | Comet    | Alive     |
+| v1.2.0  | Eclipse  | Crew      |
+| v1.2.5  | Nebula   | Pulse     |
+| v1.3.0  | Polaris  | Relay     |
+| v1.3.5  | Zenith   | Intelligent Collaboration |
+| v1.4.0  | Orion    | Beacon    |
+| v1.4.5  | Pulsar   | Insight   |
+| v1.5.0  | Quasar   | Forge     |
+| v1.5.5  | Aurora   | Summit    |
+| v1.6.0  | Cosmos   | LAN Connectivity & UI Polish |
 
 Reserved future codenames: Atlas, Helios, Lyra, Vega, Sirius.
 
 Display format for release titles:
 
 ```
-🚀 QueueLess v1.7.0
+🚀 QueueLess v1.6.0
 Codename: Cosmos — LAN Connectivity & UI Polish
 ```
 
 ## Git tags
 
-Annotated tags in the form `vX.Y.Z` only (`v1.7.0`). Never `latest`,
+Signed annotated tags in the form `vX.Y.Z` only (`v1.6.0`). Never `latest`,
 `release1`, `vFinal`, or build-suffixed tags.
 
 ```bash
-git tag -a v1.7.0 -m "QueueLess v1.7.0 — Cosmos (LAN Connectivity & UI Polish)"
-git push origin v1.7.0
+git tag -s v1.6.0 -m "QueueLess v1.6.0 — Cosmos (LAN Connectivity & UI Polish)"
+git push origin v1.6.0
 ```
 
 ## Branch strategy
