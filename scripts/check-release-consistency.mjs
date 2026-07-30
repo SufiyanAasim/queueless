@@ -6,7 +6,7 @@ import { fileURLToPath } from 'node:url';
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 
 const releases = [
-  { version: '1.0.0', codename: 'Nova', milestone: 'Sight' },
+  { version: '1.0.0', codename: 'Nova', milestone: 'Sight', prerelease: true },
   { version: '1.0.5', codename: 'Comet', milestone: 'Alive' },
   { version: '1.2.0', codename: 'Eclipse', milestone: 'Crew' },
   { version: '1.2.5', codename: 'Nebula', milestone: 'Pulse' },
@@ -94,6 +94,11 @@ for (const release of releases) {
   expectContains('README.md', `| [${tag}]`);
   expectContains('README.md', `| **${release.codename}** | ${release.milestone} |`);
   expectContains('RELEASE.md', `| ${tag}`);
+  if (release.prerelease) {
+    expectContains(notesPath, 'The first pre-release of **QueueLess**');
+    expectContains('README.md', `| [${tag}](${notesPath}) | **${release.codename}** | ${release.milestone} | **Pre-release**`);
+    expectContains('RELEASE.md', `${tag} ${release.codename} is designated as a pre-release`);
+  }
 }
 
 const expectedTags = releases.map(({ version }) => `v${version}`);

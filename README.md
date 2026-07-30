@@ -526,7 +526,7 @@ For the change log, see [CHANGELOG.md](CHANGELOG.md); full per-release notes liv
 | [v1.2.5](docs/releases/v1.2.5.md) | **Nebula** | Pulse | Proactive push alerts, per-service pause, re-queue, group tokens, SLA alerts, staff metrics, multi-admin, auto-reset, appointment merge |
 | [v1.2.0](docs/releases/v1.2.0.md) | **Eclipse** | Crew | Profile management, priority queue engine, 8 new features, 0 vulnerabilities |
 | [v1.0.5](docs/releases/v1.0.5.md) | **Comet** | Alive | Analytics report, AI suggestions, dynamic heatmap, UI fixes |
-| [v1.0.0](docs/releases/v1.0.0.md) | **Nova** | Sight | Initial release — core queue system, analytics dashboard, staff portal |
+| [v1.0.0](docs/releases/v1.0.0.md) | **Nova** | Sight | **Pre-release** — core queue system, analytics dashboard, staff portal |
 
 ---
 

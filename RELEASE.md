@@ -34,6 +34,8 @@ Format: **vX.Y.Z · Codename — Milestone**
 | v1.5.5  | Aurora   | Summit    |
 | v1.6.0  | Cosmos   | LAN Connectivity & UI Polish |
 
+> **Release status:** v1.0.0 Nova is designated as a pre-release.
+
 Reserved future codenames: Atlas, Helios, Lyra, Vega, Sirius.
 
 Display format for release titles:
