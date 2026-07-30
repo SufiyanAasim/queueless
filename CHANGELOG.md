@@ -2,6 +2,12 @@
 
 All notable changes to the QueueLess project will be documented in this file.
 
+The canonical release sequence is `v1.2.0`, `v1.2.5`, `v1.3.0`, `v1.3.5`,
+`v1.4.0`, `v1.4.5`, `v1.5.0`, `v1.5.5`, `v1.6.0`, `v1.6.5`, and `v1.7.0`.
+These labels replace the former sequence `v1.0.0` through `v1.6.0` without
+changing release order or milestone contents; see [RELEASE.md](RELEASE.md) for
+the exact one-to-one mapping.
+
 ---
 
 ## QueueLess v1.7.0 — Cosmos
