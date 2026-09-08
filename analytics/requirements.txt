@@ -6,7 +6,7 @@
 
 # Core data manipulation
 pandas>=3.0.5,<4.0
-numpy>=1.26,<2.2
+numpy>=2.5.2,<2.6
 
 # Visualization
 matplotlib>=3.11.1,<4.0
