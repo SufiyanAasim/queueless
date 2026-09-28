@@ -20,7 +20,7 @@
     "dotenv": "^17.4.2",
     "express": "^4.19.2",
     "express-rate-limit": "^8.7.0",
-    "firebase-admin": "^14.4.0",
+    "firebase-admin": "^14.5.0",
     "helmet": "^7.1.0",
     "joi": "^18.2.9",
     "jsonwebtoken": "^9.0.2",
@@ -29,9 +29,9 @@
     "nodemailer": "^10.0.10"
   },
   "devDependencies": {
-    "jest": "^30.5.1",
+    "jest": "^30.5.2",
     "nodemon": "^3.1.4",
-    "supertest": "^7.0.0"
+    "supertest": "^7.3.0"
   },
   "overrides": {
     "uuid": "^11.1.1",
